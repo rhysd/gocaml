@@ -261,7 +261,7 @@ func lexNumber(l *Lexer) stateFn {
 		}
 	}
 
-	if l.top == 'e' {
+	if l.top == 'e' || l.top == 'E' {
 		tok = token.FLOAT
 		l.eat()
 		if l.top == '+' || l.top == '-' {
