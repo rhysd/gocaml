@@ -12,7 +12,7 @@ func getSource(args []string) (io.Reader, string, error) {
 	if len(args) <= 1 {
 		return os.Stdin, "<stdin>", nil
 	} else {
-		n := args[0]
+		n := args[1]
 		f, err := os.Open(n)
 		if err != nil {
 			return nil, n, err

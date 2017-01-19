@@ -104,7 +104,7 @@ func (l *Lexer) emitIllegal(reason string) {
 func (l *Lexer) emitExpected(s string, a rune) {
 	l.tokens <- token.Token{
 		token.ILLEGAL,
-		fmt.Sprintf("Expected %s but got '%c'", s, a),
+		fmt.Sprintf("Expected %s but got '%c'(%d)", s, a, a),
 		l.current,
 		l.current,
 		l.file,
