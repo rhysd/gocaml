@@ -121,7 +121,7 @@ func (l *Lexer) emitUnexpectedEOF(expected string) {
 	}
 }
 
-func (l *Lexer) eat() {
+func (l *Lexer) consume() {
 	r, size, err := l.src.ReadRune()
 	if err == io.EOF {
 		l.top = 0
@@ -140,10 +140,17 @@ func (l *Lexer) eat() {
 	} else {
 		l.current.Column += 1
 	}
-	l.buf.WriteRune(r)
 
 	l.top = r
 	l.eof = false
+}
+
+func (l *Lexer) eat() {
+	if l.eof {
+		return
+	}
+	l.buf.WriteRune(l.top)
+	l.consume()
 }
 
 func lexComment(l *Lexer) stateFn {
@@ -341,7 +348,7 @@ func lex(l *Lexer) stateFn {
 		default:
 			switch {
 			case unicode.IsSpace(l.top):
-				l.eat()
+				l.consume()
 			case unicode.IsDigit(l.top):
 				return lexNumber
 			default:
