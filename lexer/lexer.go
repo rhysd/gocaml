@@ -1,11 +1,12 @@
 package lexer
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/rhysd/mincaml-parser/source"
 	"github.com/rhysd/mincaml-parser/token"
 	"io"
+	"os"
 	"unicode"
 	"unicode/utf8"
 )
@@ -18,28 +19,36 @@ type Lexer struct {
 	state   stateFn
 	start   token.Position
 	current token.Position
-	buf     bytes.Buffer
-	src     *bufio.Reader
+	src     *source.Source
+	input   *bytes.Reader
 	tokens  chan token.Token
 	top     rune
 	eof     bool
-	file    string
+	Error   func(msg string, t token.Token)
 }
 
-func NewLexer(file string, src io.Reader, tokens chan token.Token) *Lexer {
-	start := token.Position{1, 1, 0}
+func NewLexer(src *source.Source, tokens chan token.Token) *Lexer {
+	start := token.Position{
+		Offset: 0,
+		Line:   1,
+		Column: 1,
+	}
 	return &Lexer{
 		state:   lex,
 		start:   start,
 		current: start,
-		src:     bufio.NewReader(src),
+		input:   bytes.NewReader(src.Code),
+		src:     src,
 		tokens:  tokens,
-		file:    file,
+		Error: func(m string, t token.Token) {
+			fmt.Fprintf(os.Stderr, "Error at %s: %s", t.String(), m)
+		},
 	}
 }
 
 func (l *Lexer) Lex() {
-	l.eat()
+	// Set top to peek current rune
+	l.consume()
 	for l.state != nil {
 		l.state = l.state(l)
 	}
@@ -48,17 +57,15 @@ func (l *Lexer) Lex() {
 func (l *Lexer) emit(kind token.TokenKind) {
 	l.tokens <- token.Token{
 		kind,
-		l.buf.String(),
 		l.start,
 		l.current,
-		l.file,
+		l.src,
 	}
-	l.buf.Truncate(0)
 	l.start = l.current
 }
 
 func (l *Lexer) emitIdent() {
-	s := l.buf.String()
+	s := string(l.src.Code[l.start.Offset:l.current.Offset])
 	if len(s) == 1 {
 		// Shortcut because no keyword is one character. It must be identifier
 		l.emit(token.IDENT)
@@ -89,40 +96,34 @@ func (l *Lexer) emitIdent() {
 	}
 }
 
-func (l *Lexer) emitIllegal(reason string) {
-	l.tokens <- token.Token{
+func (l *Lexer) emitIllegal() token.Token {
+	t := token.Token{
 		token.ILLEGAL,
-		reason,
+		l.start,
 		l.current,
-		l.current,
-		l.file,
+		l.src,
 	}
-	l.buf.Truncate(0)
+	l.tokens <- t
 	l.start = l.current
+	return t
 }
 
-func (l *Lexer) emitExpected(s string, a rune) {
-	l.tokens <- token.Token{
-		token.ILLEGAL,
-		fmt.Sprintf("Expected %s but got '%c'(%d)", s, a, a),
-		l.current,
-		l.current,
-		l.file,
-	}
-	l.buf.Truncate(0)
-	l.start = l.current
+func (l *Lexer) expected(s string, a rune) {
+	t := l.emitIllegal()
+	l.Error(fmt.Sprintf("Expected %s but got '%c'(%d)", s, a, a), t)
 }
 
-func (l *Lexer) emitUnexpectedEOF(expected string) {
+func (l *Lexer) unexpectedEOF(expected string) {
+	t := l.emitIllegal()
 	if len(expected) == 1 {
-		l.emitIllegal(fmt.Sprintf("Expected '%s' but got EOF", expected))
+		l.Error(fmt.Sprintf("Expected '%s' but got EOF", expected), t)
 	} else {
-		l.emitIllegal(fmt.Sprintf("Expected one of '%s' but got EOF", expected))
+		l.Error(fmt.Sprintf("Expected one of '%s' but got EOF", expected), t)
 	}
 }
 
 func (l *Lexer) consume() {
-	r, size, err := l.src.ReadRune()
+	r, _, err := l.input.ReadRune()
 	if err == io.EOF {
 		l.top = 0
 		l.eof = true
@@ -133,36 +134,43 @@ func (l *Lexer) consume() {
 		panic(err)
 	}
 
-	l.current.Offset += size
-	if r == '\n' {
-		l.current.Line += 1
-		l.current.Column = 1
-	} else {
-		l.current.Column += 1
-	}
-
 	l.top = r
 	l.eof = false
 }
 
 func (l *Lexer) eat() {
+	size := utf8.RuneLen(l.top)
+	l.current.Offset += size
+
+	// TODO: Consider \n\r
+	if l.top == '\n' {
+		l.current.Line += 1
+		l.current.Column = 1
+	} else {
+		l.current.Column += size
+	}
+
+	l.consume()
+}
+
+func (l *Lexer) skip() {
 	if l.eof {
 		return
 	}
-	l.buf.WriteRune(l.top)
-	l.consume()
+	l.eat()
+	l.start = l.current
 }
 
 func lexComment(l *Lexer) stateFn {
 	for {
 		if l.eof {
-			l.emitUnexpectedEOF("*")
+			l.unexpectedEOF("*")
 			return nil
 		}
 		if l.top == '*' {
 			l.eat()
 			if l.eof {
-				l.emitUnexpectedEOF(")")
+				l.unexpectedEOF(")")
 				return nil
 			}
 			if l.top == ')' {
@@ -210,7 +218,7 @@ func lexMultOp(l *Lexer) stateFn {
 	l.eat()
 
 	if l.top != '.' {
-		l.emitExpected("'.'", l.top)
+		l.expected("'.'", l.top)
 		return nil
 	}
 
@@ -275,7 +283,7 @@ func lexNumber(l *Lexer) stateFn {
 			l.eat()
 		}
 		if !unicode.IsDigit(l.top) {
-			l.emitExpected("number", l.top)
+			l.expected("number", l.top)
 			return nil
 		}
 		for unicode.IsDigit(l.top) {
@@ -296,7 +304,7 @@ func isLetter(r rune) bool {
 
 func lexIdent(l *Lexer) stateFn {
 	if !isLetter(l.top) {
-		l.emitExpected("letter", l.top)
+		l.expected("letter", l.top)
 		return nil
 	}
 	l.eat()
@@ -348,7 +356,7 @@ func lex(l *Lexer) stateFn {
 		default:
 			switch {
 			case unicode.IsSpace(l.top):
-				l.consume()
+				l.skip()
 			case unicode.IsDigit(l.top):
 				return lexNumber
 			default:

@@ -3,33 +3,28 @@ package main
 import (
 	"fmt"
 	"github.com/rhysd/mincaml-parser/lexer"
+	"github.com/rhysd/mincaml-parser/source"
 	"github.com/rhysd/mincaml-parser/token"
-	"io"
 	"os"
 )
 
-func getSource(args []string) (io.Reader, string, error) {
+func getSource(args []string) (*source.Source, error) {
 	if len(args) <= 1 {
-		return os.Stdin, "<stdin>", nil
+		return source.FromStdin()
 	} else {
-		n := args[1]
-		f, err := os.Open(n)
-		if err != nil {
-			return nil, n, err
-		}
-		return f, n, nil
+		return source.FromFile(args[1])
 	}
 }
 
 func main() {
-	r, f, err := getSource(os.Args)
+	src, err := getSource(os.Args)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error on opening %s: %s\n", f, err.Error())
+		fmt.Fprintf(os.Stderr, "Error on opening source: %s\n", err.Error())
 		os.Exit(4)
 	}
 
 	ch := make(chan token.Token)
-	l := lexer.NewLexer(f, r, ch)
+	l := lexer.NewLexer(src, ch)
 	go l.Lex()
 	for {
 		select {
@@ -38,7 +33,6 @@ func main() {
 			case token.EOF:
 				os.Exit(0)
 			case token.ILLEGAL:
-				fmt.Fprintf(os.Stderr, "Error at %s", t.String())
 				os.Exit(5)
 			default:
 				fmt.Println(t.String())
