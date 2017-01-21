@@ -15,16 +15,11 @@ func Print(e Expr) {
 }
 
 func printExpr(e Expr, indent int) {
-	p := &Printer{indent}
-	p.Visit(e)
-}
+	fmt.Printf("\n%s<%s:%d:%d-%d:%d>", strings.Repeat("  ", indent), e.Pos().Line, e.Pos().Column, e.End().Line, e.End().Column)
 
-func (p *Printer) Visit(e Expr) *Printer {
-	fmt.Printf("\n%s<%s:%d:%d-%d:%d>", strings.repeat("  ", p.indent), e.Pos().Line, e.Pos().Column, e.End().Line, e.End().Column)
+	i := indent + 1
 
-	i := p.indent + 1
-
-	switch n := node.(type) {
+	switch n := e.(type) {
 	case *Not:
 		printExpr(n.Child, i)
 	case *Neg:
@@ -63,7 +58,7 @@ func (p *Printer) Visit(e Expr) *Printer {
 		printExpr(n.Bound, i)
 		printExpr(n.Body, i)
 	case *LetRec:
-		printExpr(n.FuncDef.Body, i)
+		printExpr(n.Func.Body, i)
 		printExpr(n.Body, i)
 	case *Apply:
 		printExpr(n.Callee, i)

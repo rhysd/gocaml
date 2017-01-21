@@ -51,7 +51,7 @@ type Decl struct {
 
 type FuncDef struct {
 	Decl   Decl
-	Params []string
+	Params []Decl
 	Body   Expr
 }
 
@@ -141,7 +141,6 @@ type (
 
 	Let struct {
 		LetToken *token.Token
-		end      *token.Token
 		Decl     Decl
 		Bound    Expr
 		Body     Expr
@@ -154,7 +153,7 @@ type (
 
 	LetRec struct {
 		LetToken *token.Token
-		Func     FuncDef
+		Func     *FuncDef
 		Body     Expr
 	}
 

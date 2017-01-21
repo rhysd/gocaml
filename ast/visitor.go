@@ -9,7 +9,7 @@ func Visit(v Visitor, e Expr) {
 		return
 	}
 
-	switch n := node.(type) {
+	switch n := e.(type) {
 	case *Not:
 		Visit(v, n.Child)
 	case *Neg:
@@ -48,7 +48,7 @@ func Visit(v Visitor, e Expr) {
 		Visit(v, n.Bound)
 		Visit(v, n.Body)
 	case *LetRec:
-		Visit(v, n.FuncDef.Body)
+		Visit(v, n.Func.Body)
 		Visit(v, n.Body)
 	case *Apply:
 		Visit(v, n.Callee)
