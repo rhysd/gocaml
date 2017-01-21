@@ -58,225 +58,314 @@ type FuncDef struct {
 // AST node which meets Expr interface
 type (
 	Unit struct {
-		start *token.Token
-		end   *token.Token
+		LParenToken *token.Token
+		RParenToken *token.Token
 	}
 
 	Bool struct {
-		start *token.Token
-		end   *token.Token
+		Token *token.Token
 		Value bool
 	}
 
 	Int struct {
-		start *token.Token
-		end   *token.Token
+		Token *token.Token
 		Value int
 	}
 
 	Float struct {
-		start *token.Token
-		end   *token.Token
+		Token *token.Token
 		Value float
 	}
 
 	Not struct {
-		start *token.Token
-		end   *token.Token
 		Child Expr
 	}
 
 	Neg struct {
-		start *token.Token
-		end   *token.Token
 		Child Expr
 	}
 
 	Add struct {
-		start *token.Token
-		end   *token.Token
 		Left  Expr
 		Right Expr
 	}
 
 	Sub struct {
-		start *token.Token
-		end   *token.Token
 		Left  Expr
 		Right Expr
 	}
 
 	FNeg struct {
-		start *token.Token
-		end   *token.Token
 		Child Expr
 	}
 
 	FAdd struct {
-		start *token.Token
-		end   *token.Token
 		Left  Expr
 		Right Expr
 	}
 
 	FSub struct {
-		start *token.Token
-		end   *token.Token
 		Left  Expr
 		Right Expr
 	}
 
 	FMul struct {
-		start *token.Token
-		end   *token.Token
 		Left  Expr
 		Right Expr
 	}
 
 	FDiv struct {
-		start *token.Token
-		end   *token.Token
 		Left  Expr
 		Right Expr
 	}
 
 	Eq struct {
-		start *token.Token
-		end   *token.Token
 		Left  Expr
 		Right Expr
 	}
 
 	Less struct {
-		start *token.Token
-		end   *token.Token
 		Left  Expr
 		Right Expr
 	}
 
 	If struct {
-		start *token.Token
-		end   *token.Token
-		Cond  Expr
-		Then  Expr
-		Else  Expr
+		IfToken *token.Token
+		Cond    Expr
+		Then    Expr
+		Else    Expr
 	}
 
 	Let struct {
-		start *token.Token
-		end   *token.Token
-		Decl  Decl
-		Bound Expr
-		Body  Expr
+		LetToken *token.Token
+		end      *token.Token
+		Decl     Decl
+		Bound    Expr
+		Body     Expr
 	}
 
 	Var struct {
-		start *token.Token
-		end   *token.Token
+		Token *token.Token
 		Name  string
 	}
 
 	LetRec struct {
-		start *token.Token
-		end   *token.Token
-		Func  FuncDef
-		Body  Expr
+		LetToken *token.Token
+		Func     FuncDef
+		Body     Expr
 	}
 
 	Apply struct {
-		start  *token.Token
-		end    *token.Token
 		Callee Expr
 		Args   []Expr
 	}
 
 	Tuple struct {
-		start *token.Token
-		end   *token.Token
 		Elems []Expr
 	}
 
 	LetTuple struct {
-		start *token.Token
-		end   *token.Token
-		Decls []Decl
-		Bound Expr
-		Body  Expr
+		LetToken *token.Token
+		Decls    []Decl
+		Bound    Expr
+		Body     Expr
 	}
 
 	Array struct {
-		start *token.Token
-		end   *token.Token
-		Size  Expr
-		Elem  Expr
+		ArrayToken *token.Token
+		Size       Expr
+		Elem       Expr
 	}
 
 	Get struct {
-		start *token.Token
-		end   *token.Token
 		Array Expr
 		Index Expr
 	}
 
 	Put struct {
-		start    *token.Token
-		end      *token.Token
 		Array    Expr
 		Index    Expr
 		Assignee Expr
 	}
 )
 
-func (e *Unit) Pos()     { return e.start.Start }
-func (e *Unit) End()     { return e.end.End }
-func (e *Bool) Pos()     { return e.start.Start }
-func (e *Bool) End()     { return e.end.End }
-func (e *Int) Pos()      { return e.start.Start }
-func (e *Int) End()      { return e.end.End }
-func (e *Float) Pos()    { return e.start.Start }
-func (e *Float) End()    { return e.end.End }
-func (e *Not) Pos()      { return e.start.Start }
-func (e *Not) End()      { return e.end.End }
-func (e *Neg) Pos()      { return e.start.Start }
-func (e *Neg) End()      { return e.end.End }
-func (e *Add) Pos()      { return e.start.Start }
-func (e *Add) End()      { return e.end.End }
-func (e *Sub) Pos()      { return e.start.Start }
-func (e *Sub) End()      { return e.end.End }
-func (e *FNeg) Pos()     { return e.start.Start }
-func (e *FNeg) End()     { return e.end.End }
-func (e *FAdd) Pos()     { return e.start.Start }
-func (e *FAdd) End()     { return e.end.End }
-func (e *FSub) Pos()     { return e.start.Start }
-func (e *FSub) End()     { return e.end.End }
-func (e *FMul) Pos()     { return e.start.Start }
-func (e *FMul) End()     { return e.end.End }
-func (e *FDiv) Pos()     { return e.start.Start }
-func (e *FDiv) End()     { return e.end.End }
-func (e *Eq) Pos()       { return e.start.Start }
-func (e *Eq) End()       { return e.end.End }
-func (e *Less) Pos()     { return e.start.Start }
-func (e *Less) End()     { return e.end.End }
-func (e *If) Pos()       { return e.start.Start }
-func (e *If) End()       { return e.end.End }
-func (e *Let) Pos()      { return e.start.Start }
-func (e *Let) End()      { return e.end.End }
-func (e *Var) Pos()      { return e.start.Start }
-func (e *Var) End()      { return e.end.End }
-func (e *LetRec) Pos()   { return e.start.Start }
-func (e *LetRec) End()   { return e.end.End }
-func (e *Apply) Pos()    { return e.start.Start }
-func (e *Apply) End()    { return e.end.End }
-func (e *Tuple) Pos()    { return e.start.Start }
-func (e *Tuple) End()    { return e.end.End }
-func (e *LetTuple) Pos() { return e.start.Start }
-func (e *LetTuple) End() { return e.end.End }
-func (e *Array) Pos()    { return e.start.Start }
-func (e *Array) End()    { return e.end.End }
-func (e *Get) Pos()      { return e.start.Start }
-func (e *Get) End()      { return e.end.End }
-func (e *Put) Pos()      { return e.start.Start }
-func (e *Put) End()      { return e.end.End }
+func (e *Unit) Pos() token.Position {
+	return e.LParenToken.Start
+}
+func (e *Unit) End() token.Position {
+	return e.RParenToken.End
+}
+
+func (e *Bool) Pos() token.Position {
+	return e.Token.Start
+}
+func (e *Bool) End() token.Position {
+	return e.Token.End
+}
+
+func (e *Int) Pos() token.Position {
+	return e.Token.Start
+}
+func (e *Int) End() token.Position {
+	return e.Token.End
+}
+
+func (e *Float) Pos() token.Position {
+	return e.Token.Start
+}
+func (e *Float) End() token.Position {
+	return e.Token.End
+}
+
+func (e *Not) Pos() token.Position {
+	return e.Child.Pos()
+}
+func (e *Not) End() token.Position {
+	return e.Child.End()
+}
+
+func (e *Neg) Pos() token.Position {
+	return e.Child.Pos()
+}
+func (e *Neg) End() token.Position {
+	return e.Child.End()
+}
+
+func (e *Add) Pos() token.Position {
+	return e.Left.Pos()
+}
+func (e *Add) End() token.Position {
+	return e.Right.Pos()
+}
+
+func (e *Sub) Pos() token.Position {
+	return e.Left.Pos()
+}
+func (e *Sub) End() token.Position {
+	return e.Right.Pos()
+}
+
+func (e *FNeg) Pos() token.Position {
+	return e.Left.Pos()
+}
+func (e *FNeg) End() token.Position {
+	return e.Right.Pos()
+}
+
+func (e *FAdd) Pos() token.Position {
+	return e.Left.Pos()
+}
+func (e *FAdd) End() token.Position {
+	return e.Right.Pos()
+}
+
+func (e *FSub) Pos() token.Position {
+	return e.Left.Pos()
+}
+func (e *FSub) End() token.Position {
+	return e.Right.Pos()
+}
+
+func (e *FMul) Pos() token.Position {
+	return e.Left.Pos()
+}
+func (e *FMul) End() token.Position {
+	return e.Right.Pos()
+}
+
+func (e *FDiv) Pos() token.Position {
+	return e.Left.Pos()
+}
+func (e *FDiv) End() token.Position {
+	return e.Right.Pos()
+}
+
+func (e *Eq) Pos() token.Position {
+	return e.Left.Pos()
+}
+func (e *Eq) End() token.Position {
+	return e.Right.Pos()
+}
+
+func (e *Less) Pos() token.Position {
+	return e.Left.Pos()
+}
+func (e *Less) End() token.Position {
+	return e.Right.Pos()
+}
+
+func (e *If) Pos() token.Position {
+	return e.IfToken.Start
+}
+func (e *If) End() token.Position {
+	return e.Else.End()
+}
+
+func (e *Let) Pos() token.Position {
+	return e.LetToken.Start
+}
+func (e *Let) End() token.Position {
+	return e.Body.End()
+}
+
+func (e *Var) Pos() token.Position {
+	return e.Token.Start
+}
+func (e *Var) End() token.Position {
+	return e.Token.End
+}
+
+func (e *LetRec) Pos() token.Position {
+	return e.LetToken.Start
+}
+func (e *LetRec) End() token.Position {
+	return e.Body.End()
+}
+
+func (e *Apply) Pos() token.Position {
+	return e.Callee.Pos()
+}
+func (e *Apply) End() token.Position {
+	if len(e.Elems) == 0 {
+		return e.Callee.End()
+	}
+	return e.Elems[len(e.Elems)-1].End()
+}
+
+func (e *Tuple) Pos() token.Position {
+	return e.Elems[0].Pos()
+}
+func (e *Tuple) End() token.Position {
+	return e.Elems[len(e.Elems)-1].End()
+}
+
+func (e *LetTuple) Pos() token.Position {
+	return e.LetToken.Start
+}
+func (e *LetTuple) End() token.Position {
+	return e.Body.End()
+}
+
+func (e *Array) Pos() token.Position {
+	return e.ArrayToken.Start
+}
+func (e *Array) End() token.Position {
+	return e.Elem.End()
+}
+
+func (e *Get) Pos() token.Position {
+	return e.Array.Pos()
+}
+func (e *Get) End() token.Position {
+	return e.Index.End()
+}
+
+func (e *Put) Pos() token.Position {
+	return e.Array.Pos()
+}
+func (e *Put) End() token.Position {
+	return e.Assignee.End()
+}
 
 func (e *Unit) Name()     { return "Unit" }
 func (e *Bool) Name()     { return "Bool" }
