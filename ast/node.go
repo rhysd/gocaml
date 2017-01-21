@@ -74,15 +74,17 @@ type (
 
 	Float struct {
 		Token *token.Token
-		Value float
+		Value float64
 	}
 
 	Not struct {
-		Child Expr
+		OpToken *token.Token
+		Child   Expr
 	}
 
 	Neg struct {
-		Child Expr
+		MinusToken *token.Token
+		Child      Expr
 	}
 
 	Add struct {
@@ -96,7 +98,8 @@ type (
 	}
 
 	FNeg struct {
-		Child Expr
+		MinusToken *token.Token
+		Child      Expr
 	}
 
 	FAdd struct {
@@ -146,7 +149,7 @@ type (
 
 	Var struct {
 		Token *token.Token
-		Name  string
+		Ident string
 	}
 
 	LetRec struct {
@@ -218,14 +221,14 @@ func (e *Float) End() token.Position {
 }
 
 func (e *Not) Pos() token.Position {
-	return e.Child.Pos()
+	return e.OpToken.Start
 }
 func (e *Not) End() token.Position {
 	return e.Child.End()
 }
 
 func (e *Neg) Pos() token.Position {
-	return e.Child.Pos()
+	return e.MinusToken.Start
 }
 func (e *Neg) End() token.Position {
 	return e.Child.End()
@@ -246,10 +249,10 @@ func (e *Sub) End() token.Position {
 }
 
 func (e *FNeg) Pos() token.Position {
-	return e.Left.Pos()
+	return e.MinusToken.Start
 }
 func (e *FNeg) End() token.Position {
-	return e.Right.Pos()
+	return e.Child.Pos()
 }
 
 func (e *FAdd) Pos() token.Position {
@@ -326,10 +329,10 @@ func (e *Apply) Pos() token.Position {
 	return e.Callee.Pos()
 }
 func (e *Apply) End() token.Position {
-	if len(e.Elems) == 0 {
+	if len(e.Args) == 0 {
 		return e.Callee.End()
 	}
-	return e.Elems[len(e.Elems)-1].End()
+	return e.Args[len(e.Args)-1].End()
 }
 
 func (e *Tuple) Pos() token.Position {
@@ -367,28 +370,28 @@ func (e *Put) End() token.Position {
 	return e.Assignee.End()
 }
 
-func (e *Unit) Name()     { return "Unit" }
-func (e *Bool) Name()     { return "Bool" }
-func (e *Int) Name()      { return "Int" }
-func (e *Float) Name()    { return "Float" }
-func (e *Not) Name()      { return "Not" }
-func (e *Neg) Name()      { return "Neg" }
-func (e *Add) Name()      { return "Add" }
-func (e *Sub) Name()      { return "Sub" }
-func (e *FNeg) Name()     { return "FNeg" }
-func (e *FAdd) Name()     { return "FAdd" }
-func (e *FSub) Name()     { return "FSub" }
-func (e *FMul) Name()     { return "FMul" }
-func (e *FDiv) Name()     { return "FDiv" }
-func (e *Eq) Name()       { return "Eq" }
-func (e *Less) Name()     { return "Less" }
-func (e *If) Name()       { return "If" }
-func (e *Let) Name()      { return "Let" }
-func (e *Var) Name()      { return "Var" }
-func (e *LetRec) Name()   { return "LetRec" }
-func (e *Apply) Name()    { return "Apply" }
-func (e *Tuple) Name()    { return "Tuple" }
-func (e *LetTuple) Name() { return "LetTuple" }
-func (e *Array) Name()    { return "Array" }
-func (e *Get) Name()      { return "Get" }
-func (e *Put) Name()      { return "Put" }
+func (e *Unit) Name() string     { return "Unit" }
+func (e *Bool) Name() string     { return "Bool" }
+func (e *Int) Name() string      { return "Int" }
+func (e *Float) Name() string    { return "Float" }
+func (e *Not) Name() string      { return "Not" }
+func (e *Neg) Name() string      { return "Neg" }
+func (e *Add) Name() string      { return "Add" }
+func (e *Sub) Name() string      { return "Sub" }
+func (e *FNeg) Name() string     { return "FNeg" }
+func (e *FAdd) Name() string     { return "FAdd" }
+func (e *FSub) Name() string     { return "FSub" }
+func (e *FMul) Name() string     { return "FMul" }
+func (e *FDiv) Name() string     { return "FDiv" }
+func (e *Eq) Name() string       { return "Eq" }
+func (e *Less) Name() string     { return "Less" }
+func (e *If) Name() string       { return "If" }
+func (e *Let) Name() string      { return "Let" }
+func (e *Var) Name() string      { return "Var" }
+func (e *LetRec) Name() string   { return "LetRec" }
+func (e *Apply) Name() string    { return "Apply" }
+func (e *Tuple) Name() string    { return "Tuple" }
+func (e *LetTuple) Name() string { return "LetTuple" }
+func (e *Array) Name() string    { return "Array" }
+func (e *Get) Name() string      { return "Get" }
+func (e *Put) Name() string      { return "Put" }

@@ -10,7 +10,7 @@ guard :shell do
     when /_test\.go$/
       run_test m[0]
     else
-      system "go build"
+      system "go build #{m[0]}"
     end
   end
 end
