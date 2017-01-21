@@ -3,8 +3,7 @@ package lexer
 import (
 	"bytes"
 	"fmt"
-	"github.com/rhysd/mincaml-parser/source"
-	"github.com/rhysd/mincaml-parser/token"
+	"github.com/rhysd/gocaml/token"
 	"io"
 	"os"
 	"unicode"
@@ -19,7 +18,7 @@ type Lexer struct {
 	state   stateFn
 	start   token.Position
 	current token.Position
-	src     *source.Source
+	src     *token.Source
 	input   *bytes.Reader
 	tokens  chan token.Token
 	top     rune
@@ -27,7 +26,7 @@ type Lexer struct {
 	Error   func(msg string, t token.Token)
 }
 
-func NewLexer(src *source.Source, tokens chan token.Token) *Lexer {
+func NewLexer(src *token.Source, tokens chan token.Token) *Lexer {
 	start := token.Position{
 		Offset: 0,
 		Line:   1,

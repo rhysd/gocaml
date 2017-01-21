@@ -1,4 +1,4 @@
-package source
+package token
 
 import (
 	"io/ioutil"
@@ -10,7 +10,7 @@ type Source struct {
 	Code []byte
 }
 
-func FromFile(name string) (*Source, error) {
+func NewSourceFromFile(name string) (*Source, error) {
 	b, err := ioutil.ReadFile(name)
 	if err != nil {
 		return nil, err
@@ -18,7 +18,7 @@ func FromFile(name string) (*Source, error) {
 	return &Source{name, b}, nil
 }
 
-func FromStdin() (*Source, error) {
+func NewSourceFromStdin() (*Source, error) {
 	b, err := ioutil.ReadAll(os.Stdin)
 	if err != nil {
 		return nil, err

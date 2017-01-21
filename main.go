@@ -2,17 +2,16 @@ package main
 
 import (
 	"fmt"
-	"github.com/rhysd/mincaml-parser/lexer"
-	"github.com/rhysd/mincaml-parser/source"
-	"github.com/rhysd/mincaml-parser/token"
+	"github.com/rhysd/gocaml/lexer"
+	"github.com/rhysd/gocaml/token"
 	"os"
 )
 
-func getSource(args []string) (*source.Source, error) {
+func getSource(args []string) (*token.Source, error) {
 	if len(args) <= 1 {
-		return source.FromStdin()
+		return token.NewSourceFromStdin()
 	} else {
-		return source.FromFile(args[1])
+		return token.NewSourceFromFile(args[1])
 	}
 }
 

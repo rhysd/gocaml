@@ -2,7 +2,6 @@ package token
 
 import (
 	"fmt"
-	"github.com/rhysd/mincaml-parser/source"
 )
 
 type Position struct {
@@ -91,7 +90,7 @@ type Token struct {
 	Kind  TokenKind
 	Start Position
 	End   Position
-	File  *source.Source
+	File  *Source
 }
 
 func (tok *Token) String() string {
