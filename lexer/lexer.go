@@ -134,6 +134,10 @@ func (l *Lexer) consume() {
 		panic(err)
 	}
 
+	if !utf8.ValidRune(r) {
+		panic(fmt.Errorf("Invalid UTF-8 character at line:%d,col:%d: '%c' (%d)", l.current.Line, l.current.Column, r, r))
+	}
+
 	l.top = r
 	l.eof = false
 }
