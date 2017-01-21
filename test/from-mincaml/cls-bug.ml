@@ -1,4 +1,4 @@
-(* ¡ÖÁÇËÑ¡×¤Êknown function optimization¤Ç¤ÏÂÌÌÜ¤Ê¾ì¹ç *)
+(* ã€Œç´ æœ´ã€ãªknown function optimizationã§ã¯é§„ç›®ãªå ´åˆ *)
 (* Cf. http://www.yl.is.s.u-tokyo.ac.jp/~sumii/pub/compiler-enshu-2002/Mail/8 *)
 let rec f x = x + 123 in
 let rec g y = f in

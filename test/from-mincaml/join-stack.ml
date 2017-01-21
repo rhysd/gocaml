@@ -5,4 +5,4 @@ let rec h _ = 789 in
 let x = f () in
 let y = g () in
 print_int ((if h () = 0 then x + 1 else y + 2) + x + y)
-(* thenÀá¤Ç¤Ïx¤¬r0¤Çy¤¬¥¹¥¿¥Ã¥¯¤Ë¡¢elseÀá¤Ç¤Ïy¤¬r0¤Çx¤¬¥¹¥¿¥Ã¥¯¤Ë¤¢¤ë *)
+(* thenç¯€ã§ã¯xãŒr0ã§yãŒã‚¹ã‚¿ãƒƒã‚¯ã«ã€elseç¯€ã§ã¯yãŒr0ã§xãŒã‚¹ã‚¿ãƒƒã‚¯ã«ã‚ã‚‹ *)

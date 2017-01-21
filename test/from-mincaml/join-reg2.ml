@@ -4,5 +4,5 @@ let rec h _ = 789 in
 
 let x = f () in
 print_int ((if x <= 0 then g () + x else h () - x) + x)
-(* thenÀá¤Ç¤âelseÀá¤Ç¤âx¤¬r1¤Ë¤¢¤ë *)
-(* ¤¿¤À¤·¡¢ifÊ¸¤ÎÁ°¤Ç¤Ïx¤Ïr0¤Ë¤¢¤ë *)
+(* thenç¯€ã§ã‚‚elseç¯€ã§ã‚‚xãŒr1ã«ã‚ã‚‹ *)
+(* ãŸã ã—ã€ifæ–‡ã®å‰ã§ã¯xã¯r0ã«ã‚ã‚‹ *)

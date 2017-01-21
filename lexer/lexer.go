@@ -164,13 +164,13 @@ func (l *Lexer) skip() {
 func lexComment(l *Lexer) stateFn {
 	for {
 		if l.eof {
-			l.unexpectedEOF("*")
+			l.unexpectedEOF("* for closing comment")
 			return nil
 		}
 		if l.top == '*' {
 			l.eat()
 			if l.eof {
-				l.unexpectedEOF(")")
+				l.unexpectedEOF(") for closing comment")
 				return nil
 			}
 			if l.top == ')' {
