@@ -16,7 +16,10 @@ gobuild: $(SRCS)
 goyacc: parser/grammar.go.y
 	goyacc -o parser/grammar.go parser/grammar.go.y
 
+test:
+	go test ./...
+
 clean:
 	rm -f gocaml y.output parser/grammar.go
 
-.PHONY: all clean
+.PHONY: all clean test

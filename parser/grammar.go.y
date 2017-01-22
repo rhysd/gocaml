@@ -82,7 +82,7 @@ import (
 %%
 
 program:
-	exp
+	exp EOF
 		{
 			$$ = $1
 			yylex.(*pseudoLexer).result = $$
