@@ -9,7 +9,7 @@ type Printer struct {
 	indent int
 }
 
-func Print(a AST) {
+func Print(a *AST) {
 	fmt.Printf("AST for %s:", a.File.Name)
 	printExpr(a.Root, 1)
 }
