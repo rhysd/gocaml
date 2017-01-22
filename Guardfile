@@ -13,4 +13,10 @@ guard :shell do
       system "go build"
     end
   end
+  watch /\.go\.y$/ do |m|
+    puts "\033[93m#{Time.now}: #{File.basename m[0]}\033[0m"
+    goyacc = "goyacc -o #{m[0][0...-2]} #{m[0]}"
+    puts goyacc
+    system goyacc
+  end
 end

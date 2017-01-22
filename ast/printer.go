@@ -9,9 +9,9 @@ type Printer struct {
 	indent int
 }
 
-func Print(e Expr) {
-	fmt.Print("AST:")
-	printExpr(e, 1)
+func Print(a AST) {
+	fmt.Printf("AST for %s:", a.File.Name)
+	printExpr(a.Root, 1)
 }
 
 func printExpr(e Expr, indent int) {
