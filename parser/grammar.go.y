@@ -85,7 +85,7 @@ program:
 	exp
 		{
 			$$ = $1
-			yylex.(*lexerWrapper).result = $$
+			yylex.(*pseudoLexer).result = $$
 		}
 
 exp:

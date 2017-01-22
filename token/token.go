@@ -13,8 +13,7 @@ type Position struct {
 type TokenKind int
 
 const (
-	ILLEGAL TokenKind = iota
-	EOF
+	EOF TokenKind = iota
 	COMMENT
 	LPAREN
 	RPAREN
@@ -47,6 +46,7 @@ const (
 	DOT
 	LESS_MINUS
 	SEMICOLON
+	ILLEGAL
 )
 
 var TokenStrings = [...]string{
