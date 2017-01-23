@@ -9,6 +9,7 @@ SRCS := \
 	token/source.go \
 
 TESTS := \
+	lexer/lexer_test.go \
 
 all: build test
 
@@ -22,7 +23,7 @@ parser/grammar.go: parser/grammar.go.y
 	go tool yacc -o parser/grammar.go parser/grammar.go.y
 
 test: $(TESTS)
-	go test ./...
+	go test -v ./...
 
 clean:
 	rm -f gocaml y.output parser/grammar.go

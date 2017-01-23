@@ -8,15 +8,12 @@ guard :shell do
     puts "\033[93m#{Time.now}: #{File.basename m[0]}\033[0m"
     case m[0]
     when /_test\.go$/
-      run_test m[0]
+      system "make test"
     else
-      system "go build"
+      system "make build"
     end
   end
   watch /\.go\.y$/ do |m|
-    puts "\033[93m#{Time.now}: #{File.basename m[0]}\033[0m"
-    goyacc = "goyacc -o #{m[0][0...-2]} #{m[0]}"
-    puts goyacc
-    system goyacc
+    system "make build"
   end
 end
