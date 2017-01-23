@@ -112,13 +112,9 @@ func (l *Lexer) expected(s string, a rune) {
 	l.Error(fmt.Sprintf("Expected %s but got '%c'(%d)", s, a, a), t)
 }
 
-func (l *Lexer) unexpectedEOF(expected string) {
+func (l *Lexer) unclosedComment(expected string) {
 	t := l.emitIllegal()
-	if len(expected) == 1 {
-		l.Error(fmt.Sprintf("Expected '%s' but got EOF", expected), t)
-	} else {
-		l.Error(fmt.Sprintf("Expected one of '%s' but got EOF", expected), t)
-	}
+	l.Error(fmt.Sprintf("Expected '%s' for closing comment but got EOF", expected), t)
 }
 
 func (l *Lexer) consume() {
@@ -167,13 +163,13 @@ func (l *Lexer) skip() {
 func lexComment(l *Lexer) stateFn {
 	for {
 		if l.eof {
-			l.unexpectedEOF("* for closing comment")
+			l.unclosedComment("*")
 			return nil
 		}
 		if l.top == '*' {
 			l.eat()
 			if l.eof {
-				l.unexpectedEOF(") for closing comment")
+				l.unclosedComment(")")
 				return nil
 			}
 			if l.top == ')' {

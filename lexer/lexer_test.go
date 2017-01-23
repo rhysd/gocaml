@@ -50,3 +50,49 @@ func TestLexingOK(t *testing.T) {
 		}
 	}
 }
+
+func TestLexingIllegal(t *testing.T) {
+	testdir := filepath.FromSlash("../testdata/lexer/invalid")
+	files, err := ioutil.ReadDir(testdir)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, f := range files {
+		n := filepath.Join(testdir, f.Name())
+		if !strings.HasSuffix(n, ".ml") {
+			continue
+		}
+
+		t.Run(fmt.Sprintf("Check lexing illegal input: %s", f.Name()), func(t *testing.T) {
+			s, err := token.NewSourceFromFile(n)
+			if err != nil {
+				panic(err)
+			}
+			errorOccurred := false
+			tokens := make(chan token.Token)
+			l := NewLexer(s, tokens)
+			l.Error = func(_ string, _ token.Token) {
+				errorOccurred = true
+			}
+			go l.Lex()
+			for {
+				select {
+				case tok := <-tokens:
+					switch tok.Kind {
+					case token.ILLEGAL:
+						if !errorOccurred {
+							t.Fatalf("Illegal token was emitted but no error occured")
+						}
+						return
+					case token.EOF:
+						t.Fatalf("Lexing successfully done unexpectedly")
+						return
+					default:
+						break
+					}
+				}
+			}
+		})
+	}
+}

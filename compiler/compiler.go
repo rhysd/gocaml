@@ -13,13 +13,17 @@ type Compiler struct {
 	// Compiler options (e.g. optimization level) go here.
 }
 
-func (c *Compiler) Compile(source *token.Source) {
+func (c *Compiler) Compile(source *token.Source) error {
 	// TODO
+	return nil
 }
 
 func (c *Compiler) Lex(src *token.Source) chan token.Token {
 	ch := make(chan token.Token)
 	l := lexer.NewLexer(src, ch)
+	l.Error = func(msg string, tok token.Token) {
+		fmt.Fprintf(os.Stderr, "%s at token %s\n", msg, tok.String())
+	}
 	go l.Lex()
 	return ch
 }
