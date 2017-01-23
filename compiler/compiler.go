@@ -21,8 +21,8 @@ func (c *Compiler) Compile(source *token.Source) error {
 func (c *Compiler) Lex(src *token.Source) chan token.Token {
 	ch := make(chan token.Token)
 	l := lexer.NewLexer(src, ch)
-	l.Error = func(msg string, tok token.Token) {
-		fmt.Fprintf(os.Stderr, "%s at token %s\n", msg, tok.String())
+	l.Error = func(msg string, pos token.Position) {
+		fmt.Fprintf(os.Stderr, "%s at (line:%d, column:%d)\n", msg, pos.Line, pos.Column)
 	}
 	go l.Lex()
 	return ch

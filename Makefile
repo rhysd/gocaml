@@ -2,11 +2,12 @@ SRCS := \
 	ast/node.go \
 	ast/printer.go \
 	ast/visitor.go \
+	compiler/compiler.go \
 	lexer/lexer.go \
 	parser/grammar.go \
 	parser/parser.go \
-	token/token.go \
 	token/source.go \
+	token/token.go \
 
 TESTS := \
 	lexer/lexer_test.go \

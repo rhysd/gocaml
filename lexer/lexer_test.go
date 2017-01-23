@@ -72,7 +72,7 @@ func TestLexingIllegal(t *testing.T) {
 			errorOccurred := false
 			tokens := make(chan token.Token)
 			l := NewLexer(s, tokens)
-			l.Error = func(_ string, _ token.Token) {
+			l.Error = func(_ string, _ token.Position) {
 				errorOccurred = true
 			}
 			go l.Lex()

@@ -22,7 +22,7 @@ type Lexer struct {
 	tokens  chan token.Token
 	top     rune
 	eof     bool
-	Error   func(msg string, t token.Token)
+	Error   func(msg string, pos token.Position)
 }
 
 func NewLexer(src *token.Source, tokens chan token.Token) *Lexer {
@@ -92,7 +92,7 @@ func (l *Lexer) emitIdent() {
 	}
 }
 
-func (l *Lexer) emitIllegal() token.Token {
+func (l *Lexer) emitIllegal() {
 	t := token.Token{
 		token.ILLEGAL,
 		l.start,
@@ -101,21 +101,20 @@ func (l *Lexer) emitIllegal() token.Token {
 	}
 	l.tokens <- t
 	l.start = l.current
-	return t
 }
 
 func (l *Lexer) expected(s string, actual rune) {
-	t := l.emitIllegal()
 	if l.Error != nil {
-		l.Error(fmt.Sprintf("Expected %s but got '%c'(%d)", s, actual, actual), t)
+		l.Error(fmt.Sprintf("Expected %s but got '%c'(%d)", s, actual, actual), l.current)
 	}
+	l.emitIllegal()
 }
 
 func (l *Lexer) unclosedComment(expected string) {
-	t := l.emitIllegal()
 	if l.Error != nil {
-		l.Error(fmt.Sprintf("Expected '%s' for closing comment but got EOF", expected), t)
+		l.Error(fmt.Sprintf("Expected '%s' for closing comment but got EOF", expected), l.current)
 	}
+	l.emitIllegal()
 }
 
 func (l *Lexer) consume() {
