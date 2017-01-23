@@ -22,7 +22,7 @@ import (
 	decls []ast.Decl
 }
 
-%token<token> EOF
+%token<token> ILLEGAL
 %token<token> COMMENT
 %token<token> LPAREN
 %token<token> RPAREN
@@ -70,22 +70,21 @@ import (
 
 %type<node> exp
 %type<node> parenless_exp
-%type<node> program
 %type<nodes> elems
 %type<nodes> args
 %type<decls> params
 %type<decls> pat
 %type<funcdef> fundef
+%type<> program
 
 %start program
 
 %%
 
 program:
-	exp EOF
+	exp
 		{
-			$$ = $1
-			yylex.(*pseudoLexer).result = $$
+			yylex.(*pseudoLexer).result = $1
 		}
 
 exp:
@@ -147,6 +146,12 @@ exp:
 	| ARRAY DOT CREATE parenless_exp parenless_exp
 		%prec prec_app
 		{ $$ = &ast.Array{$1, $4, $5} }
+	| ILLEGAL error
+		{
+			yylex.Error(fmt.Sprintf("Parsing illegal token: %s", $1.String()))
+			$$ = nil
+		}
+
 
 fundef:
 	IDENT params EQUAL exp
@@ -215,3 +220,5 @@ func genTempId() string {
 	genCount += 1
 	return fmt.Sprintf("$tmp%d", genCount)
 }
+
+// vim: noet

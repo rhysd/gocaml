@@ -25,14 +25,19 @@ func (w *pseudoLexer) Lex(lval *yySymType) int {
 	select {
 	case t := <-w.tokens:
 		lval.token = &t
-		fmt.Printf("t: %d: %s\n", int(t.Kind), t.String())
+
+		if t.Kind == token.EOF {
+			// Zero means input ends
+			// (see golang.org/x/tools/cmd/goyacc/testdata/expr/expr.y)
+			return 0
+		}
 
 		// XXX:
 		// Converting token value into yacc's token.
 		// This conversion requires that token order must the same as
 		// yacc's token order. EOF is a first token. So we can use it
 		// to make an offset between token value and yacc's token value.
-		return int(t.Kind) + EOF
+		return int(t.Kind) + ILLEGAL
 	}
 	panic("Unreachable")
 }
@@ -48,7 +53,6 @@ func (w *pseudoLexer) getErrorMessage() error {
 
 func Parse(tokens chan token.Token) (ast.Expr, error) {
 	yyErrorVerbose = true
-	yyDebug = 9999
 
 	wrapper := &pseudoLexer{tokens: tokens}
 	ret := yyParse(wrapper)
