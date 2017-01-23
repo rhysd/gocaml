@@ -14,30 +14,28 @@ type pseudoLexer struct {
 	result       ast.Expr
 }
 
-func newLexerWrapper(tokens chan token.Token) *pseudoLexer {
-	return &pseudoLexer{
-		tokens:     tokens,
-		errorCount: 0,
-	}
-}
-
 func (w *pseudoLexer) Lex(lval *yySymType) int {
-	select {
-	case t := <-w.tokens:
-		lval.token = &t
+	for {
+		select {
+		case t := <-w.tokens:
+			lval.token = &t
 
-		if t.Kind == token.EOF {
-			// Zero means input ends
-			// (see golang.org/x/tools/cmd/goyacc/testdata/expr/expr.y)
-			return 0
+			switch t.Kind {
+			case token.EOF:
+				// Zero means input ends
+				// (see golang.org/x/tools/cmd/goyacc/testdata/expr/expr.y)
+				return 0
+			case token.COMMENT:
+				continue
+			}
+
+			// XXX:
+			// Converting token value into yacc's token.
+			// This conversion requires that token order must the same as
+			// yacc's token order. EOF is a first token. So we can use it
+			// to make an offset between token value and yacc's token value.
+			return int(t.Kind) + ILLEGAL
 		}
-
-		// XXX:
-		// Converting token value into yacc's token.
-		// This conversion requires that token order must the same as
-		// yacc's token order. EOF is a first token. So we can use it
-		// to make an offset between token value and yacc's token value.
-		return int(t.Kind) + ILLEGAL
 	}
 	panic("Unreachable")
 }
@@ -54,14 +52,14 @@ func (w *pseudoLexer) getErrorMessage() error {
 func Parse(tokens chan token.Token) (ast.Expr, error) {
 	yyErrorVerbose = true
 
-	wrapper := &pseudoLexer{tokens: tokens}
-	ret := yyParse(wrapper)
+	l := &pseudoLexer{tokens: tokens}
+	ret := yyParse(l)
 
 	if ret != 0 {
-		return nil, wrapper.getErrorMessage()
+		return nil, l.getErrorMessage()
 	}
 
-	root := wrapper.result
+	root := l.result
 	if root == nil {
 		panic("FATAL: Parsing was successfully done but result was not set")
 	}
