@@ -303,7 +303,7 @@ func isLetter(r rune) bool {
 
 func lexIdent(l *Lexer) stateFn {
 	if !isLetter(l.top) {
-		l.expected("letter for head character of indentifer", l.top)
+		l.expected("letter for head character of identifer", l.top)
 		return nil
 	}
 	l.eat()

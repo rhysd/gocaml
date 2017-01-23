@@ -8,7 +8,8 @@ guard :shell do
     puts "\033[93m#{Time.now}: #{File.basename m[0]}\033[0m"
     case m[0]
     when /_test\.go$/
-      system "make test"
+      dir = m[0].match(%r[^[^/]+])[0]
+      system "go test ./#{dir}"
     else
       system "make build"
     end
