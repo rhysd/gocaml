@@ -8,18 +8,23 @@ SRCS := \
 	token/token.go \
 	token/source.go \
 
-all: gobuild goyacc
+TESTS := \
 
-gobuild: $(SRCS)
+all: build test
+
+build: gocaml
+
+gocaml: $(SRCS)
 	go build
 
-goyacc: parser/grammar.go.y
-	goyacc -o parser/grammar.go parser/grammar.go.y
+parser/grammar.go: parser/grammar.go.y
+	go get golang.org/x/tools/cmd/goyacc
+	go tool yacc -o parser/grammar.go parser/grammar.go.y
 
-test:
+test: $(TESTS)
 	go test ./...
 
 clean:
 	rm -f gocaml y.output parser/grammar.go
 
-.PHONY: all clean test
+.PHONY: all build clean test
