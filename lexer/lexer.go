@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/rhysd/gocaml/token"
 	"io"
-	"os"
 	"unicode"
 	"unicode/utf8"
 )
@@ -39,9 +38,7 @@ func NewLexer(src *token.Source, tokens chan token.Token) *Lexer {
 		input:   bytes.NewReader(src.Code),
 		src:     src,
 		tokens:  tokens,
-		Error: func(m string, t token.Token) {
-			fmt.Fprintf(os.Stderr, "Error at %s: %s", t.String(), m)
-		},
+		Error:   nil,
 	}
 }
 
@@ -107,14 +104,18 @@ func (l *Lexer) emitIllegal() token.Token {
 	return t
 }
 
-func (l *Lexer) expected(s string, a rune) {
+func (l *Lexer) expected(s string, actual rune) {
 	t := l.emitIllegal()
-	l.Error(fmt.Sprintf("Expected %s but got '%c'(%d)", s, a, a), t)
+	if l.Error != nil {
+		l.Error(fmt.Sprintf("Expected %s but got '%c'(%d)", s, actual, actual), t)
+	}
 }
 
 func (l *Lexer) unclosedComment(expected string) {
 	t := l.emitIllegal()
-	l.Error(fmt.Sprintf("Expected '%s' for closing comment but got EOF", expected), t)
+	if l.Error != nil {
+		l.Error(fmt.Sprintf("Expected '%s' for closing comment but got EOF", expected), t)
+	}
 }
 
 func (l *Lexer) consume() {
@@ -217,7 +218,7 @@ func lexMultOp(l *Lexer) stateFn {
 	l.eat()
 
 	if l.top != '.' {
-		l.expected("'.'", l.top)
+		l.expected("'.' for '*.' or '/.' operator", l.top)
 		return nil
 	}
 
@@ -282,7 +283,7 @@ func lexNumber(l *Lexer) stateFn {
 			l.eat()
 		}
 		if !unicode.IsDigit(l.top) {
-			l.expected("number", l.top)
+			l.expected("number for exponential part of float literal", l.top)
 			return nil
 		}
 		for unicode.IsDigit(l.top) {
@@ -303,7 +304,7 @@ func isLetter(r rune) bool {
 
 func lexIdent(l *Lexer) stateFn {
 	if !isLetter(l.top) {
-		l.expected("letter", l.top)
+		l.expected("letter for head character of indentifer", l.top)
 		return nil
 	}
 	l.eat()
