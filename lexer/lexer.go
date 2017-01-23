@@ -60,15 +60,14 @@ func (l *Lexer) emit(kind token.TokenKind) {
 	l.start = l.current
 }
 
-func (l *Lexer) emitIdent() {
-	s := string(l.src.Code[l.start.Offset:l.current.Offset])
-	if len(s) == 1 {
+func (l *Lexer) emitIdent(ident string) {
+	if len(ident) == 1 {
 		// Shortcut because no keyword is one character. It must be identifier
 		l.emit(token.IDENT)
 		return
 	}
 
-	switch s {
+	switch ident {
 	case "true", "false":
 		l.emit(token.BOOL)
 	case "if":
@@ -83,10 +82,6 @@ func (l *Lexer) emitIdent() {
 		l.emit(token.IN)
 	case "rec":
 		l.emit(token.REC)
-	case "Array":
-		l.emit(token.ARRAY)
-	case "create":
-		l.emit(token.CREATE)
 	default:
 		l.emit(token.IDENT)
 	}
@@ -158,6 +153,19 @@ func (l *Lexer) skip() {
 	}
 	l.eat()
 	l.start = l.current
+}
+
+func (l *Lexer) eatIndent() bool {
+	if !isLetter(l.top) {
+		l.expected("letter for head character of identifer", l.top)
+		return false
+	}
+	l.eat()
+
+	for isLetter(l.top) || unicode.IsDigit(l.top) {
+		l.eat()
+	}
+	return true
 }
 
 func lexComment(l *Lexer) stateFn {
@@ -301,18 +309,43 @@ func isLetter(r rune) bool {
 		r >= utf8.RuneSelf && unicode.IsLetter(r)
 }
 
-func lexIdent(l *Lexer) stateFn {
-	if !isLetter(l.top) {
-		l.expected("letter for head character of identifer", l.top)
+func lexArrayCreate(l *Lexer) stateFn {
+	if l.top != '.' {
+		l.expected("'.' for 'Array.create'", l.top)
 		return nil
 	}
 	l.eat()
 
-	for isLetter(l.top) || unicode.IsDigit(l.top) {
-		l.eat()
+	if !l.eatIndent() {
+		return nil
 	}
 
-	l.emitIdent()
+	ident := string(l.src.Code[l.start.Offset:l.current.Offset])
+
+	switch ident {
+	// Note:
+	// Ate 'Array' and '.' but no token was emitted. So 'Array.' remains as
+	// current token string.
+	case "Array.create", "Array.make":
+		l.emit(token.ARRAY_CREATE)
+		return lex
+	default:
+		if l.Error != nil {
+			l.Error(fmt.Sprintf("Expected 'create' or 'make' for Array.create but got '%s'", ident), l.current)
+		}
+		return nil
+	}
+}
+
+func lexIdent(l *Lexer) stateFn {
+	if !l.eatIndent() {
+		return nil
+	}
+	i := string(l.src.Code[l.start.Offset:l.current.Offset])
+	if i == "Array" {
+		return lexArrayCreate
+	}
+	l.emitIdent(i)
 	return lex
 }
 

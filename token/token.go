@@ -41,8 +41,7 @@ const (
 	IN
 	REC
 	COMMA
-	ARRAY
-	CREATE
+	ARRAY_CREATE
 	DOT
 	LESS_MINUS
 	SEMICOLON
@@ -79,8 +78,7 @@ var TokenStrings = [...]string{
 	IN:            "in",
 	REC:           "rec",
 	COMMA:         ",",
-	ARRAY:         "Array",
-	CREATE:        "create",
+	ARRAY_CREATE:  "Array.create",
 	DOT:           ".",
 	LESS_MINUS:    "<-",
 	SEMICOLON:     ";",

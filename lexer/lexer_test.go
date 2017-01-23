@@ -38,7 +38,7 @@ func TestLexingOK(t *testing.T) {
 					case tok := <-tokens:
 						switch tok.Kind {
 						case token.ILLEGAL:
-							t.Fatal(tok)
+							t.Fatal(tok.String())
 						case token.EOF:
 							return
 						default:

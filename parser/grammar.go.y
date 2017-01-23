@@ -50,8 +50,7 @@ import (
 %token<token> IN
 %token<token> REC
 %token<token> COMMA
-%token<token> ARRAY
-%token<token> CREATE
+%token<token> ARRAY_CREATE
 %token<token> DOT
 %token<token> LESS_MINUS
 %token<token> SEMICOLON
@@ -63,7 +62,7 @@ import (
 %left COMMA
 %left EQUAL LESS_GREATER LESS GREATER LESS_EQUAL GREATER_EQUAL
 %left PLUS MINUS PLUS_DOT MINUS_DOT
-%left AST_DOT SLASH_DOT
+%left STAR_DOT SLASH_DOT
 %right prec_unary_minus
 %left prec_app
 %left DOT
@@ -122,7 +121,7 @@ exp:
 		{ $$ = &ast.FAdd{$1, $3} }
 	| exp MINUS_DOT exp
 		{ $$ = &ast.FSub{$1, $3} }
-	| exp AST_DOT exp
+	| exp STAR_DOT exp
 		{ $$ = &ast.FMul{$1, $3} }
 	| exp SLASH_DOT exp
 		{ $$ = &ast.FDiv{$1, $3} }
@@ -143,9 +142,9 @@ exp:
 		{ $$ = &ast.Put{$1, $4, $7} }
 	| exp SEMICOLON exp
 		{ $$ = &ast.Let{$2, ast.Decl{genTempId()}, $1, $3} }
-	| ARRAY DOT CREATE parenless_exp parenless_exp
+	| ARRAY_CREATE parenless_exp parenless_exp
 		%prec prec_app
-		{ $$ = &ast.Array{$1, $4, $5} }
+		{ $$ = &ast.Array{$1, $2, $3} }
 	| ILLEGAL error
 		{
 			yylex.Error(fmt.Sprintf("Parsing illegal token: %s", $1.String()))
