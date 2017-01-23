@@ -10,12 +10,17 @@ type Printer struct {
 }
 
 func Print(a *AST) {
-	fmt.Printf("# AST for %s:", a.File.Name)
+	fmt.Printf("AST for %s:", a.File.Name)
 	printExpr(a.Root, 1)
 }
 
+func Println(a *AST) {
+	Print(a)
+	fmt.Println("")
+}
+
 func printExpr(e Expr, indent int) {
-	fmt.Printf("\n%s- %s (%d:%d-%d:%d)", strings.Repeat("  ", indent), e.Name(), e.Pos().Line, e.Pos().Column, e.End().Line, e.End().Column)
+	fmt.Printf("\n%s%s (%d:%d-%d:%d)", strings.Repeat("-   ", indent), e.Name(), e.Pos().Line, e.Pos().Column, e.End().Line, e.End().Column)
 
 	i := indent + 1
 

@@ -60,5 +60,5 @@ func (c *Compiler) PrintAST(src *token.Source) {
 		fmt.Fprintln(os.Stderr, err.Error())
 		return
 	}
-	ast.Print(a)
+	ast.Println(a)
 }
