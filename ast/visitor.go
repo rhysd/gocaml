@@ -75,15 +75,49 @@ func Visit(v Visitor, e Expr) {
 	}
 }
 
-type predicate func(Expr) bool
-
-func (p predicate) Visit(e Expr) Visitor {
-	if !p(e) {
-		return nil
-	}
-	return p
+type finder struct {
+	found     bool
+	predicate func(Expr) bool
 }
 
-func Find(e Expr, f func(Expr) bool) {
-	Visit(predicate(f), e)
+func (f *finder) Visit(e Expr) Visitor {
+	if f.found {
+		return nil
+	}
+	if f.predicate(e) {
+		f.found = true
+		return nil
+	}
+	return f
+}
+
+func Find(e Expr, p func(Expr) bool) bool {
+	f := &finder{
+		found:     false,
+		predicate: p,
+	}
+	Visit(f, e)
+	return f.found
+}
+
+type childrenVisitor struct {
+	isChild   bool
+	predicate func(Expr)
+}
+
+func (v *childrenVisitor) Visit(e Expr) Visitor {
+	if v.isChild {
+		v.predicate(e)
+		return nil
+	}
+	v.isChild = true
+	return v // Visit children
+}
+
+func VisitChildren(e Expr, pred func(e Expr)) {
+	v := &childrenVisitor{
+		isChild:   false,
+		predicate: pred,
+	}
+	Visit(v, e)
 }
