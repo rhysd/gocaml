@@ -50,7 +50,7 @@ func (l *Lexer) Lex() {
 	}
 }
 
-func (l *Lexer) emit(kind token.TokenKind) {
+func (l *Lexer) emit(kind token.Kind) {
 	l.Tokens <- token.Token{
 		kind,
 		l.start,
@@ -134,7 +134,7 @@ func (l *Lexer) eat() {
 
 	// TODO: Consider \n\r
 	if l.top == '\n' {
-		l.current.Line += 1
+		l.current.Line++
 		l.current.Column = 1
 	} else {
 		l.current.Column += size
@@ -198,10 +198,9 @@ func lexLeftParen(l *Lexer) stateFn {
 	if l.top == '*' {
 		l.eat()
 		return lexComment
-	} else {
-		l.emit(token.LPAREN)
-		return lex
 	}
+	l.emit(token.LPAREN)
+	return lex
 }
 
 func lexAdditiveOp(l *Lexer) stateFn {

@@ -1,4 +1,5 @@
 SRCS := \
+	main.go \
 	ast/node.go \
 	ast/printer.go \
 	ast/visitor.go \

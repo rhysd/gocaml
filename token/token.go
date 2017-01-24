@@ -10,10 +10,10 @@ type Position struct {
 	Column int
 }
 
-type TokenKind int
+type Kind int
 
 const (
-	ILLEGAL TokenKind = iota
+	ILLEGAL Kind = iota
 	COMMENT
 	LPAREN
 	RPAREN
@@ -85,7 +85,7 @@ var TokenStrings = [...]string{
 }
 
 type Token struct {
-	Kind  TokenKind
+	Kind  Kind
 	Start Position
 	End   Position
 	File  *Source

@@ -37,11 +37,10 @@ func (l *pseudoLexer) Lex(lval *yySymType) int {
 			return int(t.Kind) + ILLEGAL
 		}
 	}
-	panic("Unreachable")
 }
 
 func (l *pseudoLexer) Error(msg string) {
-	l.errorCount += 1
+	l.errorCount++
 	l.errorMessage.WriteString(fmt.Sprintf("  * %s\n", msg))
 }
 
@@ -61,8 +60,7 @@ func Parse(tokens chan token.Token) (ast.Expr, error) {
 
 	root := l.result
 	if root == nil {
-		return nil, fmt.Errorf("")
-		panic("FATAL: Parsing was successfully done but result was not set")
+		return nil, fmt.Errorf("Parsing failed")
 	}
 
 	return root, nil

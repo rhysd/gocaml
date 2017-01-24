@@ -31,7 +31,7 @@ type testNumAllNodes struct {
 }
 
 func (v *testNumAllNodes) Visit(e Expr) Visitor {
-	v.total += 1
+	v.total++
 	return v
 }
 
@@ -41,7 +41,7 @@ type testNumRootChildren struct {
 }
 
 func (v *testNumRootChildren) Visit(e Expr) Visitor {
-	v.numChildren += 1
+	v.numChildren++
 	if v.rootVisited {
 		return nil
 	}
@@ -88,6 +88,6 @@ func TestVisitorVisitChildren(t *testing.T) {
 		if names[index] != child.Name() {
 			t.Errorf("Expected child name %s but actually %s", names[index], child.Name())
 		}
-		index += 1
+		index++
 	})
 }

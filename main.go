@@ -30,9 +30,8 @@ func usage() {
 func getSource(args []string) (*token.Source, error) {
 	if len(args) == 0 {
 		return token.NewSourceFromStdin()
-	} else {
-		return token.NewSourceFromFile(args[1])
 	}
+	return token.NewSourceFromFile(args[1])
 }
 
 func main() {
