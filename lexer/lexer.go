@@ -44,7 +44,7 @@ func NewLexer(src *token.Source, tokens chan token.Token) *Lexer {
 
 func (l *Lexer) Lex() {
 	// Set top to peek current rune
-	l.consume()
+	l.forward()
 	for l.state != nil {
 		l.state = l.state(l)
 	}
@@ -99,20 +99,16 @@ func (l *Lexer) emitIllegal() {
 }
 
 func (l *Lexer) expected(s string, actual rune) {
-	if l.Error != nil {
-		l.Error(fmt.Sprintf("Expected %s but got '%c'(%d)", s, actual, actual), l.current)
-	}
+	l.errmsg(fmt.Sprintf("Expected %s but got '%c'(%d)", s, actual, actual))
 	l.emitIllegal()
 }
 
 func (l *Lexer) unclosedComment(expected string) {
-	if l.Error != nil {
-		l.Error(fmt.Sprintf("Expected '%s' for closing comment but got EOF", expected), l.current)
-	}
+	l.errmsg(fmt.Sprintf("Expected '%s' for closing comment but got EOF", expected))
 	l.emitIllegal()
 }
 
-func (l *Lexer) consume() {
+func (l *Lexer) forward() {
 	r, _, err := l.input.ReadRune()
 	if err == io.EOF {
 		l.top = 0
@@ -144,15 +140,22 @@ func (l *Lexer) eat() {
 		l.current.Column += size
 	}
 
-	l.consume()
+	l.forward()
 }
 
-func (l *Lexer) skip() {
+func (l *Lexer) consume() {
 	if l.eof {
 		return
 	}
 	l.eat()
 	l.start = l.current
+}
+
+func (l *Lexer) errmsg(msg string) {
+	if l.Error == nil {
+		return
+	}
+	l.Error(msg, l.current)
 }
 
 func (l *Lexer) eatIndent() bool {
@@ -330,9 +333,7 @@ func lexArrayCreate(l *Lexer) stateFn {
 		l.emit(token.ARRAY_CREATE)
 		return lex
 	default:
-		if l.Error != nil {
-			l.Error(fmt.Sprintf("Expected 'create' or 'make' for Array.create but got '%s'", ident), l.current)
-		}
+		l.errmsg(fmt.Sprintf("Expected 'create' or 'make' for Array.create but got '%s'", ident))
 		return nil
 	}
 }
@@ -388,7 +389,7 @@ func lex(l *Lexer) stateFn {
 		default:
 			switch {
 			case unicode.IsSpace(l.top):
-				l.skip()
+				l.consume()
 			case unicode.IsDigit(l.top):
 				return lexNumber
 			default:
