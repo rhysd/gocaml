@@ -19,13 +19,13 @@ type Lexer struct {
 	current token.Position
 	src     *token.Source
 	input   *bytes.Reader
-	tokens  chan token.Token
+	Tokens  chan token.Token
 	top     rune
 	eof     bool
 	Error   func(msg string, pos token.Position)
 }
 
-func NewLexer(src *token.Source, tokens chan token.Token) *Lexer {
+func NewLexer(src *token.Source) *Lexer {
 	start := token.Position{
 		Offset: 0,
 		Line:   1,
@@ -37,7 +37,7 @@ func NewLexer(src *token.Source, tokens chan token.Token) *Lexer {
 		current: start,
 		input:   bytes.NewReader(src.Code),
 		src:     src,
-		tokens:  tokens,
+		Tokens:  make(chan token.Token),
 		Error:   nil,
 	}
 }
@@ -51,7 +51,7 @@ func (l *Lexer) Lex() {
 }
 
 func (l *Lexer) emit(kind token.TokenKind) {
-	l.tokens <- token.Token{
+	l.Tokens <- token.Token{
 		kind,
 		l.start,
 		l.current,
@@ -94,7 +94,7 @@ func (l *Lexer) emitIllegal() {
 		l.current,
 		l.src,
 	}
-	l.tokens <- t
+	l.Tokens <- t
 	l.start = l.current
 }
 

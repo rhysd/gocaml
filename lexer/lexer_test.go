@@ -30,12 +30,11 @@ func TestLexingOK(t *testing.T) {
 				if err != nil {
 					panic(err)
 				}
-				tokens := make(chan token.Token)
-				l := NewLexer(s, tokens)
+				l := NewLexer(s)
 				go l.Lex()
 				for {
 					select {
-					case tok := <-tokens:
+					case tok := <-l.Tokens:
 						switch tok.Kind {
 						case token.ILLEGAL:
 							t.Fatal(tok.String())
@@ -70,15 +69,14 @@ func TestLexingIllegal(t *testing.T) {
 				panic(err)
 			}
 			errorOccurred := false
-			tokens := make(chan token.Token)
-			l := NewLexer(s, tokens)
+			l := NewLexer(s)
 			l.Error = func(_ string, _ token.Position) {
 				errorOccurred = true
 			}
 			go l.Lex()
 			for {
 				select {
-				case tok := <-tokens:
+				case tok := <-l.Tokens:
 					switch tok.Kind {
 					case token.ILLEGAL:
 						if !errorOccurred {

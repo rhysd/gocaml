@@ -32,11 +32,10 @@ func TestParseOK(t *testing.T) {
 					panic(err)
 				}
 
-				tokens := make(chan token.Token)
-				l := lexer.NewLexer(s, tokens)
+				l := lexer.NewLexer(s)
 				go l.Lex()
 
-				root, err := Parse(tokens)
+				root, err := Parse(l.Tokens)
 				if err != nil {
 					t.Fatalf("Error on parsing %s: %s", f.Name(), err.Error())
 				}
