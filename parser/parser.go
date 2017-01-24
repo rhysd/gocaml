@@ -14,10 +14,10 @@ type pseudoLexer struct {
 	result       ast.Expr
 }
 
-func (w *pseudoLexer) Lex(lval *yySymType) int {
+func (l *pseudoLexer) Lex(lval *yySymType) int {
 	for {
 		select {
-		case t := <-w.tokens:
+		case t := <-l.tokens:
 			lval.token = &t
 
 			switch t.Kind {
@@ -40,13 +40,13 @@ func (w *pseudoLexer) Lex(lval *yySymType) int {
 	panic("Unreachable")
 }
 
-func (w *pseudoLexer) Error(msg string) {
-	w.errorCount += 1
-	w.errorMessage.WriteString(fmt.Sprintf("  * %s\n", msg))
+func (l *pseudoLexer) Error(msg string) {
+	l.errorCount += 1
+	l.errorMessage.WriteString(fmt.Sprintf("  * %s\n", msg))
 }
 
-func (w *pseudoLexer) getErrorMessage() error {
-	return fmt.Errorf("%d errors while parsing\n%s", w.errorCount, w.errorMessage.String())
+func (l *pseudoLexer) getErrorMessage() error {
+	return fmt.Errorf("%d errors while parsing\n%s", l.errorCount, l.errorMessage.String())
 }
 
 func Parse(tokens chan token.Token) (ast.Expr, error) {
@@ -61,6 +61,7 @@ func Parse(tokens chan token.Token) (ast.Expr, error) {
 
 	root := l.result
 	if root == nil {
+		return nil, fmt.Errorf("")
 		panic("FATAL: Parsing was successfully done but result was not set")
 	}
 

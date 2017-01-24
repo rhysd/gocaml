@@ -46,3 +46,33 @@ func TestParseOK(t *testing.T) {
 		}
 	}
 }
+
+func TestParseInvalid(t *testing.T) {
+	tokens := []token.Token{
+		token.Token{
+			Kind:  token.IF,
+			Start: token.Position{0, 1, 1},
+			End:   token.Position{2, 1, 3},
+		},
+		token.Token{
+			Kind:  token.IF,
+			Start: token.Position{3, 1, 4},
+			End:   token.Position{5, 1, 6},
+		},
+		token.Token{
+			Kind:  token.EOF,
+			Start: token.Position{2, 1, 6},
+			End:   token.Position{2, 1, 6},
+		},
+	}
+	c := make(chan token.Token)
+	go func() {
+		for _, t := range tokens {
+			c <- t
+		}
+	}()
+	r, err := Parse(c)
+	if err == nil {
+		t.Fatalf("Illegal token must raise an error but got %v", r)
+	}
+}
