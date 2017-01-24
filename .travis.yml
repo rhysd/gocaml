@@ -1,0 +1,6 @@
+language: go
+os:
+  - linux
+  - osx
+script:
+  - bash ./scripts/travis.sh
