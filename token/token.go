@@ -95,7 +95,7 @@ func (tok *Token) String() string {
 	return fmt.Sprintf(
 		"<%s:%s>(%d:%d:%d-%d:%d:%d)",
 		TokenStrings[tok.Kind],
-		string(tok.File.Code[tok.Start.Offset:tok.End.Offset]),
+		tok.Value(),
 		tok.Start.Line, tok.Start.Column, tok.Start.Offset,
 		tok.End.Line, tok.End.Column, tok.End.Offset)
 }
