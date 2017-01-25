@@ -7,9 +7,7 @@ import (
 
 var testTree = &Let{
 	LetToken: &token.Token{},
-	Decl: Decl{
-		Name: "test",
-	},
+	Decl:     NewDecl("test"),
 	Bound: &Int{
 		Token: &token.Token{},
 		Value: 42,
