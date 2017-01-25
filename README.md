@@ -1,11 +1,12 @@
 GoCaml
 ======
+[![Build Status][]][Travis CI]
 
 GoCaml is a [MinCaml][] implementation in Go using [LLVM][]. MinCaml is an educational compiler for a minimal subset of OCaml.
 
 This project aims my practices for understanding type inference and introducing own intermediate language (IL) to own language.
 
-```ml
+```ocaml
 let rec gcd m n =
   if m = 0 then n else
   if m <= n then gcd m (n - m) else
@@ -42,3 +43,5 @@ Or clone this repository and execute `make` in the directory.
 [MinCaml]: https://github.com/esumii/min-caml
 [goyacc]: https://github.com/cznic/goyacc
 [LLVM]: http://llvm.org/
+[Build Status]: https://travis-ci.org/rhysd/gocaml.svg?branch=master
+[Travis CI]: https://travis-ci.org/rhysd/gocaml
