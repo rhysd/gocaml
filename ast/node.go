@@ -46,7 +46,11 @@ type Expr interface {
 
 type Decl struct {
 	Name string
-	// Type typing.Type
+	Type Type
+}
+
+func NewDecl(n string) Decl {
+	return Decl{n, NewTypeVar()}
 }
 
 type FuncDef struct {
