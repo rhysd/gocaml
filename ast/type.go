@@ -80,7 +80,7 @@ type TypeVar struct {
 
 func (t *TypeVar) String() string {
 	if t.Ref == nil {
-		return fmt.Sprintf("$%d(None)", t.Id)
+		return fmt.Sprintf("$%d(unknown)", t.Id)
 	}
 	return fmt.Sprintf("$%d(%s)", t.Id, t.Ref.String())
 }

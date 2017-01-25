@@ -13,6 +13,7 @@ SRCS := \
 	typing/env.go \
 	typing/unify.go \
 	typing/deref.go \
+	typing/infer.go \
 
 TESTS := \
 	lexer/lexer_test.go \

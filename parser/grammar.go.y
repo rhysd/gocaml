@@ -19,7 +19,7 @@ import (
 	nodes []ast.Expr
 	token *token.Token
 	funcdef *ast.FuncDef
-	decls []ast.Decl
+	decls []*ast.Decl
 }
 
 %token<token> ILLEGAL
@@ -160,7 +160,7 @@ params:
 	IDENT params
 		{ $$ = append($2, ast.NewDecl($1.Value())) }
 	| IDENT
-		{ $$ = []ast.Decl{ast.NewDecl($1.Value())} }
+		{ $$ = []*ast.Decl{ast.NewDecl($1.Value())} }
 
 args:
 	args parenless_exp
@@ -180,7 +180,7 @@ pat:
 	pat COMMA IDENT
 		{ $$ = append($1, ast.NewDecl($3.Value())) }
 	| IDENT COMMA IDENT
-		{ $$ = []ast.Decl{ast.NewDecl($1.Value()), ast.NewDecl($3.Value())} }
+		{ $$ = []*ast.Decl{ast.NewDecl($1.Value()), ast.NewDecl($3.Value())} }
 
 parenless_exp:
 	LPAREN exp RPAREN

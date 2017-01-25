@@ -49,13 +49,13 @@ type Decl struct {
 	Type Type
 }
 
-func NewDecl(n string) Decl {
-	return Decl{n, NewTypeVar()}
+func NewDecl(n string) *Decl {
+	return &Decl{n, NewTypeVar()}
 }
 
 type FuncDef struct {
-	Decl   Decl
-	Params []Decl
+	Decl   *Decl
+	Params []*Decl
 	Body   Expr
 }
 
@@ -145,7 +145,7 @@ type (
 
 	Let struct {
 		LetToken *token.Token
-		Decl     Decl
+		Decl     *Decl
 		Bound    Expr
 		Body     Expr
 	}
@@ -172,7 +172,7 @@ type (
 
 	LetTuple struct {
 		LetToken *token.Token
-		Decls    []Decl
+		Decls    []*Decl
 		Bound    Expr
 		Body     Expr
 	}

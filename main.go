@@ -65,6 +65,16 @@ func main() {
 	case *showAST:
 		c.PrintAST(src)
 	default:
-		c.PrintAST(src) // TODO: Temporary
+		ast, err := c.Parse(src)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(4)
+		}
+		env, err := c.SemanticAnalysis(ast)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(4)
+		}
+		env.Dump() // TODO: Temporary
 	}
 }
