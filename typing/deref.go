@@ -40,7 +40,11 @@ func stripTypeVar(target ast.Type) (ast.Type, bool) {
 			return nil, false
 		}
 		// Dereference type variable
-		return t.Ref, true
+		r, ok := stripTypeVar(t.Ref)
+		if !ok {
+			return nil, false
+		}
+		return r, true
 	}
 	return target, true
 }
