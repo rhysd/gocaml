@@ -1,5 +1,5 @@
 let
-    a = !false
-    b = -42
+    x = not true
+    y = -42
 in
-    a && b < 0
+    print_int(y == x < 0)

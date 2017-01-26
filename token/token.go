@@ -56,7 +56,7 @@ var TokenStrings = [...]string{
 	RPAREN:        ")",
 	IDENT:         "IDENT",
 	BOOL:          "BOOL",
-	NOT:           "not",
+	NOT:           "NOT",
 	INT:           "INT",
 	FLOAT:         "FLOAT",
 	MINUS:         "-",

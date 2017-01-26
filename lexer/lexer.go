@@ -82,6 +82,8 @@ func (l *Lexer) emitIdent(ident string) {
 		l.emit(token.IN)
 	case "rec":
 		l.emit(token.REC)
+	case "not":
+		l.emit(token.NOT)
 	default:
 		l.emit(token.IDENT)
 	}
