@@ -1,5 +1,3 @@
-let
-    x = not true
-    y = -42
-in
-    print_int(y == x < 0)
+let x = not true in
+let y = -42 in
+print_int (y = x < 0)
