@@ -72,7 +72,7 @@ func (c *Compiler) SemanticAnalysis(a *ast.AST) (*typing.Env, error) {
 	env := typing.NewEnv()
 	err := env.ApplyTypeAnalysis(a.Root)
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("While semantic analysis for %s", a.File.Name))
+		return nil, errors.Wrapf(err, "While semantic analysis for %s\n", a.File.Name)
 	}
 	return env, nil
 }

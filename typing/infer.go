@@ -8,7 +8,7 @@ import (
 
 func typeError(err error, node ast.Expr) error {
 	pos := node.Pos()
-	return errors.Wrap(err, fmt.Sprintf("Type error at node '%s' (line:%d, column:%d)", node.Name(), pos.Line, pos.Column))
+	return errors.Wrapf(err, "Type error at node '%s' (line:%d, column:%d)\n", node.Name(), pos.Line, pos.Column)
 }
 
 func (env *Env) checkNodeType(node ast.Expr, expected ast.Type) error {

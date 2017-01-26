@@ -34,7 +34,7 @@ func (env *Env) ApplyTypeAnalysis(root ast.Expr) error {
 	}
 
 	if err := Unify(ast.UnitTypeVal, t); err != nil {
-		return errors.Wrap(err, "Type of root expression of program must be unit")
+		return errors.Wrap(err, "Type of root expression of program must be unit\n")
 	}
 
 	// While dereferencing type variables in table, we can detect type variables

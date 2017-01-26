@@ -72,7 +72,7 @@ func main() {
 		}
 		env, err := c.SemanticAnalysis(ast)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			fmt.Fprintf(os.Stderr, "%v\n", err)
 			os.Exit(4)
 		}
 		env.Dump() // TODO: Temporary

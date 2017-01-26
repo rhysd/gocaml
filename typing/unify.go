@@ -1,7 +1,6 @@
 package typing
 
 import (
-	"fmt"
 	"github.com/pkg/errors"
 	"github.com/rhysd/gocaml/ast"
 )
@@ -39,14 +38,14 @@ func occur(v *ast.TypeVar, rhs ast.Type) bool {
 func unifyTuple(left, right *ast.TupleType) error {
 	length := len(left.Elems)
 	if length != len(right.Elems) {
-		return fmt.Errorf("Number of elements of tuple does not match between '%s' and '%s'", left.String(), right.String())
+		return errors.Errorf("Number of elements of tuple does not match between '%s' and '%s'", left.String(), right.String())
 	}
 
 	for i := 0; i < length; i++ {
 		l := left.Elems[i]
 		r := right.Elems[i]
 		if err := Unify(l, r); err != nil {
-			return errors.Wrap(err, fmt.Sprintf("On unifying tuples '%s' and '%s'", left.String(), right.String()))
+			return errors.Wrapf(err, "On unifying tuples '%s' and '%s'\n", left.String(), right.String())
 		}
 	}
 
@@ -55,19 +54,19 @@ func unifyTuple(left, right *ast.TupleType) error {
 
 func unifyFun(left, right *ast.FunType) error {
 	if err := Unify(left.Ret, right.Ret); err != nil {
-		return errors.Wrap(err, fmt.Sprintf("On unifying functions' return types of '%s' and '%s'", left.String(), right.String()))
+		return errors.Wrapf(err, "On unifying functions' return types of '%s' and '%s'\n", left.String(), right.String())
 	}
 
 	length := len(left.Params)
 	if length != len(right.Params) {
-		return fmt.Errorf("Number of parameters of function does not match between '%s' and '%s'", left.String(), right.String())
+		return errors.Errorf("Number of parameters of function does not match between '%s' and '%s'", left.String(), right.String())
 	}
 
 	for i := 0; i < length; i++ {
 		l := left.Params[i]
 		r := right.Params[i]
 		if err := Unify(l, r); err != nil {
-			return errors.Wrap(err, fmt.Sprintf("On unifying function parameters of function '%s' and '%s'", left.String(), right.String()))
+			return errors.Wrapf(err, "On unifying function parameters of function '%s' and '%s'\n", left.String(), right.String())
 		}
 	}
 
@@ -87,7 +86,7 @@ func unifyTypeVar(l *ast.TypeVar, right ast.Type) error {
 	}
 
 	if occur(l, right) {
-		return fmt.Errorf("Cyclic dependency found in types. Type variable '%s' is contained in '%s'")
+		return errors.Errorf("Cyclic dependency found in types. Type variable '%s' is contained in '%s'")
 	}
 
 	// Assign rhs type to type variable when lhs type variable is unknown
@@ -137,5 +136,5 @@ func Unify(left, right ast.Type) error {
 		return unifyTypeVar(v, left)
 	}
 
-	return fmt.Errorf("Cannot unify types. Type mismatch between '%s' and '%s'", left.String(), right.String())
+	return errors.Errorf("Cannot unify types. Type mismatch between '%s' and '%s'", left.String(), right.String())
 }
