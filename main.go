@@ -12,6 +12,7 @@ var (
 	help       = flag.Bool("help", false, "Show this help")
 	showTokens = flag.Bool("tokens", false, "Show tokens for input")
 	showAST    = flag.Bool("ast", false, "Show AST for input")
+	externals  = flag.Bool("externals", false, "Display external symbols")
 )
 
 const usageHeader = `Usage: gocaml [flags] [file]
@@ -75,6 +76,11 @@ func main() {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(4)
 		}
+
+		if *externals {
+			env.DumpExternals()
+		}
+
 		env.Dump() // TODO: Temporary
 	}
 }

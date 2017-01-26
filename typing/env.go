@@ -48,12 +48,17 @@ func (env *Env) ApplyTypeAnalysis(root ast.Expr) error {
 }
 
 func (env *Env) Dump() {
-	fmt.Println("* Variables")
+	fmt.Println("Variables:")
 	for n, t := range env.Table {
-		fmt.Printf("%s: %s\n", n, t.String())
+		fmt.Printf("  %s: %s\n", n, t.String())
 	}
-	fmt.Println("\n* External Variables")
+	fmt.Println()
+	env.DumpExternals()
+}
+
+func (env *Env) DumpExternals() {
+	fmt.Println("External Variables:")
 	for n, t := range env.Externals {
-		fmt.Printf("%s: %s\n", n, t.String())
+		fmt.Printf("  %s: %s\n", n, t.String())
 	}
 }
