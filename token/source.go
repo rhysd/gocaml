@@ -25,3 +25,7 @@ func NewSourceFromStdin() (*Source, error) {
 	}
 	return &Source{"<stdin>", b}, nil
 }
+
+func NewDummySource(code string) *Source {
+	return &Source{"dummy", []byte(code)}
+}

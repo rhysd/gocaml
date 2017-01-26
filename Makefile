@@ -18,6 +18,10 @@ SRCS := \
 TESTS := \
 	lexer/lexer_test.go \
 	parser/parser_test.go \
+	ast/visitor_test.go \
+	token/source_test.go \
+	token/token_test.go \
+	typing/infer_test.go \
 
 all: build test
 
