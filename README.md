@@ -14,9 +14,9 @@ let rec gcd m n =
 print_int (gcd 21600 337500)
 ```
 
-- [x] Lexer -> ([./lexer](./lexer))
-- [x] Parser with [goyacc][] -> ([./parser](./parser))
-- [x] Type inference (Hindley Milner monomorphic type system) -> ([./typing](./typing))
+- [x] Lexer -> ([lexer doc][])
+- [x] Parser with [goyacc][] -> ([parser doc][])
+- [x] Type inference (Hindley Milner monomorphic type system) -> ([typing doc][])
 - [ ] GoCaml intermediate language (GCIL)
 - [ ] K nomarization from AST into GCIL
 - [ ] Alpha transform
@@ -45,3 +45,6 @@ Or clone this repository and execute `make` in the directory.
 [LLVM]: http://llvm.org/
 [Build Status]: https://travis-ci.org/rhysd/gocaml.svg?branch=master
 [Travis CI]: https://travis-ci.org/rhysd/gocaml
+[lexer doc]: https://godoc.org/github.com/rhysd/gocaml/lexer
+[parser doc]: https://godoc.org/github.com/rhysd/gocaml/parser
+[typing doc]: https://godoc.org/github.com/rhysd/gocaml/typing
