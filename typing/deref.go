@@ -6,16 +6,58 @@ import (
 	"strings"
 )
 
-func stripTypeVar(target ast.Type) (ast.Type, bool) {
+type typeVarDereferencer struct {
+	errors []string
+	env    *Env
+}
+
+func (d *typeVarDereferencer) unwrapTypeVar(variable *ast.TypeVar) (ast.Type, bool) {
+	if variable.Ref != nil {
+		r, ok := d.unwrap(variable.Ref)
+		if !ok {
+			return nil, false
+		}
+		return r, true
+	}
+
+	// XXX: Different behavior from MinCaml.
+	//
+	// In MinCaml, unknown type value will be fallbacked into Int.
+	// But GoCaml decided to fallback unit type.
+	//
+	//   1. When type variable is empty (e.g. not $1(unknown list), but $1(unknown))
+	//   2. When the type variable appears in return type of external function symbol.
+	//
+	// For example, `print_int 42; ()` causes a type error such as 'type of $tmp1 is unknown'
+	// This is because it will be transformed to `let $tmp1 = print_int 42 in ()` and return
+	// type of external function `print_int` is unknown.
+	// To avoid kinds of this error, GoCaml decided to assign `()` to the return type.
+	// Then $tmp can be inferred as `()`. $tmp1 is always unused variable. So it doesn't
+	// cause any problem, I believe.
+	//
+	// (Test case: testdata/basic/external_func_unknown_ret_type.ml)
+	for _, t := range d.env.Externals {
+		if v, ok := t.(*ast.TypeVar); ok && v.Ref != nil {
+			if f, ok := v.Ref.(*ast.FunType); ok && f.Ret == variable {
+				f.Ret = ast.UnitTypeVal
+				return ast.UnitTypeVal, true
+			}
+		}
+	}
+
+	return nil, false
+}
+
+func (d *typeVarDereferencer) unwrap(target ast.Type) (ast.Type, bool) {
 	switch t := target.(type) {
 	case *ast.FunType:
-		r, ok := stripTypeVar(t.Ret)
+		r, ok := d.unwrap(t.Ret)
 		if !ok {
 			return nil, false
 		}
 		t.Ret = r
 		for i, param := range t.Params {
-			p, ok := stripTypeVar(param)
+			p, ok := d.unwrap(param)
 			if !ok {
 				return nil, false
 			}
@@ -23,41 +65,29 @@ func stripTypeVar(target ast.Type) (ast.Type, bool) {
 		}
 	case *ast.TupleType:
 		for i, elem := range t.Elems {
-			e, ok := stripTypeVar(elem)
+			e, ok := d.unwrap(elem)
 			if !ok {
 				return nil, false
 			}
 			t.Elems[i] = e
 		}
 	case *ast.ArrayType:
-		e, ok := stripTypeVar(t.Elem)
+		e, ok := d.unwrap(t.Elem)
 		if !ok {
 			return nil, false
 		}
 		t.Elem = e
 	case *ast.TypeVar:
-		if t.Ref == nil {
-			return nil, false
-		}
-		// Dereference type variable
-		r, ok := stripTypeVar(t.Ref)
-		if !ok {
-			return nil, false
-		}
-		return r, true
+		return d.unwrapTypeVar(t)
 	}
 	return target, true
 }
 
-type typeVarDereferencer struct {
-	errors []string
-}
-
 func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
-	t, ok := stripTypeVar(sym.Type)
+	t, ok := d.unwrap(sym.Type)
 	if !ok {
 		pos := node.Pos()
-		d.errors = append(d.errors, fmt.Sprintf("Cannot infer type of variable '%s' in node %s (line:%d, column:%d). Infered type was '%s'", sym.Name, node.Name(), pos.Line, pos.Column, sym.Type.String()))
+		d.errors = append(d.errors, fmt.Sprintf("Cannot infer type of variable '%s' in node %s (line:%d, column:%d). Inferred type was '%s'", sym.Name, node.Name(), pos.Line, pos.Column, sym.Type.String()))
 		return
 	}
 	sym.Type = t
@@ -80,10 +110,8 @@ func (d *typeVarDereferencer) Visit(node ast.Expr) ast.Visitor {
 	return d
 }
 
-func DerefTypeVars(root ast.Expr) error {
-	v := &typeVarDereferencer{
-		errors: []string{},
-	}
+func (env *Env) DerefTypeVars(root ast.Expr) error {
+	v := &typeVarDereferencer{[]string{}, env}
 	ast.Visit(v, root)
 	if len(v.errors) > 0 {
 		return fmt.Errorf("Error while type inference (dereferencing type vars)\n%s", strings.Join(v.errors, "\n"))

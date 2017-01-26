@@ -40,7 +40,7 @@ func (env *Env) ApplyTypeAnalysis(root ast.Expr) error {
 	// While dereferencing type variables in table, we can detect type variables
 	// which does not have exact type and raise an error for that.
 	// External variables must be well-typed also.
-	if err := DerefTypeVars(root); err != nil {
+	if err := env.DerefTypeVars(root); err != nil {
 		return err
 	}
 
