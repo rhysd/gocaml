@@ -75,7 +75,7 @@ func (env *Env) infer(e ast.Expr) (ast.Type, error) {
 		if err := env.checkNodeType(n.Child, ast.IntTypeVal); err != nil {
 			return nil, err
 		}
-		return ast.BoolTypeVal, nil
+		return ast.IntTypeVal, nil
 	case *ast.Add:
 		return env.inferArithmeticBinOp(n.Left, n.Right, ast.IntTypeVal)
 	case *ast.Sub:
