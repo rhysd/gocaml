@@ -161,5 +161,3 @@ func TestInvalidExpressions(t *testing.T) {
 		})
 	}
 }
-
-// TODO: Test external variables detection

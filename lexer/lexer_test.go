@@ -40,8 +40,6 @@ func TestLexingOK(t *testing.T) {
 							t.Fatal(tok.String())
 						case token.EOF:
 							return
-						default:
-							break
 						}
 					}
 				}
@@ -86,8 +84,6 @@ func TestLexingIllegal(t *testing.T) {
 					case token.EOF:
 						t.Fatalf("Lexing successfully done unexpectedly")
 						return
-					default:
-						break
 					}
 				}
 			}

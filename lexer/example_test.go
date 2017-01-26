@@ -33,7 +33,6 @@ func Example() {
 				return
 			default:
 				fmt.Printf("Token: %s", tok.String())
-				break
 			}
 		}
 	}

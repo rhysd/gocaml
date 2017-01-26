@@ -74,7 +74,7 @@ func (t *ArrayType) String() string {
 }
 
 type TypeVar struct {
-	Id  int
+	ID  int
 	Ref Type
 }
 
@@ -93,13 +93,13 @@ var (
 	FloatTypeVal = &FloatType{}
 
 	// ID to identify type variables
-	typeVarId = 0
+	typeVarID = 0
 )
 
 func NewTypeVar() *TypeVar {
-	typeVarId++
+	typeVarID++
 	return &TypeVar{
-		Id:  typeVarId,
+		ID:  typeVarID,
 		Ref: nil,
 	}
 }

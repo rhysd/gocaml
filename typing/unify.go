@@ -76,7 +76,7 @@ func unifyFun(left, right *ast.FunType) error {
 func unifyTypeVar(l *ast.TypeVar, right ast.Type) error {
 	switch r := right.(type) {
 	case *ast.TypeVar:
-		if l.Id == r.Id {
+		if l.ID == r.ID {
 			return nil
 		}
 	}

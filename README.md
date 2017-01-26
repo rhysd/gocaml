@@ -6,6 +6,8 @@ GoCaml is a [MinCaml][] implementation in Go using [LLVM][]. MinCaml is an educa
 
 This project aims my practices for understanding type inference and introducing own intermediate language (IL) to own language.
 
+Example:
+
 ```ocaml
 let rec gcd m n =
   if m = 0 then n else
@@ -13,6 +15,8 @@ let rec gcd m n =
   gcd n (m - n) in
 print_int (gcd 21600 337500)
 ```
+
+## Tasks
 
 - [x] Lexer -> ([lexer doc][])
 - [x] Parser with [goyacc][] -> ([parser doc][])
