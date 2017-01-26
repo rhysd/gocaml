@@ -122,11 +122,11 @@ func (env *Env) infer(e ast.Expr) (ast.Type, error) {
 			return nil, err
 		}
 
-		if err = Unify(n.Decl.Type, bound); err != nil {
+		if err = Unify(n.Symbol.Type, bound); err != nil {
 			return nil, typeError(err, n.Body)
 		}
 
-		env.Table[n.Decl.Name] = bound
+		env.Table[n.Symbol.Name] = bound
 		return env.infer(n.Body)
 	case *ast.Var:
 		if t, ok := env.Table[n.Ident]; ok {
@@ -141,7 +141,7 @@ func (env *Env) infer(e ast.Expr) (ast.Type, error) {
 		env.Externals[n.Ident] = t
 		return t, nil
 	case *ast.LetRec:
-		env.Table[n.Func.Decl.Name] = n.Func.Decl.Type
+		env.Table[n.Func.Symbol.Name] = n.Func.Symbol.Type
 
 		// Register parameters of function as variables to table
 		params := make([]ast.Type, len(n.Func.Params))
@@ -163,7 +163,7 @@ func (env *Env) infer(e ast.Expr) (ast.Type, error) {
 
 		// n.Func.Type represents its function type. So unify it with
 		// inferred function type from its parameters and body.
-		if err = Unify(n.Func.Decl.Type, fun); err != nil {
+		if err = Unify(n.Func.Symbol.Type, fun); err != nil {
 			return nil, typeError(err, n)
 		}
 
@@ -207,8 +207,8 @@ func (env *Env) infer(e ast.Expr) (ast.Type, error) {
 		}
 		return &ast.TupleType{Elems: elems}, nil
 	case *ast.LetTuple:
-		elems := make([]ast.Type, len(n.Decls))
-		for i, d := range n.Decls {
+		elems := make([]ast.Type, len(n.Symbols))
+		for i, d := range n.Symbols {
 			env.Table[d.Name] = d.Type
 			elems[i] = d.Type
 		}

@@ -53,28 +53,28 @@ type typeVarDereferencer struct {
 	errors []string
 }
 
-func (d *typeVarDereferencer) derefDecl(node ast.Expr, decl *ast.Decl) {
-	t, ok := stripTypeVar(decl.Type)
+func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
+	t, ok := stripTypeVar(sym.Type)
 	if !ok {
 		pos := node.Pos()
-		d.errors = append(d.errors, fmt.Sprintf("Cannot infer type of variable '%s' in node %s (line:%d, column:%d). Infered type was '%s'", decl.Name, node.Name(), pos.Line, pos.Column, decl.Type.String()))
+		d.errors = append(d.errors, fmt.Sprintf("Cannot infer type of variable '%s' in node %s (line:%d, column:%d). Infered type was '%s'", sym.Name, node.Name(), pos.Line, pos.Column, sym.Type.String()))
 		return
 	}
-	decl.Type = t
+	sym.Type = t
 }
 
 func (d *typeVarDereferencer) Visit(node ast.Expr) ast.Visitor {
 	switch n := node.(type) {
 	case *ast.Let:
-		d.derefDecl(n, n.Decl)
+		d.derefSym(n, n.Symbol)
 	case *ast.LetRec:
-		d.derefDecl(n, n.Func.Decl)
-		for _, decl := range n.Func.Params {
-			d.derefDecl(n, decl)
+		d.derefSym(n, n.Func.Symbol)
+		for _, sym := range n.Func.Params {
+			d.derefSym(n, sym)
 		}
 	case *ast.LetTuple:
-		for _, decl := range n.Decls {
-			d.derefDecl(n, decl)
+		for _, sym := range n.Symbols {
+			d.derefSym(n, sym)
 		}
 	}
 	return d

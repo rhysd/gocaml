@@ -44,18 +44,18 @@ type Expr interface {
 	// Type() *typing.Type
 }
 
-type Decl struct {
+type Symbol struct {
 	Name string
 	Type Type
 }
 
-func NewDecl(n string) *Decl {
-	return &Decl{n, NewTypeVar()}
+func NewSymbol(n string) *Symbol {
+	return &Symbol{n, NewTypeVar()}
 }
 
 type FuncDef struct {
-	Decl   *Decl
-	Params []*Decl
+	Symbol *Symbol
+	Params []*Symbol
 	Body   Expr
 }
 
@@ -145,7 +145,7 @@ type (
 
 	Let struct {
 		LetToken *token.Token
-		Decl     *Decl
+		Symbol   *Symbol
 		Bound    Expr
 		Body     Expr
 	}
@@ -172,7 +172,7 @@ type (
 
 	LetTuple struct {
 		LetToken *token.Token
-		Decls    []*Decl
+		Symbols  []*Symbol
 		Bound    Expr
 		Body     Expr
 	}
