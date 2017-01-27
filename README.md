@@ -2,7 +2,7 @@ GoCaml
 ======
 [![Build Status][]][Travis CI]
 
-GoCaml is a [MinCaml][] implementation in Go using [LLVM][]. MinCaml is an educational compiler for a minimal subset of OCaml.
+GoCaml is a [MinCaml][] implementation in Go using [LLVM][]. MinCaml is an educational compiler for a minimal subset of OCaml. ([spec][MinCaml spec])
 
 This project aims my practices for understanding type inference and introducing own intermediate language (IL) to own language.
 
@@ -32,6 +32,13 @@ print_int (gcd 21600 337500)
   - [ ] Striping unused variables
 - [ ] Code generation using [LLVM][]
 
+## Difference from original MinCaml
+
+- MinCaml assumes external symbols' types are `int` when it can't be inferred. GoCaml does not have such an assumption.
+  GoCaml assumes unknown return type of external functions as `()` (`void` in C), but in other cases, falls into compilation error.
+- MinCaml allows `-` unary operator for float literal. So for example `-3.14` is valid but `-f` (where `f` is `float`) is not valid.
+  GoCaml does not allow `-` unary operator for float values totally.
+
 ## Installation
 
 ```
@@ -52,3 +59,4 @@ Or clone this repository and execute `make` in the directory.
 [lexer doc]: https://godoc.org/github.com/rhysd/gocaml/lexer
 [parser doc]: https://godoc.org/github.com/rhysd/gocaml/parser
 [typing doc]: https://godoc.org/github.com/rhysd/gocaml/typing
+[MinCaml spec]: http://esumii.github.io/min-caml/paper.pdf
