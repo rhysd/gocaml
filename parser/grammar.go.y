@@ -127,7 +127,7 @@ exp:
 		{ $$ = &ast.FDiv{$1, $3} }
 	| LET IDENT EQUAL exp IN exp
 		%prec prec_let
-		{ $$ = &ast.Let{$1, &ast.Symbol{$2.Value()}, $4, $6} }
+		{ $$ = &ast.Let{$1, ast.NewSymbol($2.Value()), $4, $6} }
 	| LET REC fundef IN exp
 		%prec prec_let
 		{ $$ = &ast.LetRec{$1, $3, $5} }
@@ -141,7 +141,7 @@ exp:
 	| parenless_exp DOT LPAREN exp RPAREN LESS_MINUS exp
 		{ $$ = &ast.Put{$1, $4, $7} }
 	| exp SEMICOLON exp
-		{ $$ = &ast.Let{$2, &ast.Symbol{genTempId()}, $1, $3} }
+		{ $$ = &ast.Let{$2, ast.NewSymbol(genTempId()), $1, $3} }
 	| ARRAY_CREATE parenless_exp parenless_exp
 		%prec prec_app
 		{ $$ = &ast.Array{$1, $2, $3} }
@@ -154,13 +154,13 @@ exp:
 
 fundef:
 	IDENT params EQUAL exp
-		{ $$ = &ast.FuncDef{&ast.Symbol{$1.Value()}, $2, $4} }
+		{ $$ = &ast.FuncDef{ast.NewSymbol($1.Value()), $2, $4} }
 
 params:
 	IDENT params
-		{ $$ = append($2, &ast.Symbol{$1.Value()}) }
+		{ $$ = append($2, ast.NewSymbol($1.Value())) }
 	| IDENT
-		{ $$ = []*ast.Symbol{{$1.Value()}} }
+		{ $$ = []*ast.Symbol{ast.NewSymbol($1.Value())} }
 
 args:
 	args parenless_exp
@@ -178,9 +178,14 @@ elems:
 
 pat:
 	pat COMMA IDENT
-		{ $$ = append($1, &ast.Symbol{$3.Value()}) }
+		{ $$ = append($1, ast.NewSymbol($3.Value())) }
 	| IDENT COMMA IDENT
-		{ $$ = []*ast.Symbol{{$1.Value()}, {$3.Value()}} }
+		{
+			$$ = []*ast.Symbol{
+				ast.NewSymbol($1.Value()),
+				ast.NewSymbol($3.Value()), 
+			}
+		}
 
 parenless_exp:
 	LPAREN exp RPAREN

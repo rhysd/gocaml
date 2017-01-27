@@ -48,8 +48,13 @@ type Expr interface {
 // This struct cannot be replaced with string because there may be the
 // same name symbol.
 type Symbol struct {
-	Name string
+	Name        string
+	Transformed string
 	// Other symbol attirbutes go here
+}
+
+func NewSymbol(name string) *Symbol {
+	return &Symbol{name, name}
 }
 
 type FuncDef struct {
@@ -151,7 +156,7 @@ type (
 
 	Var struct {
 		Token *token.Token
-		Ident string
+		Ident string // TODO: Make *Symbol this because name will be transformed
 	}
 
 	LetRec struct {

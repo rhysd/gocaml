@@ -14,6 +14,8 @@ SRCS := \
 	typing/deref.go \
 	typing/infer.go \
 	typing/type.go \
+	alpha/transform.go \
+	alpha/mapping.go \
 
 TESTS := \
 	lexer/lexer_test.go \
