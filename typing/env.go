@@ -11,19 +11,32 @@ import (
 // should have its table. When some variable reference appears in code, try to find its definition from
 // the nested tables.
 
+type SymbolTable map[*ast.Symbol]Type
+type VarTable map[*ast.Var]Type
+
 type Env struct {
 	// Types for declarations. This is referred by type variables to resolve
 	// type variables' actual types
-	Table map[string]ast.Type
+	//
+	// XXX:
+	// Currently nested identifiers don't work. Example:
+	//   let
+	//     x = 42
+	//   in
+	//     let x = true in print_bool (x);
+	//     print_int (x)
+	// We need alpha transform before type inference in order to ensure
+	// all symbol names are unique.
+	Table map[string]Type
 	// External variable names which are referred but not defined.
 	// External variables are exposed as external symbols in other object files.
-	Externals map[string]ast.Type
+	Externals map[string]Type
 }
 
 func NewEnv() *Env {
 	return &Env{
-		map[string]ast.Type{},
-		map[string]ast.Type{},
+		map[string]Type{},
+		map[string]Type{},
 	}
 }
 
@@ -33,7 +46,7 @@ func (env *Env) ApplyTypeAnalysis(root ast.Expr) error {
 		return err
 	}
 
-	if err := Unify(ast.UnitTypeVal, t); err != nil {
+	if err := Unify(UnitType, t); err != nil {
 		return errors.Wrap(err, "Type of root expression of program must be unit\n")
 	}
 
@@ -49,8 +62,8 @@ func (env *Env) ApplyTypeAnalysis(root ast.Expr) error {
 
 func (env *Env) Dump() {
 	fmt.Println("Variables:")
-	for n, t := range env.Table {
-		fmt.Printf("  %s: %s\n", n, t.String())
+	for s, t := range env.Table {
+		fmt.Printf("  %s: %s\n", s, t.String())
 	}
 	fmt.Println()
 	env.DumpExternals()
@@ -58,7 +71,7 @@ func (env *Env) Dump() {
 
 func (env *Env) DumpExternals() {
 	fmt.Println("External Variables:")
-	for n, t := range env.Externals {
-		fmt.Printf("  %s: %s\n", n, t.String())
+	for s, t := range env.Externals {
+		fmt.Printf("  %s: %s\n", s, t.String())
 	}
 }

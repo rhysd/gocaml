@@ -44,13 +44,12 @@ type Expr interface {
 	// Type() *typing.Type
 }
 
+// Note:
+// This struct cannot be replaced with string because there may be the
+// same name symbol.
 type Symbol struct {
 	Name string
-	Type Type
-}
-
-func NewSymbol(n string) *Symbol {
-	return &Symbol{n, NewTypeVar()}
+	// Other symbol attirbutes go here
 }
 
 type FuncDef struct {

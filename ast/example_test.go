@@ -28,7 +28,7 @@ func Example() {
 	// AST which usually comes from parser.Parse() function.
 	rootOfAST := &Let{
 		LetToken: &token.Token{},
-		Symbol:   NewSymbol("test"),
+		Symbol:   &Symbol{"test"},
 		Bound: &Int{
 			Token: &token.Token{},
 			Value: 42,

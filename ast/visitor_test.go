@@ -7,7 +7,7 @@ import (
 
 var testTree = &Let{
 	LetToken: &token.Token{},
-	Symbol:   NewSymbol("test"),
+	Symbol:   &Symbol{"test"},
 	Bound: &Int{
 		Token: &token.Token{},
 		Value: 42,

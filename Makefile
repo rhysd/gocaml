@@ -1,7 +1,6 @@
 SRCS := \
 	main.go \
 	ast/node.go \
-	ast/type.go \
 	ast/printer.go \
 	ast/visitor.go \
 	compiler/compiler.go \
@@ -14,6 +13,7 @@ SRCS := \
 	typing/unify.go \
 	typing/deref.go \
 	typing/infer.go \
+	typing/type.go \
 
 TESTS := \
 	lexer/lexer_test.go \

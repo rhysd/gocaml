@@ -11,7 +11,7 @@ func typeError(err error, node ast.Expr) error {
 	return errors.Wrapf(err, "Type error at node '%s' (line:%d, column:%d)\n", node.Name(), pos.Line, pos.Column)
 }
 
-func (env *Env) checkNodeType(node ast.Expr, expected ast.Type) error {
+func (env *Env) checkNodeType(node ast.Expr, expected Type) error {
 	t, err := env.infer(node)
 	if err != nil {
 		return err
@@ -22,7 +22,7 @@ func (env *Env) checkNodeType(node ast.Expr, expected ast.Type) error {
 	return nil
 }
 
-func (env *Env) inferArithmeticBinOp(left, right ast.Expr, operand ast.Type) (ast.Type, error) {
+func (env *Env) inferArithmeticBinOp(left, right ast.Expr, operand Type) (Type, error) {
 	l, err := env.infer(left)
 	if err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func (env *Env) inferArithmeticBinOp(left, right ast.Expr, operand ast.Type) (as
 	return operand, nil
 }
 
-func (env *Env) inferRelationalBinOp(left, right ast.Expr) (ast.Type, error) {
+func (env *Env) inferRelationalBinOp(left, right ast.Expr) (Type, error) {
 	l, err := env.infer(left)
 	if err != nil {
 		return nil, err
@@ -53,52 +53,52 @@ func (env *Env) inferRelationalBinOp(left, right ast.Expr) (ast.Type, error) {
 	if err = Unify(l, r); err != nil {
 		return nil, typeError(err, left)
 	}
-	return ast.BoolTypeVal, nil
+	return BoolType, nil
 }
 
-func (env *Env) infer(e ast.Expr) (ast.Type, error) {
+func (env *Env) infer(e ast.Expr) (Type, error) {
 	switch n := e.(type) {
 	case *ast.Unit:
-		return ast.UnitTypeVal, nil
+		return UnitType, nil
 	case *ast.Int:
-		return ast.IntTypeVal, nil
+		return IntType, nil
 	case *ast.Float:
-		return ast.FloatTypeVal, nil
+		return FloatType, nil
 	case *ast.Bool:
-		return ast.BoolTypeVal, nil
+		return BoolType, nil
 	case *ast.Not:
-		if err := env.checkNodeType(n.Child, ast.BoolTypeVal); err != nil {
+		if err := env.checkNodeType(n.Child, BoolType); err != nil {
 			return nil, err
 		}
-		return ast.BoolTypeVal, nil
+		return BoolType, nil
 	case *ast.Neg:
-		if err := env.checkNodeType(n.Child, ast.IntTypeVal); err != nil {
+		if err := env.checkNodeType(n.Child, IntType); err != nil {
 			return nil, err
 		}
-		return ast.IntTypeVal, nil
+		return IntType, nil
 	case *ast.Add:
-		return env.inferArithmeticBinOp(n.Left, n.Right, ast.IntTypeVal)
+		return env.inferArithmeticBinOp(n.Left, n.Right, IntType)
 	case *ast.Sub:
-		return env.inferArithmeticBinOp(n.Left, n.Right, ast.IntTypeVal)
+		return env.inferArithmeticBinOp(n.Left, n.Right, IntType)
 	case *ast.FNeg:
-		if err := env.checkNodeType(n.Child, ast.FloatTypeVal); err != nil {
+		if err := env.checkNodeType(n.Child, FloatType); err != nil {
 			return nil, err
 		}
-		return ast.BoolTypeVal, nil
+		return FloatType, nil
 	case *ast.FAdd:
-		return env.inferArithmeticBinOp(n.Left, n.Right, ast.FloatTypeVal)
+		return env.inferArithmeticBinOp(n.Left, n.Right, FloatType)
 	case *ast.FSub:
-		return env.inferArithmeticBinOp(n.Left, n.Right, ast.FloatTypeVal)
+		return env.inferArithmeticBinOp(n.Left, n.Right, FloatType)
 	case *ast.FMul:
-		return env.inferArithmeticBinOp(n.Left, n.Right, ast.FloatTypeVal)
+		return env.inferArithmeticBinOp(n.Left, n.Right, FloatType)
 	case *ast.FDiv:
-		return env.inferArithmeticBinOp(n.Left, n.Right, ast.FloatTypeVal)
+		return env.inferArithmeticBinOp(n.Left, n.Right, FloatType)
 	case *ast.Eq:
 		return env.inferRelationalBinOp(n.Left, n.Right)
 	case *ast.Less:
 		return env.inferRelationalBinOp(n.Left, n.Right)
 	case *ast.If:
-		if err := env.checkNodeType(n.Cond, ast.BoolTypeVal); err != nil {
+		if err := env.checkNodeType(n.Cond, BoolType); err != nil {
 			return nil, err
 		}
 
@@ -122,7 +122,8 @@ func (env *Env) infer(e ast.Expr) (ast.Type, error) {
 			return nil, err
 		}
 
-		if err = Unify(n.Symbol.Type, bound); err != nil {
+		t := NewVar()
+		if err = Unify(t, bound); err != nil {
 			return nil, typeError(err, n.Body)
 		}
 
@@ -137,17 +138,21 @@ func (env *Env) infer(e ast.Expr) (ast.Type, error) {
 		}
 		// Assume as free variable. If free variable's type is not identified,
 		// It falls into compilation error
-		t := ast.NewTypeVar()
+		t := NewVar()
 		env.Externals[n.Ident] = t
 		return t, nil
 	case *ast.LetRec:
-		env.Table[n.Func.Symbol.Name] = n.Func.Symbol.Type
+		f := NewVar()
+		// Need to register function here because of recursive functions
+		env.Table[n.Func.Symbol.Name] = f
 
 		// Register parameters of function as variables to table
-		params := make([]ast.Type, len(n.Func.Params))
+		params := make([]Type, len(n.Func.Params))
 		for i, p := range n.Func.Params {
-			env.Table[p.Name] = p.Type
-			params[i] = p.Type
+			// Types of parameters are unknown at definition
+			t := NewVar()
+			env.Table[p.Name] = t
+			params[i] = t
 		}
 
 		// Infer return type of function from its body
@@ -156,20 +161,20 @@ func (env *Env) infer(e ast.Expr) (ast.Type, error) {
 			return nil, err
 		}
 
-		fun := &ast.FunType{
+		fun := &Fun{
 			Params: params,
 			Ret:    ret,
 		}
 
 		// n.Func.Type represents its function type. So unify it with
 		// inferred function type from its parameters and body.
-		if err = Unify(n.Func.Symbol.Type, fun); err != nil {
+		if err = Unify(fun, f); err != nil {
 			return nil, typeError(err, n)
 		}
 
 		return env.infer(n.Body)
 	case *ast.Apply:
-		args := make([]ast.Type, len(n.Args))
+		args := make([]Type, len(n.Args))
 		for i, a := range n.Args {
 			t, err := env.infer(a)
 			if err != nil {
@@ -180,8 +185,8 @@ func (env *Env) infer(e ast.Expr) (ast.Type, error) {
 
 		// Return type of callee is unknown in this point.
 		// So make a new type variable and allocate it as return type.
-		ret := ast.NewTypeVar()
-		fun := &ast.FunType{
+		ret := NewVar()
+		fun := &Fun{
 			Ret:    ret,
 			Params: args,
 		}
@@ -197,7 +202,7 @@ func (env *Env) infer(e ast.Expr) (ast.Type, error) {
 
 		return ret, nil
 	case *ast.Tuple:
-		elems := make([]ast.Type, len(n.Elems))
+		elems := make([]Type, len(n.Elems))
 		for i, e := range n.Elems {
 			t, err := env.infer(e)
 			if err != nil {
@@ -205,46 +210,48 @@ func (env *Env) infer(e ast.Expr) (ast.Type, error) {
 			}
 			elems[i] = t
 		}
-		return &ast.TupleType{Elems: elems}, nil
+		return &Tuple{Elems: elems}, nil
 	case *ast.LetTuple:
-		elems := make([]ast.Type, len(n.Symbols))
-		for i, d := range n.Symbols {
-			env.Table[d.Name] = d.Type
-			elems[i] = d.Type
+		elems := make([]Type, len(n.Symbols))
+		for i, sym := range n.Symbols {
+			// Bound elements' types are unknown in this point
+			t := NewVar()
+			env.Table[sym.Name] = t
+			elems[i] = t
 		}
 
 		// Bound value must be tuple
-		if err := env.checkNodeType(n.Bound, &ast.TupleType{Elems: elems}); err != nil {
+		if err := env.checkNodeType(n.Bound, &Tuple{Elems: elems}); err != nil {
 			return nil, err
 		}
 
 		return env.infer(n.Body)
 	case *ast.Array:
-		if err := env.checkNodeType(n.Size, ast.IntTypeVal); err != nil {
+		if err := env.checkNodeType(n.Size, IntType); err != nil {
 			return nil, err
 		}
 		elem, err := env.infer(n.Elem)
 		if err != nil {
 			return nil, err
 		}
-		return &ast.ArrayType{Elem: elem}, nil
+		return &Array{Elem: elem}, nil
 	case *ast.Get:
 		// Lhs of Get must be array but its element type is unknown.
 		// So introduce new type variable for it.
-		elem := ast.NewTypeVar()
-		array := &ast.ArrayType{Elem: elem}
+		elem := NewVar()
+		array := &Array{Elem: elem}
 
 		if err := env.checkNodeType(n.Array, array); err != nil {
 			return nil, err
 		}
 
-		if err := env.checkNodeType(n.Index, ast.IntTypeVal); err != nil {
+		if err := env.checkNodeType(n.Index, IntType); err != nil {
 			return nil, err
 		}
 
 		return elem, nil
 	case *ast.Put:
-		if err := env.checkNodeType(n.Index, ast.IntTypeVal); err != nil {
+		if err := env.checkNodeType(n.Index, IntType); err != nil {
 			return nil, err
 		}
 		assignee, err := env.infer(n.Assignee)
@@ -253,13 +260,13 @@ func (env *Env) infer(e ast.Expr) (ast.Type, error) {
 		}
 
 		// Type of assigned value must be the same as element type of the array
-		array := &ast.ArrayType{Elem: assignee}
+		array := &Array{Elem: assignee}
 		if err := env.checkNodeType(n.Array, array); err != nil {
 			return nil, err
 		}
 
 		// Assign to array does not have a value, so return unit type
-		return ast.UnitTypeVal, nil
+		return UnitType, nil
 	}
 	panic(fmt.Sprintf("Unreachable: %s %v %v", e.Name(), e.Pos(), e.End()))
 }

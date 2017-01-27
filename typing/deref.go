@@ -11,7 +11,7 @@ type typeVarDereferencer struct {
 	env    *Env
 }
 
-func (d *typeVarDereferencer) unwrapTypeVar(variable *ast.TypeVar) (ast.Type, bool) {
+func (d *typeVarDereferencer) unwrapVar(variable *Var) (Type, bool) {
 	if variable.Ref != nil {
 		r, ok := d.unwrap(variable.Ref)
 		if !ok {
@@ -37,10 +37,11 @@ func (d *typeVarDereferencer) unwrapTypeVar(variable *ast.TypeVar) (ast.Type, bo
 	//
 	// (Test case: testdata/basic/external_func_unknown_ret_type.ml)
 	for _, t := range d.env.Externals {
-		if v, ok := t.(*ast.TypeVar); ok && v.Ref != nil {
-			if f, ok := v.Ref.(*ast.FunType); ok && f.Ret == variable {
-				f.Ret = ast.UnitTypeVal
-				return ast.UnitTypeVal, true
+		if v, ok := t.(*Var); ok && v.Ref != nil {
+			if f, ok := v.Ref.(*Fun); ok && f.Ret == variable {
+				f.Ret = UnitType
+				variable.Ref = UnitType
+				return UnitType, true
 			}
 		}
 	}
@@ -48,9 +49,9 @@ func (d *typeVarDereferencer) unwrapTypeVar(variable *ast.TypeVar) (ast.Type, bo
 	return nil, false
 }
 
-func (d *typeVarDereferencer) unwrap(target ast.Type) (ast.Type, bool) {
+func (d *typeVarDereferencer) unwrap(target Type) (Type, bool) {
 	switch t := target.(type) {
-	case *ast.FunType:
+	case *Fun:
 		r, ok := d.unwrap(t.Ret)
 		if !ok {
 			return nil, false
@@ -63,7 +64,7 @@ func (d *typeVarDereferencer) unwrap(target ast.Type) (ast.Type, bool) {
 			}
 			t.Params[i] = p
 		}
-	case *ast.TupleType:
+	case *Tuple:
 		for i, elem := range t.Elems {
 			e, ok := d.unwrap(elem)
 			if !ok {
@@ -71,26 +72,34 @@ func (d *typeVarDereferencer) unwrap(target ast.Type) (ast.Type, bool) {
 			}
 			t.Elems[i] = e
 		}
-	case *ast.ArrayType:
+	case *Array:
 		e, ok := d.unwrap(t.Elem)
 		if !ok {
 			return nil, false
 		}
 		t.Elem = e
-	case *ast.TypeVar:
-		return d.unwrapTypeVar(t)
+	case *Var:
+		return d.unwrapVar(t)
 	}
 	return target, true
 }
 
 func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
-	t, ok := d.unwrap(sym.Type)
+	symType, ok := d.env.Table[sym.Name]
 	if !ok {
-		pos := node.Pos()
-		d.errors = append(d.errors, fmt.Sprintf("Cannot infer type of variable '%s' in node %s (line:%d, column:%d). Inferred type was '%s'", sym.Name, node.Name(), pos.Line, pos.Column, sym.Type.String()))
+		panic(fmt.Sprintf("Cannot dereference unknown symbol '%s'", sym.Name))
 		return
 	}
-	sym.Type = t
+
+	t, ok := d.unwrap(symType)
+	if !ok {
+		pos := node.Pos()
+		d.errors = append(d.errors, fmt.Sprintf("Cannot infer type of variable '%s' in node %s (line:%d, column:%d). Inferred type was '%s'", sym.Name, node.Name(), pos.Line, pos.Column, symType.String()))
+		return
+	}
+
+	// Also dereference type variable in symbol
+	d.env.Table[sym.Name] = t
 }
 
 func (d *typeVarDereferencer) Visit(node ast.Expr) ast.Visitor {
@@ -116,5 +125,8 @@ func (env *Env) DerefTypeVars(root ast.Expr) error {
 	if len(v.errors) > 0 {
 		return fmt.Errorf("Error while type inference (dereferencing type vars)\n%s", strings.Join(v.errors, "\n"))
 	}
+
+	// TODO?:
+	// Should dereference type variables in symbol tables?
 	return nil
 }

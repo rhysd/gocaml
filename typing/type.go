@@ -1,4 +1,4 @@
-package ast
+package typing
 
 import (
 	"fmt"
@@ -12,40 +12,40 @@ type Type interface {
 	String() string
 }
 
-type UnitType struct {
+type Unit struct {
 }
 
-func (t *UnitType) String() string {
+func (t *Unit) String() string {
 	return "()"
 }
 
-type BoolType struct {
+type Bool struct {
 }
 
-func (t *BoolType) String() string {
+func (t *Bool) String() string {
 	return "bool"
 }
 
-type IntType struct {
+type Int struct {
 }
 
-func (t *IntType) String() string {
+func (t *Int) String() string {
 	return "int"
 }
 
-type FloatType struct {
+type Float struct {
 }
 
-func (t *FloatType) String() string {
+func (t *Float) String() string {
 	return "float"
 }
 
-type FunType struct {
+type Fun struct {
 	Ret    Type
 	Params []Type
 }
 
-func (t *FunType) String() string {
+func (t *Fun) String() string {
 	params := make([]string, len(t.Params))
 	for i, p := range t.Params {
 		params[i] = p.String()
@@ -53,11 +53,11 @@ func (t *FunType) String() string {
 	return fmt.Sprintf("%s -> %s", strings.Join(params, " -> "), t.Ret.String())
 }
 
-type TupleType struct {
+type Tuple struct {
 	Elems []Type
 }
 
-func (t *TupleType) String() string {
+func (t *Tuple) String() string {
 	elems := make([]string, len(t.Elems))
 	for i, e := range t.Elems {
 		elems[i] = e.String()
@@ -65,20 +65,20 @@ func (t *TupleType) String() string {
 	return fmt.Sprintf("(%s)", strings.Join(elems, ", "))
 }
 
-type ArrayType struct {
+type Array struct {
 	Elem Type
 }
 
-func (t *ArrayType) String() string {
+func (t *Array) String() string {
 	return fmt.Sprintf("%s array", t.Elem.String())
 }
 
-type TypeVar struct {
+type Var struct {
 	ID  int
 	Ref Type
 }
 
-func (t *TypeVar) String() string {
+func (t *Var) String() string {
 	if t.Ref == nil {
 		return "(unknown)"
 	}
@@ -87,18 +87,18 @@ func (t *TypeVar) String() string {
 
 var (
 	// Make singleton type values because it doesn't have any contextual information
-	UnitTypeVal  = &UnitType{}
-	BoolTypeVal  = &BoolType{}
-	IntTypeVal   = &IntType{}
-	FloatTypeVal = &FloatType{}
+	UnitType  = &Unit{}
+	BoolType  = &Bool{}
+	IntType   = &Int{}
+	FloatType = &Float{}
 
 	// ID to identify type variables
 	typeVarID = 0
 )
 
-func NewTypeVar() *TypeVar {
+func NewVar() *Var {
 	typeVarID++
-	return &TypeVar{
+	return &Var{
 		ID:  typeVarID,
 		Ref: nil,
 	}

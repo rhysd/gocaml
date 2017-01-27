@@ -2,23 +2,22 @@ package typing
 
 import (
 	"github.com/pkg/errors"
-	"github.com/rhysd/gocaml/ast"
 )
 
 // Check cyclic dependency. When unifying t and u where t is type variable and
 // u is a type which contains t, it results in infinite-length type.
 // It should be reported as semantic error.
-func occur(v *ast.TypeVar, rhs ast.Type) bool {
+func occur(v *Var, rhs Type) bool {
 	switch t := rhs.(type) {
-	case *ast.TupleType:
+	case *Tuple:
 		for _, e := range t.Elems {
 			if occur(v, e) {
 				return true
 			}
 		}
-	case *ast.ArrayType:
+	case *Array:
 		return occur(v, t.Elem)
-	case *ast.FunType:
+	case *Fun:
 		if occur(v, t.Ret) {
 			return true
 		}
@@ -27,7 +26,7 @@ func occur(v *ast.TypeVar, rhs ast.Type) bool {
 				return true
 			}
 		}
-	case *ast.TypeVar:
+	case *Var:
 		if t.Ref != nil {
 			return occur(v, t.Ref)
 		}
@@ -35,7 +34,7 @@ func occur(v *ast.TypeVar, rhs ast.Type) bool {
 	return false
 }
 
-func unifyTuple(left, right *ast.TupleType) error {
+func unifyTuple(left, right *Tuple) error {
 	length := len(left.Elems)
 	if length != len(right.Elems) {
 		return errors.Errorf("Number of elements of tuple does not match between '%s' and '%s'", left.String(), right.String())
@@ -52,7 +51,7 @@ func unifyTuple(left, right *ast.TupleType) error {
 	return nil
 }
 
-func unifyFun(left, right *ast.FunType) error {
+func unifyFun(left, right *Fun) error {
 	if err := Unify(left.Ret, right.Ret); err != nil {
 		return errors.Wrapf(err, "On unifying functions' return types of '%s' and '%s'\n", left.String(), right.String())
 	}
@@ -73,9 +72,8 @@ func unifyFun(left, right *ast.FunType) error {
 	return nil
 }
 
-func unifyTypeVar(l *ast.TypeVar, right ast.Type) error {
-	switch r := right.(type) {
-	case *ast.TypeVar:
+func unifyVar(l *Var, right Type) error {
+	if r, ok := right.(*Var); ok {
 		if l.ID == r.ID {
 			return nil
 		}
@@ -94,46 +92,42 @@ func unifyTypeVar(l *ast.TypeVar, right ast.Type) error {
 	return nil
 }
 
-func Unify(left, right ast.Type) error {
+func Unify(left, right Type) error {
 	switch l := left.(type) {
-	case *ast.UnitType:
-		if _, ok := right.(*ast.UnitType); ok {
+	case *Unit:
+		if _, ok := right.(*Unit); ok {
 			return nil
 		}
-	case *ast.BoolType:
-		if _, ok := right.(*ast.BoolType); ok {
+	case *Bool:
+		if _, ok := right.(*Bool); ok {
 			return nil
 		}
-	case *ast.IntType:
-		if _, ok := right.(*ast.IntType); ok {
+	case *Int:
+		if _, ok := right.(*Int); ok {
 			return nil
 		}
-	case *ast.FloatType:
-		if _, ok := right.(*ast.FloatType); ok {
+	case *Float:
+		if _, ok := right.(*Float); ok {
 			return nil
 		}
-	case *ast.TupleType:
-		switch r := right.(type) {
-		case *ast.TupleType:
+	case *Tuple:
+		if r, ok := right.(*Tuple); ok {
 			return unifyTuple(l, r)
 		}
-	case *ast.ArrayType:
-		switch r := right.(type) {
-		case *ast.ArrayType:
+	case *Array:
+		if r, ok := right.(*Array); ok {
 			return Unify(l.Elem, r.Elem)
 		}
-	case *ast.FunType:
-		switch r := right.(type) {
-		case *ast.FunType:
+	case *Fun:
+		if r, ok := right.(*Fun); ok {
 			return unifyFun(l, r)
 		}
-	case *ast.TypeVar:
-		return unifyTypeVar(l, right)
+	case *Var:
+		return unifyVar(l, right)
 	}
 
-	switch v := right.(type) {
-	case *ast.TypeVar:
-		return unifyTypeVar(v, left)
+	if v, ok := right.(*Var); ok {
+		return unifyVar(v, left)
 	}
 
 	return errors.Errorf("Cannot unify types. Type mismatch between '%s' and '%s'", left.String(), right.String())
