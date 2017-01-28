@@ -151,7 +151,6 @@ exp:
 			$$ = nil
 		}
 
-
 fundef:
 	IDENT params EQUAL exp
 		{ $$ = &ast.FuncDef{ast.NewSymbol($1.Value()), $2, $4} }
@@ -163,11 +162,9 @@ params:
 		{ $$ = []*ast.Symbol{ast.NewSymbol($1.Value())} }
 
 args:
-	args parenless_exp
-		%prec prec_app
-		{ $$ = append($1, $2) }
+	parenless_exp args
+		{ $$ = append($2, $1) }
 	| parenless_exp
-		%prec prec_app
 		{ $$ = []ast.Expr{$1} }
 
 elems:
