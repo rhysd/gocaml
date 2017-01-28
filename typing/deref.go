@@ -85,21 +85,21 @@ func (d *typeVarDereferencer) unwrap(target Type) (Type, bool) {
 }
 
 func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
-	symType, ok := d.env.Table[sym.Name]
+	symType, ok := d.env.Table[sym.ID]
 	if !ok {
-		panic(fmt.Sprintf("Cannot dereference unknown symbol '%s'", sym.Name))
+		panic(fmt.Sprintf("Cannot dereference unknown symbol '%s'", sym.ID))
 		return
 	}
 
 	t, ok := d.unwrap(symType)
 	if !ok {
 		pos := node.Pos()
-		d.errors = append(d.errors, fmt.Sprintf("Cannot infer type of variable '%s' in node %s (line:%d, column:%d). Inferred type was '%s'", sym.Name, node.Name(), pos.Line, pos.Column, symType.String()))
+		d.errors = append(d.errors, fmt.Sprintf("Cannot infer type of variable '%s' in node %s (line:%d, column:%d). Inferred type was '%s'", sym.ID, node.Name(), pos.Line, pos.Column, symType.String()))
 		return
 	}
 
 	// Also dereference type variable in symbol
-	d.env.Table[sym.Name] = t
+	d.env.Table[sym.ID] = t
 }
 
 func (d *typeVarDereferencer) Visit(node ast.Expr) ast.Visitor {

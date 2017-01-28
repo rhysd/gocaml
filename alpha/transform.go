@@ -51,7 +51,7 @@ func (t *transformer) newID(n string) string {
 func (t *transformer) register(s *ast.Symbol) {
 	mapped := t.newID(s.Name)
 	t.current.vars[s.Name] = mapped
-	s.Transformed = mapped
+	s.ID = mapped
 }
 
 func (t *transformer) nest() *mapping {

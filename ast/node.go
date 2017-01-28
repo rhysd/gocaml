@@ -48,8 +48,8 @@ type Expr interface {
 // This struct cannot be replaced with string because there may be the
 // same name symbol.
 type Symbol struct {
-	Name        string
-	Transformed string
+	Name string
+	ID   string
 	// Other symbol attirbutes go here
 }
 

@@ -84,7 +84,7 @@ func unifyVar(l *Var, right Type) error {
 	}
 
 	if occur(l, right) {
-		return errors.Errorf("Cyclic dependency found in types. Type variable '%s' is contained in '%s'")
+		return errors.Errorf("Cyclic dependency found in types. Type variable '%s' is contained in '%s'\n")
 	}
 
 	// Assign rhs type to type variable when lhs type variable is unknown

@@ -106,6 +106,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		e, err := env.infer(n.Else)
 		if err != nil {
 			return nil, err
@@ -127,7 +128,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 			return nil, typeError(err, n.Body)
 		}
 
-		env.Table[n.Symbol.Name] = bound
+		env.Table[n.Symbol.ID] = bound
 		return env.infer(n.Body)
 	case *ast.Var:
 		if t, ok := env.Table[n.Ident]; ok {
@@ -144,14 +145,14 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 	case *ast.LetRec:
 		f := NewVar()
 		// Need to register function here because of recursive functions
-		env.Table[n.Func.Symbol.Name] = f
+		env.Table[n.Func.Symbol.ID] = f
 
 		// Register parameters of function as variables to table
 		params := make([]Type, len(n.Func.Params))
 		for i, p := range n.Func.Params {
 			// Types of parameters are unknown at definition
 			t := NewVar()
-			env.Table[p.Name] = t
+			env.Table[p.ID] = t
 			params[i] = t
 		}
 
@@ -216,7 +217,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		for i, sym := range n.Symbols {
 			// Bound elements' types are unknown in this point
 			t := NewVar()
-			env.Table[sym.Name] = t
+			env.Table[sym.ID] = t
 			elems[i] = t
 		}
 
