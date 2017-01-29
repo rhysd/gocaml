@@ -4,7 +4,7 @@ GoCaml
 
 GoCaml is a [MinCaml][] implementation in Go using [LLVM][]. MinCaml is a minimal subset of OCaml for educational purpose ([spec][MinCaml spec]).
 
-This project aims my practices for understanding type inference and introducing own intermediate language (IL) to own language.
+This project aims my practices for understanding type inference, closure transform and introducing own intermediate language (IL) to own language.
 
 Example:
 
@@ -20,13 +20,13 @@ print_int (gcd 21600 337500)
 
 - [x] Lexer -> ([doc][lexer doc])
 - [x] Parser with [goyacc][] -> ([doc][parser doc])
+- [x] Alpha transform ([doc][alpha transform doc])
 - [x] Type inference (Hindley Milner monomorphic type system) -> ([doc][typing doc])
+- [ ] Closure transform
 - [ ] GoCaml intermediate language (GCIL)
 - [ ] K nomarization from AST into GCIL
-- [x] Alpha transform ([doc][alpha transform doc])
-- [ ] Beta reduction
-- [ ] Closure transform
 - [ ] Optimizations
+  - [ ] Beta reduction
   - [ ] Inlining
   - [ ] Folding constants
   - [ ] Striping unused variables
@@ -36,6 +36,8 @@ print_int (gcd 21600 337500)
 
 - MinCaml assumes external symbols' types are `int` when it can't be inferred. GoCaml does not have such an assumption.
   GoCaml assumes unknown return type of external functions as `()` (`void` in C), but in other cases, falls into compilation error.
+  When you use nested external functions call, you need to clarify the return type of inner function call. For example, when `f` in
+  `g (f ())` returns `int`, you need to show it like `g ((f ()) + 0)`.
 - MinCaml allows `-` unary operator for float literal. So for example `-3.14` is valid but `-f` (where `f` is `float`) is not valid.
   GoCaml does not allow `-` unary operator for float values totally.
 
