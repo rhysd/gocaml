@@ -11,9 +11,6 @@ import (
 // should have its table. When some variable reference appears in code, try to find its definition from
 // the nested tables.
 
-type SymbolTable map[*ast.Symbol]Type
-type VarTable map[*ast.Var]Type
-
 type Env struct {
 	// Types for declarations. This is referred by type variables to resolve
 	// type variables' actual types

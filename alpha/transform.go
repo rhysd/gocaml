@@ -54,10 +54,12 @@ func (t *transformer) register(s *ast.Symbol) {
 	s.ID = mapped
 }
 
-func (t *transformer) nest() *mapping {
-	m := t.current
+func (t *transformer) nest() {
 	t.current = newMapping(t.current)
-	return m
+}
+
+func (t *transformer) pop() {
+	t.current = t.current.parent
 }
 
 func (t *transformer) Visit(node ast.Expr) ast.Visitor {
@@ -65,24 +67,24 @@ func (t *transformer) Visit(node ast.Expr) ast.Visitor {
 	case *ast.Let:
 		// At first, transform value bound to the variable
 		ast.Visit(t, n.Bound)
-		parent := t.nest()
+		t.nest()
 		t.register(n.Symbol)
 		ast.Visit(t, n.Body)
-		t.current = parent
+		t.pop()
 		return nil
 	case *ast.LetRec:
 		if s := duplicateSymbol(n.Func.Params); s != nil {
 			t.setDuplicateError(n, s.Name)
 			return nil
 		}
-		parent := t.nest()
+		t.nest()
 		for _, p := range n.Func.Params {
 			t.register(p)
 		}
 		ast.Visit(t, n.Func.Body)
 		t.register(n.Func.Symbol)
 		ast.Visit(t, n.Body)
-		t.current = parent
+		t.pop()
 		return nil
 	case *ast.LetTuple:
 		ast.Visit(t, n.Bound)
@@ -90,14 +92,14 @@ func (t *transformer) Visit(node ast.Expr) ast.Visitor {
 			t.setDuplicateError(n, s.Name)
 			return nil
 		}
-		parent := t.nest()
+		t.nest()
 		for _, e := range n.Symbols {
 			t.register(e)
 		}
 		ast.Visit(t, n.Body)
-		t.current = parent
+		t.pop()
 		return nil
-	case *ast.Var:
+	case *ast.VarRef:
 		mapped, ok := t.current.resolve(n.Ident)
 		if !ok {
 			// External symbol is ignored because name should be identical.

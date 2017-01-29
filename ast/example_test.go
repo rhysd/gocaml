@@ -34,7 +34,7 @@ func Example() {
 			Value: 42,
 		},
 		Body: &Add{
-			Left: &Var{
+			Left: &VarRef{
 				Token: &token.Token{},
 				Ident: "test",
 			},

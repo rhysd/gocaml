@@ -154,7 +154,7 @@ type (
 		Body     Expr
 	}
 
-	Var struct {
+	VarRef struct {
 		Token *token.Token
 		Ident string // TODO: Make *Symbol this because name will be transformed
 	}
@@ -181,7 +181,7 @@ type (
 		Body     Expr
 	}
 
-	Array struct {
+	ArrayCreate struct {
 		ArrayToken *token.Token
 		Size       Expr
 		Elem       Expr
@@ -318,10 +318,10 @@ func (e *Let) End() token.Position {
 	return e.Body.End()
 }
 
-func (e *Var) Pos() token.Position {
+func (e *VarRef) Pos() token.Position {
 	return e.Token.Start
 }
-func (e *Var) End() token.Position {
+func (e *VarRef) End() token.Position {
 	return e.Token.End
 }
 
@@ -356,10 +356,10 @@ func (e *LetTuple) End() token.Position {
 	return e.Body.End()
 }
 
-func (e *Array) Pos() token.Position {
+func (e *ArrayCreate) Pos() token.Position {
 	return e.ArrayToken.Start
 }
-func (e *Array) End() token.Position {
+func (e *ArrayCreate) End() token.Position {
 	return e.Elem.End()
 }
 
@@ -377,28 +377,28 @@ func (e *Put) End() token.Position {
 	return e.Assignee.End()
 }
 
-func (e *Unit) Name() string     { return "Unit" }
-func (e *Bool) Name() string     { return "Bool" }
-func (e *Int) Name() string      { return "Int" }
-func (e *Float) Name() string    { return "Float" }
-func (e *Not) Name() string      { return "Not" }
-func (e *Neg) Name() string      { return "Neg" }
-func (e *Add) Name() string      { return "Add" }
-func (e *Sub) Name() string      { return "Sub" }
-func (e *FNeg) Name() string     { return "FNeg" }
-func (e *FAdd) Name() string     { return "FAdd" }
-func (e *FSub) Name() string     { return "FSub" }
-func (e *FMul) Name() string     { return "FMul" }
-func (e *FDiv) Name() string     { return "FDiv" }
-func (e *Eq) Name() string       { return "Eq" }
-func (e *Less) Name() string     { return "Less" }
-func (e *If) Name() string       { return "If" }
-func (e *Let) Name() string      { return "Let" }
-func (e *Var) Name() string      { return "Var" }
-func (e *LetRec) Name() string   { return "LetRec" }
-func (e *Apply) Name() string    { return "Apply" }
-func (e *Tuple) Name() string    { return "Tuple" }
-func (e *LetTuple) Name() string { return "LetTuple" }
-func (e *Array) Name() string    { return "Array" }
-func (e *Get) Name() string      { return "Get" }
-func (e *Put) Name() string      { return "Put" }
+func (e *Unit) Name() string        { return "Unit" }
+func (e *Bool) Name() string        { return "Bool" }
+func (e *Int) Name() string         { return "Int" }
+func (e *Float) Name() string       { return "Float" }
+func (e *Not) Name() string         { return "Not" }
+func (e *Neg) Name() string         { return "Neg" }
+func (e *Add) Name() string         { return "Add" }
+func (e *Sub) Name() string         { return "Sub" }
+func (e *FNeg) Name() string        { return "FNeg" }
+func (e *FAdd) Name() string        { return "FAdd" }
+func (e *FSub) Name() string        { return "FSub" }
+func (e *FMul) Name() string        { return "FMul" }
+func (e *FDiv) Name() string        { return "FDiv" }
+func (e *Eq) Name() string          { return "Eq" }
+func (e *Less) Name() string        { return "Less" }
+func (e *If) Name() string          { return "If" }
+func (e *Let) Name() string         { return "Let" }
+func (e *VarRef) Name() string      { return "VarRef" }
+func (e *LetRec) Name() string      { return "LetRec" }
+func (e *Apply) Name() string       { return "Apply" }
+func (e *Tuple) Name() string       { return "Tuple" }
+func (e *LetTuple) Name() string    { return "LetTuple" }
+func (e *ArrayCreate) Name() string { return "ArrayCreate" }
+func (e *Get) Name() string         { return "Get" }
+func (e *Put) Name() string         { return "Put" }

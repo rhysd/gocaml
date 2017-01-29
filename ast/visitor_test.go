@@ -13,7 +13,7 @@ var testTree = &Let{
 		Value: 42,
 	},
 	Body: &Add{
-		Left: &Var{
+		Left: &VarRef{
 			Token: &token.Token{},
 			Ident: "test",
 		},
@@ -65,10 +65,10 @@ func TestVisitorCancelVisit(t *testing.T) {
 
 func TestVisitorFind(t *testing.T) {
 	found := Find(testTree, func(e Expr) bool {
-		return e.Name() == "Var"
+		return e.Name() == "VarRef"
 	})
 	if !found {
-		t.Errorf("'Var' node was not found for test AST")
+		t.Errorf("'VarRef' node was not found for test AST")
 	}
 	found = Find(testTree, func(e Expr) bool {
 		_, ok := e.(*Not)

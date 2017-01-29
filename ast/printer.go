@@ -77,7 +77,7 @@ func printExpr(e Expr, indent int) {
 	case *LetTuple:
 		printExpr(n.Bound, i)
 		printExpr(n.Body, i)
-	case *Array:
+	case *ArrayCreate:
 		printExpr(n.Size, i)
 		printExpr(n.Elem, i)
 	case *Get:

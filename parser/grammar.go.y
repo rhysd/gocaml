@@ -144,7 +144,7 @@ exp:
 		{ $$ = &ast.Let{$2, ast.NewSymbol(genTempId()), $1, $3} }
 	| ARRAY_CREATE parenless_exp parenless_exp
 		%prec prec_app
-		{ $$ = &ast.Array{$1, $2, $3} }
+		{ $$ = &ast.ArrayCreate{$1, $2, $3} }
 	| ILLEGAL error
 		{
 			yylex.Error(fmt.Sprintf("Parsing illegal token: %s", $1.String()))
@@ -210,7 +210,7 @@ parenless_exp:
 			}
 		}
 	| IDENT
-		{ $$ = &ast.Var{$1, $1.Value()} }
+		{ $$ = &ast.VarRef{$1, $1.Value()} }
 	| parenless_exp DOT LPAREN exp RPAREN
 		{ $$ = &ast.Get{$1, $4} }
 

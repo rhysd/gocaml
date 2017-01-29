@@ -62,7 +62,7 @@ func Visit(v Visitor, e Expr) {
 	case *LetTuple:
 		Visit(v, n.Bound)
 		Visit(v, n.Body)
-	case *Array:
+	case *ArrayCreate:
 		Visit(v, n.Size)
 		Visit(v, n.Elem)
 	case *Get:

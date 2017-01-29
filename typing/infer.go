@@ -138,7 +138,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 
 		env.Table[n.Symbol.ID] = bound
 		return env.infer(n.Body)
-	case *ast.Var:
+	case *ast.VarRef:
 		if t, ok := env.Table[n.Ident]; ok {
 			return t, nil
 		}
@@ -235,7 +235,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		}
 
 		return env.infer(n.Body)
-	case *ast.Array:
+	case *ast.ArrayCreate:
 		if err := env.checkNodeType("size at array creation", n.Size, IntType); err != nil {
 			return nil, err
 		}
