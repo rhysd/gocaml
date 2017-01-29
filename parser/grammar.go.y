@@ -210,7 +210,7 @@ parenless_exp:
 			}
 		}
 	| IDENT
-		{ $$ = &ast.VarRef{$1, $1.Value()} }
+		{ $$ = &ast.VarRef{$1, ast.NewSymbol($1.Value())} }
 	| parenless_exp DOT LPAREN exp RPAREN
 		{ $$ = &ast.Get{$1, $4} }
 

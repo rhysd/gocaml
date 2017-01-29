@@ -85,13 +85,13 @@ func (d *typeVarDereferencer) unwrap(target Type) (Type, bool) {
 }
 
 func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
-	symType, ok := d.env.Table[sym.ID]
+	symType, ok := d.env.Table[sym.Name]
 	if !ok {
-		if !strings.HasPrefix(sym.Name, "$unused") {
+		if !strings.HasPrefix(sym.DisplayName, "$unused") {
 			// Parser expands `foo; bar` to `let $unused = foo in bar`. In this situation,
 			// type of the variable will never be determined because it's unused.
 			// So skipping it in order to avoid unknown type error for the unused variable.
-			panic(fmt.Sprintf("Cannot dereference unknown symbol '%s'", sym.ID))
+			panic(fmt.Sprintf("Cannot dereference unknown symbol '%s'", sym.Name))
 		}
 		return
 	}
@@ -99,12 +99,12 @@ func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
 	t, ok := d.unwrap(symType)
 	if !ok {
 		pos := node.Pos()
-		d.errors = append(d.errors, fmt.Sprintf("Cannot infer type of variable '%s' in node %s (line:%d, column:%d). Inferred type was '%s'", sym.ID, node.Name(), pos.Line, pos.Column, symType.String()))
+		d.errors = append(d.errors, fmt.Sprintf("Cannot infer type of variable '%s' in node %s (line:%d, column:%d). Inferred type was '%s'", sym.Name, node.Name(), pos.Line, pos.Column, symType.String()))
 		return
 	}
 
 	// Also dereference type variable in symbol
-	d.env.Table[sym.ID] = t
+	d.env.Table[sym.Name] = t
 }
 
 func (d *typeVarDereferencer) Visit(node ast.Expr) ast.Visitor {

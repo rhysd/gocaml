@@ -16,7 +16,7 @@ func duplicateSymbol(symbols []*ast.Symbol) *ast.Symbol {
 	len := len(symbols)
 	for i, left := range symbols {
 		for _, right := range symbols[i+1 : len] {
-			if left.Name == right.Name {
+			if left.DisplayName == right.DisplayName {
 				return left
 			}
 		}
@@ -49,9 +49,8 @@ func (t *transformer) newID(n string) string {
 }
 
 func (t *transformer) register(s *ast.Symbol) {
-	mapped := t.newID(s.Name)
-	t.current.vars[s.Name] = mapped
-	s.ID = mapped
+	s.Name = t.newID(s.DisplayName)
+	t.current.vars[s.DisplayName] = s
 }
 
 func (t *transformer) nest() {
@@ -74,7 +73,7 @@ func (t *transformer) Visit(node ast.Expr) ast.Visitor {
 		return nil
 	case *ast.LetRec:
 		if s := duplicateSymbol(n.Func.Params); s != nil {
-			t.setDuplicateError(n, s.Name)
+			t.setDuplicateError(n, s.DisplayName)
 			return nil
 		}
 		t.nest()
@@ -91,7 +90,7 @@ func (t *transformer) Visit(node ast.Expr) ast.Visitor {
 	case *ast.LetTuple:
 		ast.Visit(t, n.Bound)
 		if s := duplicateSymbol(n.Symbols); s != nil {
-			t.setDuplicateError(n, s.Name)
+			t.setDuplicateError(n, s.DisplayName)
 			return nil
 		}
 		t.nest()
@@ -102,12 +101,12 @@ func (t *transformer) Visit(node ast.Expr) ast.Visitor {
 		t.pop()
 		return nil
 	case *ast.VarRef:
-		mapped, ok := t.current.resolve(n.Ident)
+		mapped, ok := t.current.resolve(n.Symbol.DisplayName)
 		if !ok {
 			// External symbol is ignored because name should be identical.
 			return nil
 		}
-		n.Ident = mapped
+		n.Symbol = mapped
 		return nil
 	}
 

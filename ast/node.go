@@ -48,8 +48,8 @@ type Expr interface {
 // This struct cannot be replaced with string because there may be the
 // same name symbol.
 type Symbol struct {
-	Name string
-	ID   string
+	DisplayName string
+	Name        string
 	// Other symbol attirbutes go here
 }
 
@@ -155,8 +155,8 @@ type (
 	}
 
 	VarRef struct {
-		Token *token.Token
-		Ident string // TODO: Make *Symbol this because name will be transformed
+		Token  *token.Token
+		Symbol *Symbol
 	}
 
 	LetRec struct {

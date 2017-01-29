@@ -124,7 +124,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 			return nil, err
 		}
 
-		if strings.HasPrefix(n.Symbol.Name, "$unused") {
+		if strings.HasPrefix(n.Symbol.DisplayName, "$unused") {
 			// Parser expands `foo; bar` to `let $unused = foo in bar`. In this situation,
 			// type of the variable will never be determined because it's unused.
 			// So skipping it in order to avoid unknown type error for the unused variable.
@@ -133,34 +133,34 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 
 		t := NewVar()
 		if err = Unify(t, bound); err != nil {
-			return nil, typeError(err, fmt.Sprintf("type of variable '%s'", n.Symbol.Name), n.Body.Pos())
+			return nil, typeError(err, fmt.Sprintf("type of variable '%s'", n.Symbol.DisplayName), n.Body.Pos())
 		}
 
-		env.Table[n.Symbol.ID] = bound
+		env.Table[n.Symbol.Name] = bound
 		return env.infer(n.Body)
 	case *ast.VarRef:
-		if t, ok := env.Table[n.Ident]; ok {
+		if t, ok := env.Table[n.Symbol.Name]; ok {
 			return t, nil
 		}
-		if t, ok := env.Externals[n.Ident]; ok {
+		if t, ok := env.Externals[n.Symbol.Name]; ok {
 			return t, nil
 		}
 		// Assume as free variable. If free variable's type is not identified,
 		// It falls into compilation error
 		t := NewVar()
-		env.Externals[n.Ident] = t
+		env.Externals[n.Symbol.DisplayName] = t
 		return t, nil
 	case *ast.LetRec:
 		f := NewVar()
 		// Need to register function here because of recursive functions
-		env.Table[n.Func.Symbol.ID] = f
+		env.Table[n.Func.Symbol.Name] = f
 
 		// Register parameters of function as variables to table
 		params := make([]Type, len(n.Func.Params))
 		for i, p := range n.Func.Params {
 			// Types of parameters are unknown at definition
 			t := NewVar()
-			env.Table[p.ID] = t
+			env.Table[p.Name] = t
 			params[i] = t
 		}
 
@@ -178,7 +178,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		// n.Func.Type represents its function type. So unify it with
 		// inferred function type from its parameters and body.
 		if err = Unify(fun, f); err != nil {
-			return nil, typeError(err, fmt.Sprintf("function '%s'", n.Func.Symbol.Name), n.Pos())
+			return nil, typeError(err, fmt.Sprintf("function '%s'", n.Func.Symbol.DisplayName), n.Pos())
 		}
 
 		return env.infer(n.Body)
@@ -225,7 +225,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		for i, sym := range n.Symbols {
 			// Bound elements' types are unknown in this point
 			t := NewVar()
-			env.Table[sym.ID] = t
+			env.Table[sym.Name] = t
 			elems[i] = t
 		}
 

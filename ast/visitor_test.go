@@ -14,8 +14,8 @@ var testTree = &Let{
 	},
 	Body: &Add{
 		Left: &VarRef{
-			Token: &token.Token{},
-			Ident: "test",
+			Token:  &token.Token{},
+			Symbol: NewSymbol("test"),
 		},
 		Right: &Float{
 			Token: &token.Token{},
