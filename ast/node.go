@@ -1,6 +1,7 @@
 package ast
 
 import (
+	"fmt"
 	"github.com/rhysd/gocaml/token"
 )
 
@@ -377,28 +378,46 @@ func (e *Put) End() token.Position {
 	return e.Assignee.End()
 }
 
-func (e *Unit) Name() string        { return "Unit" }
-func (e *Bool) Name() string        { return "Bool" }
-func (e *Int) Name() string         { return "Int" }
-func (e *Float) Name() string       { return "Float" }
-func (e *Not) Name() string         { return "Not" }
-func (e *Neg) Name() string         { return "Neg" }
-func (e *Add) Name() string         { return "Add" }
-func (e *Sub) Name() string         { return "Sub" }
-func (e *FNeg) Name() string        { return "FNeg" }
-func (e *FAdd) Name() string        { return "FAdd" }
-func (e *FSub) Name() string        { return "FSub" }
-func (e *FMul) Name() string        { return "FMul" }
-func (e *FDiv) Name() string        { return "FDiv" }
-func (e *Eq) Name() string          { return "Eq" }
-func (e *Less) Name() string        { return "Less" }
-func (e *If) Name() string          { return "If" }
-func (e *Let) Name() string         { return "Let" }
-func (e *VarRef) Name() string      { return "VarRef" }
-func (e *LetRec) Name() string      { return "LetRec" }
-func (e *Apply) Name() string       { return "Apply" }
-func (e *Tuple) Name() string       { return "Tuple" }
-func (e *LetTuple) Name() string    { return "LetTuple" }
+func (e *Unit) Name() string   { return "Unit" }
+func (e *Bool) Name() string   { return "Bool" }
+func (e *Int) Name() string    { return "Int" }
+func (e *Float) Name() string  { return "Float" }
+func (e *Not) Name() string    { return "Not" }
+func (e *Neg) Name() string    { return "Neg" }
+func (e *Add) Name() string    { return "Add" }
+func (e *Sub) Name() string    { return "Sub" }
+func (e *FNeg) Name() string   { return "FNeg" }
+func (e *FAdd) Name() string   { return "FAdd" }
+func (e *FSub) Name() string   { return "FSub" }
+func (e *FMul) Name() string   { return "FMul" }
+func (e *FDiv) Name() string   { return "FDiv" }
+func (e *Eq) Name() string     { return "Eq" }
+func (e *Less) Name() string   { return "Less" }
+func (e *If) Name() string     { return "If" }
+func (e *Let) Name() string    { return fmt.Sprintf("Let (%s)", e.Symbol.DisplayName) }
+func (e *VarRef) Name() string { return fmt.Sprintf("VarRef (%s)", e.Symbol.DisplayName) }
+func (e *LetRec) Name() string {
+	if len(e.Func.Params) == 0 {
+		panic("LetTuple's symbols field must not be empty")
+	}
+	params := e.Func.Params[0].DisplayName
+	for _, s := range e.Func.Params[1:] {
+		params = fmt.Sprintf("%s, %s", params, s.DisplayName)
+	}
+	return fmt.Sprintf("LetRec (fun %s %s)", e.Func.Symbol.DisplayName, params)
+}
+func (e *Apply) Name() string { return "Apply" }
+func (e *Tuple) Name() string { return "Tuple" }
+func (e *LetTuple) Name() string {
+	if len(e.Symbols) == 0 {
+		panic("LetTuple's symbols field must not be empty")
+	}
+	vars := e.Symbols[0].DisplayName
+	for _, s := range e.Symbols[1:] {
+		vars = fmt.Sprintf("%s, %s", vars, s.DisplayName)
+	}
+	return fmt.Sprintf("LetTuple (%s)", vars)
+}
 func (e *ArrayCreate) Name() string { return "ArrayCreate" }
 func (e *Get) Name() string         { return "Get" }
 func (e *Put) Name() string         { return "Put" }
