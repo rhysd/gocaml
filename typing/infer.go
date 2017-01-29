@@ -4,25 +4,25 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/rhysd/gocaml/ast"
+	"github.com/rhysd/gocaml/token"
 )
 
-func typeError(err error, node ast.Expr) error {
-	pos := node.Pos()
-	return errors.Wrapf(err, "Type error at node '%s' (line:%d, column:%d)\n", node.Name(), pos.Line, pos.Column)
+func typeError(err error, where string, pos token.Position) error {
+	return errors.Wrapf(err, "Type error: %s (line:%d, column:%d)\n", where, pos.Line, pos.Column)
 }
 
-func (env *Env) checkNodeType(node ast.Expr, expected Type) error {
+func (env *Env) checkNodeType(where string, node ast.Expr, expected Type) error {
 	t, err := env.infer(node)
 	if err != nil {
 		return err
 	}
 	if err = Unify(expected, t); err != nil {
-		return typeError(err, node)
+		return typeError(err, fmt.Sprintf("%s must be '%s'", where, expected.String()), node.Pos())
 	}
 	return nil
 }
 
-func (env *Env) inferArithmeticBinOp(left, right ast.Expr, operand Type) (Type, error) {
+func (env *Env) inferArithmeticBinOp(op string, left, right ast.Expr, operand Type) (Type, error) {
 	l, err := env.infer(left)
 	if err != nil {
 		return nil, err
@@ -32,16 +32,16 @@ func (env *Env) inferArithmeticBinOp(left, right ast.Expr, operand Type) (Type, 
 		return nil, err
 	}
 	if err = Unify(operand, l); err != nil {
-		return nil, typeError(err, left)
+		return nil, typeError(err, fmt.Sprintf("left hand of operator '%s' must be %s", op, operand.String()), left.Pos())
 	}
 	if err = Unify(operand, r); err != nil {
-		return nil, typeError(err, right)
+		return nil, typeError(err, fmt.Sprintf("right hand of operator '%s' must be %s", op, operand.String()), right.Pos())
 	}
 	// Returns the same type as operands
 	return operand, nil
 }
 
-func (env *Env) inferRelationalBinOp(left, right ast.Expr) (Type, error) {
+func (env *Env) inferRelationalBinOp(op string, left, right ast.Expr) (Type, error) {
 	l, err := env.infer(left)
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (env *Env) inferRelationalBinOp(left, right ast.Expr) (Type, error) {
 		return nil, err
 	}
 	if err = Unify(l, r); err != nil {
-		return nil, typeError(err, left)
+		return nil, typeError(err, fmt.Sprintf("type mismatch of operands at rational operator '%s'", op), left.Pos())
 	}
 	return BoolType, nil
 }
@@ -67,38 +67,38 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 	case *ast.Bool:
 		return BoolType, nil
 	case *ast.Not:
-		if err := env.checkNodeType(n.Child, BoolType); err != nil {
+		if err := env.checkNodeType("operand of operator 'not'", n.Child, BoolType); err != nil {
 			return nil, err
 		}
 		return BoolType, nil
 	case *ast.Neg:
-		if err := env.checkNodeType(n.Child, IntType); err != nil {
+		if err := env.checkNodeType("operand of unary operator '-'", n.Child, IntType); err != nil {
 			return nil, err
 		}
 		return IntType, nil
 	case *ast.Add:
-		return env.inferArithmeticBinOp(n.Left, n.Right, IntType)
+		return env.inferArithmeticBinOp("+", n.Left, n.Right, IntType)
 	case *ast.Sub:
-		return env.inferArithmeticBinOp(n.Left, n.Right, IntType)
+		return env.inferArithmeticBinOp("-", n.Left, n.Right, IntType)
 	case *ast.FNeg:
-		if err := env.checkNodeType(n.Child, FloatType); err != nil {
+		if err := env.checkNodeType("operand of unary operator '-.'", n.Child, FloatType); err != nil {
 			return nil, err
 		}
 		return FloatType, nil
 	case *ast.FAdd:
-		return env.inferArithmeticBinOp(n.Left, n.Right, FloatType)
+		return env.inferArithmeticBinOp("+.", n.Left, n.Right, FloatType)
 	case *ast.FSub:
-		return env.inferArithmeticBinOp(n.Left, n.Right, FloatType)
+		return env.inferArithmeticBinOp("-.", n.Left, n.Right, FloatType)
 	case *ast.FMul:
-		return env.inferArithmeticBinOp(n.Left, n.Right, FloatType)
+		return env.inferArithmeticBinOp("*.", n.Left, n.Right, FloatType)
 	case *ast.FDiv:
-		return env.inferArithmeticBinOp(n.Left, n.Right, FloatType)
+		return env.inferArithmeticBinOp("/.", n.Left, n.Right, FloatType)
 	case *ast.Eq:
-		return env.inferRelationalBinOp(n.Left, n.Right)
+		return env.inferRelationalBinOp("=", n.Left, n.Right)
 	case *ast.Less:
-		return env.inferRelationalBinOp(n.Left, n.Right)
+		return env.inferRelationalBinOp("<", n.Left, n.Right)
 	case *ast.If:
-		if err := env.checkNodeType(n.Cond, BoolType); err != nil {
+		if err := env.checkNodeType("condition of 'if' expression", n.Cond, BoolType); err != nil {
 			return nil, err
 		}
 
@@ -113,7 +113,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		}
 
 		if err = Unify(t, e); err != nil {
-			return nil, typeError(err, n)
+			return nil, typeError(err, "mismatch of types for 'then' clause and 'else' clause in 'if' expression", n.Pos())
 		}
 
 		return t, nil
@@ -125,7 +125,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 
 		t := NewVar()
 		if err = Unify(t, bound); err != nil {
-			return nil, typeError(err, n.Body)
+			return nil, typeError(err, fmt.Sprintf("type of variable '%s'", n.Symbol.Name), n.Body.Pos())
 		}
 
 		env.Table[n.Symbol.ID] = bound
@@ -170,7 +170,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		// n.Func.Type represents its function type. So unify it with
 		// inferred function type from its parameters and body.
 		if err = Unify(fun, f); err != nil {
-			return nil, typeError(err, n)
+			return nil, typeError(err, fmt.Sprintf("function '%s'", n.Func.Symbol.Name), n.Pos())
 		}
 
 		return env.infer(n.Body)
@@ -198,7 +198,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		}
 
 		if err = Unify(callee, fun); err != nil {
-			return nil, typeError(err, n)
+			return nil, typeError(err, "type of called function", n.Pos())
 		}
 
 		return ret, nil
@@ -222,13 +222,13 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		}
 
 		// Bound value must be tuple
-		if err := env.checkNodeType(n.Bound, &Tuple{Elems: elems}); err != nil {
+		if err := env.checkNodeType("bound tuple value at 'let'", n.Bound, &Tuple{Elems: elems}); err != nil {
 			return nil, err
 		}
 
 		return env.infer(n.Body)
 	case *ast.Array:
-		if err := env.checkNodeType(n.Size, IntType); err != nil {
+		if err := env.checkNodeType("size at array creation", n.Size, IntType); err != nil {
 			return nil, err
 		}
 		elem, err := env.infer(n.Elem)
@@ -242,17 +242,17 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		elem := NewVar()
 		array := &Array{Elem: elem}
 
-		if err := env.checkNodeType(n.Array, array); err != nil {
+		if err := env.checkNodeType("array value in index access", n.Array, array); err != nil {
 			return nil, err
 		}
 
-		if err := env.checkNodeType(n.Index, IntType); err != nil {
+		if err := env.checkNodeType("index access to array", n.Index, IntType); err != nil {
 			return nil, err
 		}
 
 		return elem, nil
 	case *ast.Put:
-		if err := env.checkNodeType(n.Index, IntType); err != nil {
+		if err := env.checkNodeType("index at assignment to an element of array", n.Index, IntType); err != nil {
 			return nil, err
 		}
 		assignee, err := env.infer(n.Assignee)
@@ -262,7 +262,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 
 		// Type of assigned value must be the same as element type of the array
 		array := &Array{Elem: assignee}
-		if err := env.checkNodeType(n.Array, array); err != nil {
+		if err := env.checkNodeType("assignment to an element of array", n.Array, array); err != nil {
 			return nil, err
 		}
 
