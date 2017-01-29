@@ -81,8 +81,8 @@ func (t *transformer) Visit(node ast.Expr) ast.Visitor {
 		for _, p := range n.Func.Params {
 			t.register(p)
 		}
-		ast.Visit(t, n.Func.Body)
 		t.register(n.Func.Symbol)
+		ast.Visit(t, n.Func.Body)
 		ast.Visit(t, n.Body)
 		t.pop()
 		return nil
