@@ -31,9 +31,9 @@ func Example() {
 		panic(err)
 	}
 
-	// Now all symbols in the AST has unique names
+	// Now all symbols in the AST have unique names
 	// e.g. abc -> abc$t1
-	// And now all variable references (VarRef) points symbol instancer of the definition node.
+	// And now all variable references (VarRef) point a symbol instance of the definition node.
 	// By checking the pointer of symbol, we can know where the variable reference are defined
 	// in source.
 	fmt.Printf("%v\n", root)

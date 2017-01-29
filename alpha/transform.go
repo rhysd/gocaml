@@ -50,7 +50,7 @@ func (t *transformer) newID(n string) string {
 
 func (t *transformer) register(s *ast.Symbol) {
 	s.Name = t.newID(s.DisplayName)
-	t.current.vars[s.DisplayName] = s
+	t.current.add(s.DisplayName, s)
 }
 
 func (t *transformer) nest() {

@@ -18,11 +18,18 @@ SRCS := \
 	alpha/mapping.go \
 
 TESTS := \
-	lexer/lexer_test.go \
-	parser/parser_test.go \
+	alpha/example_test.go \
+	ast/example_test.go \
 	ast/visitor_test.go \
+	compiler/example_test.go \
+	lexer/example_test.go \
+	lexer/lexer_test.go \
+	parser/example_test.go \
+	parser/parser_test.go \
 	token/source_test.go \
 	token/token_test.go \
+	typing/env_test.go \
+	typing/example_test.go \
 	typing/infer_test.go \
 
 all: build test
