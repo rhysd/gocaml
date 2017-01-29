@@ -65,7 +65,8 @@ func TestVisitorCancelVisit(t *testing.T) {
 
 func TestVisitorFind(t *testing.T) {
 	found := Find(testTree, func(e Expr) bool {
-		return e.Name() == "VarRef"
+		_, ok := e.(*VarRef)
+		return ok
 	})
 	if !found {
 		t.Errorf("'VarRef' node was not found for test AST")
