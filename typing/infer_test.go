@@ -1,12 +1,45 @@
 package typing
 
 import (
+	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/token"
 	"strings"
 	"testing"
 )
+
+func TestEdgeCases(t *testing.T) {
+	testcases := []struct {
+		what string
+		code string
+	}{
+		{
+			what: "param and function have the same name",
+			code: "let rec f f = f + 1 in print_int (f 10)",
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.what, func(t *testing.T) {
+			s := token.NewDummySource(tc.code)
+			l := lexer.NewLexer(s)
+			go l.Lex()
+			e, err := parser.Parse(l.Tokens)
+			if err != nil {
+				panic(err)
+			}
+			if err = alpha.Transform(e); err != nil {
+				panic(err)
+			}
+			env := NewEnv()
+			_, err = env.infer(e)
+			if err != nil {
+				t.Fatalf("Type check raised an error for code '%s': %s", tc.code, err.Error())
+			}
+		})
+	}
+}
 
 func TestInvalidExpressions(t *testing.T) {
 	testcases := []struct {
@@ -148,6 +181,9 @@ func TestInvalidExpressions(t *testing.T) {
 			go l.Lex()
 			e, err := parser.Parse(l.Tokens)
 			if err != nil {
+				panic(err)
+			}
+			if err = alpha.Transform(e); err != nil {
 				panic(err)
 			}
 			env := NewEnv()

@@ -78,13 +78,15 @@ func (t *transformer) Visit(node ast.Expr) ast.Visitor {
 			return nil
 		}
 		t.nest()
+		t.register(n.Func.Symbol)
+		t.nest()
 		for _, p := range n.Func.Params {
 			t.register(p)
 		}
-		t.register(n.Func.Symbol)
 		ast.Visit(t, n.Func.Body)
+		t.pop() // Pop parameters scope
 		ast.Visit(t, n.Body)
-		t.pop()
+		t.pop() // Pop function scope
 		return nil
 	case *ast.LetTuple:
 		ast.Visit(t, n.Bound)

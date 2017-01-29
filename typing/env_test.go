@@ -2,6 +2,7 @@ package typing
 
 import (
 	"fmt"
+	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/token"
@@ -36,6 +37,10 @@ func TestTypeCheckOK(t *testing.T) {
 			root, err := parser.Parse(l.Tokens)
 			if err != nil {
 				panic(root)
+			}
+
+			if err = alpha.Transform(root); err != nil {
+				panic(err)
 			}
 
 			env := NewEnv()
