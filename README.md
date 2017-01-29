@@ -23,7 +23,7 @@ print_int (gcd 21600 337500)
 - [x] Type inference (Hindley Milner monomorphic type system) -> ([doc][typing doc])
 - [ ] GoCaml intermediate language (GCIL)
 - [ ] K nomarization from AST into GCIL
-- [x] Alpha transform ([doc][alpha transform spec])
+- [x] Alpha transform ([doc][alpha transform doc])
 - [ ] Beta reduction
 - [ ] Closure transform
 - [ ] Optimizations
