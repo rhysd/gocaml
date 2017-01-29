@@ -219,7 +219,7 @@ parenless_exp:
 var genCount = 0
 func genTempId() string {
 	genCount += 1
-	return fmt.Sprintf("$tmp%d", genCount)
+	return fmt.Sprintf("$unused%d", genCount)
 }
 
 // vim: noet

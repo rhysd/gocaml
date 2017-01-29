@@ -87,7 +87,12 @@ func (d *typeVarDereferencer) unwrap(target Type) (Type, bool) {
 func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
 	symType, ok := d.env.Table[sym.ID]
 	if !ok {
-		panic(fmt.Sprintf("Cannot dereference unknown symbol '%s'", sym.ID))
+		if !strings.HasPrefix(sym.Name, "$unused") {
+			// Parser expands `foo; bar` to `let $unused = foo in bar`. In this situation,
+			// type of the variable will never be determined because it's unused.
+			// So skipping it in order to avoid unknown type error for the unused variable.
+			panic(fmt.Sprintf("Cannot dereference unknown symbol '%s'", sym.ID))
+		}
 		return
 	}
 

@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rhysd/gocaml/ast"
 	"github.com/rhysd/gocaml/token"
+	"strings"
 )
 
 func typeError(err error, where string, pos token.Position) error {
@@ -121,6 +122,13 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		bound, err := env.infer(n.Bound)
 		if err != nil {
 			return nil, err
+		}
+
+		if strings.HasPrefix(n.Symbol.Name, "$unused") {
+			// Parser expands `foo; bar` to `let $unused = foo in bar`. In this situation,
+			// type of the variable will never be determined because it's unused.
+			// So skipping it in order to avoid unknown type error for the unused variable.
+			return env.infer(n.Body)
 		}
 
 		t := NewVar()
