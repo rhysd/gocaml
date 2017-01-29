@@ -2,7 +2,7 @@ GoCaml
 ======
 [![Build Status][]][Travis CI]
 
-GoCaml is a [MinCaml][] implementation in Go using [LLVM][]. MinCaml is an educational compiler for a minimal subset of OCaml. ([spec][MinCaml spec])
+GoCaml is a [MinCaml][] implementation in Go using [LLVM][]. MinCaml is a minimal subset of OCaml for educational purpose ([spec][MinCaml spec]).
 
 This project aims my practices for understanding type inference and introducing own intermediate language (IL) to own language.
 
@@ -18,12 +18,12 @@ print_int (gcd 21600 337500)
 
 ## Tasks
 
-- [x] Lexer -> ([lexer doc][])
-- [x] Parser with [goyacc][] -> ([parser doc][])
-- [x] Type inference (Hindley Milner monomorphic type system) -> ([typing doc][])
+- [x] Lexer -> ([doc][lexer doc])
+- [x] Parser with [goyacc][] -> ([doc][parser doc])
+- [x] Type inference (Hindley Milner monomorphic type system) -> ([doc][typing doc])
 - [ ] GoCaml intermediate language (GCIL)
 - [ ] K nomarization from AST into GCIL
-- [ ] Alpha transform
+- [x] Alpha transform ([doc][alpha transform spec])
 - [ ] Beta reduction
 - [ ] Closure transform
 - [ ] Optimizations
@@ -59,4 +59,5 @@ Or clone this repository and execute `make` in the directory.
 [lexer doc]: https://godoc.org/github.com/rhysd/gocaml/lexer
 [parser doc]: https://godoc.org/github.com/rhysd/gocaml/parser
 [typing doc]: https://godoc.org/github.com/rhysd/gocaml/typing
+[alpha transform doc]: https://godoc.org/github.com/rhysd/gocaml/alpha
 [MinCaml spec]: http://esumii.github.io/min-caml/paper.pdf

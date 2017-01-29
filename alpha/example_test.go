@@ -1,7 +1,7 @@
-package typing
+package alpha
 
 import (
-	"github.com/rhysd/gocaml/alpha"
+	"fmt"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/token"
@@ -25,20 +25,13 @@ func Example() {
 		panic(err)
 	}
 
-	if err = alpha.Transform(root); err != nil {
+	// Run alpha transform against the root of AST
+	if err = Transform(root); err != nil {
 		// When some some duplicates found
 		panic(err)
 	}
 
-	// Create new type analysis environment
-	// (symbol table and external variables table)
-	env := NewEnv()
-
-	// Apply type inference. After this, all symbols in AST should have exact
-	// types. It also checks types are valid and all types are determined by
-	// inference
-	if err := env.ApplyTypeAnalysis(root); err != nil {
-		// Type error detected
-		panic(err)
-	}
+	// Now all symbols in the AST has unique names
+	// e.g. abc -> abc$t1
+	fmt.Printf("%v\n", root)
 }
