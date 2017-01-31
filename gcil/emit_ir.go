@@ -166,9 +166,17 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		return e.emitLetInsn(n)
 	case *ast.VarRef:
 		if t, ok := e.types.Table[n.Symbol.Name]; ok {
+			v, ok := t.(*typing.Var)
+			if ok {
+				t = v.Ref
+			}
 			ty = t
 			val = &Ref{n.Symbol.Name}
 		} else if t, ok := e.types.Externals[n.Symbol.Name]; ok {
+			v, ok := t.(*typing.Var)
+			if ok {
+				t = v.Ref
+			}
 			ty = t
 			val = &XRef{n.Symbol.Name}
 		} else {
@@ -177,8 +185,8 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 	case *ast.LetRec:
 		return e.emitFunInsn(n)
 	case *ast.Apply:
-		prev = e.emitInsn(n.Callee)
-		callee := prev
+		callee := e.emitInsn(n.Callee)
+		prev = callee
 		args := make([]string, 0, len(n.Args))
 		for _, a := range n.Args {
 			arg := e.emitInsn(a)
@@ -189,7 +197,7 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		val = &App{callee.Ident, args}
 		f, ok := callee.Ty.(*typing.Fun)
 		if !ok {
-			panic("Callee of Apply node is not typed as function!")
+			panic(fmt.Sprintf("Callee of Apply node is not typed as function!: %s", callee.Ty.String()))
 		}
 		ty = f.Ret
 	case *ast.Tuple:

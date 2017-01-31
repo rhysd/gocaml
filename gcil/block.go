@@ -87,7 +87,7 @@ func (insn *Insn) Println(out io.Writer) {
 }
 
 func (insn *Insn) HasNext() bool {
-	return insn.Next == nil
+	return insn.Next != nil
 }
 
 func (insn *Insn) Last() *Insn {
