@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/ast"
+	"github.com/rhysd/gocaml/gcil"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/token"
@@ -78,4 +79,18 @@ func (c *Compiler) SemanticAnalysis(a *ast.AST) (*typing.Env, error) {
 		return nil, errors.Wrapf(err, "While semantic analysis (type inferernce) for %s\n", a.File.Name)
 	}
 	return env, nil
+}
+
+// TODO:
+// It should return closure-transformed gcil form program
+func (c *Compiler) EmitGCIL(src *token.Source) (*gcil.Block, error) {
+	ast, err := c.Parse(src)
+	if err != nil {
+		return nil, err
+	}
+	env, err := c.SemanticAnalysis(ast)
+	if err != nil {
+		return nil, err
+	}
+	return gcil.EmitIR(ast.Root, env), nil
 }

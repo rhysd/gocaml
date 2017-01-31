@@ -12,6 +12,7 @@ var (
 	help       = flag.Bool("help", false, "Show this help")
 	showTokens = flag.Bool("tokens", false, "Show tokens for input")
 	showAST    = flag.Bool("ast", false, "Show AST for input")
+	showGCIL   = flag.Bool("gcil", false, "Emit GoCaml Intermediate Language representation to stdout")
 	externals  = flag.Bool("externals", false, "Display external symbols")
 )
 
@@ -65,6 +66,13 @@ func main() {
 		c.PrintTokens(src)
 	case *showAST:
 		c.PrintAST(src)
+	case *showGCIL:
+		block, err := c.EmitGCIL(src)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(4)
+		}
+		block.Println(os.Stdout)
 	default:
 		ast, err := c.Parse(src)
 		if err != nil {

@@ -1,0 +1,267 @@
+package gcil
+
+import (
+	"fmt"
+	"github.com/rhysd/gocaml/ast"
+	"github.com/rhysd/gocaml/typing"
+)
+
+// Convert AST into GCIL with K-Normalization
+
+type emitter struct {
+	count uint
+	types *typing.Env
+}
+
+func (e *emitter) genID() string {
+	e.count++
+	return fmt.Sprintf("$k%d", e.count)
+}
+
+func (e *emitter) emitBinaryInsn(op OperatorKind, lhs ast.Expr, rhs ast.Expr) (typing.Type, Val, *Insn) {
+	l := e.emitInsn(lhs)
+	r := e.emitInsn(rhs)
+	r.Last().Next = l
+	return l.Ty, &Binary{op, l.Ident, r.Ident}, r
+}
+
+func (e *emitter) emitLetInsn(node *ast.Let) *Insn {
+	// Note:
+	// Instroduce shortcut about symbol to reduce number of instruction nodes.
+	//
+	// Before:
+	//   $k1 = some_insn
+	//   $sym$t1 = ref $k1
+	//
+	// After:
+	//   $sym$t1 = some_insn
+	bound := e.emitInsn(node.Bound)
+	bound.Ident = node.Symbol.Name
+	body := e.emitInsn(node.Body)
+	body.Last().Next = bound
+	return body
+}
+
+func (e *emitter) emitFunInsn(node *ast.LetRec) *Insn {
+	name := node.Func.Symbol.Name
+
+	ty, ok := e.types.Table[name]
+	if !ok {
+		ty, ok = e.types.Externals[name]
+		if !ok {
+			panic(fmt.Sprintf("Unknown function %s", name))
+		}
+	}
+
+	params := make([]string, 0, len(node.Func.Params))
+	for _, s := range node.Func.Params {
+		params = append(params, s.Name)
+	}
+
+	blk, _ := e.emitBlock(fmt.Sprintf("body of %s", name), node.Func.Body)
+
+	val := &Fun{
+		params,
+		blk,
+	}
+
+	insn := &Insn{
+		name,
+		ty,
+		val,
+		nil,
+	}
+
+	body := e.emitInsn(node.Body)
+	body.Last().Next = insn
+	return body
+}
+
+func (e *emitter) emitLetTupleInsn(node *ast.LetTuple) *Insn {
+	if len(node.Symbols) == 0 {
+		panic("LetTuple node must contain at least one symbol")
+	}
+
+	bound := e.emitInsn(node.Bound)
+	boundTy, ok := bound.Ty.(*typing.Tuple)
+	if !ok {
+		panic("LetTuple node does not bound symbols to tuple value")
+	}
+
+	insn := bound
+	for i, sym := range node.Symbols {
+		insn = &Insn{
+			sym.Name,
+			boundTy.Elems[i],
+			&TplLoad{
+				From:  bound.Ident,
+				Index: i,
+			},
+			insn,
+		}
+	}
+
+	body := e.emitInsn(node.Body)
+	body.Last().Next = insn
+	return body
+}
+
+func (e *emitter) emitInsn(node ast.Expr) *Insn {
+	var prev *Insn = nil
+	var val Val
+	var ty typing.Type
+
+	switch n := node.(type) {
+	case *ast.Unit:
+		ty = typing.UnitType
+		val = UnitVal
+	case *ast.Bool:
+		ty = typing.BoolType
+		val = &Bool{n.Value}
+	case *ast.Int:
+		ty = typing.IntType
+		val = &Int{n.Value}
+	case *ast.Float:
+		ty = typing.FloatType
+		val = &Float{n.Value}
+	case *ast.Not:
+		i := e.emitInsn(n.Child)
+		ty, val = i.Ty, &Unary{NOT, i.Ident}
+		prev = i
+	case *ast.Neg:
+		i := e.emitInsn(n.Child)
+		ty, val = i.Ty, &Unary{NEG, i.Ident}
+		prev = i
+	case *ast.FNeg:
+		i := e.emitInsn(n.Child)
+		ty, val = i.Ty, &Unary{FNEG, i.Ident}
+		prev = i
+	case *ast.Add:
+		ty, val, prev = e.emitBinaryInsn(ADD, n.Left, n.Right)
+	case *ast.Sub:
+		ty, val, prev = e.emitBinaryInsn(SUB, n.Left, n.Right)
+	case *ast.FAdd:
+		ty, val, prev = e.emitBinaryInsn(FADD, n.Left, n.Right)
+	case *ast.FSub:
+		ty, val, prev = e.emitBinaryInsn(FSUB, n.Left, n.Right)
+	case *ast.FMul:
+		ty, val, prev = e.emitBinaryInsn(FMUL, n.Left, n.Right)
+	case *ast.Less:
+		_, val, prev = e.emitBinaryInsn(LESS, n.Left, n.Right)
+		ty = typing.BoolType
+	case *ast.Eq:
+		_, val, prev = e.emitBinaryInsn(EQ, n.Left, n.Right)
+		ty = typing.BoolType
+	case *ast.If:
+		prev = e.emitInsn(n.Cond)
+		var thenBlk *Block
+		thenBlk, ty = e.emitBlock("then", n.Then)
+		elseBlk, _ := e.emitBlock("else", n.Else)
+		val = &If{
+			prev.Ident,
+			thenBlk,
+			elseBlk,
+		}
+	case *ast.Let:
+		return e.emitLetInsn(n)
+	case *ast.VarRef:
+		if t, ok := e.types.Table[n.Symbol.Name]; ok {
+			ty = t
+			val = &Ref{n.Symbol.Name}
+		} else if t, ok := e.types.Externals[n.Symbol.Name]; ok {
+			ty = t
+			val = &XRef{n.Symbol.Name}
+		} else {
+			panic(fmt.Sprintf("Unknown identifier %s", n.Symbol.Name))
+		}
+	case *ast.LetRec:
+		return e.emitFunInsn(n)
+	case *ast.Apply:
+		prev = e.emitInsn(n.Callee)
+		callee := prev
+		args := make([]string, 0, len(n.Args))
+		for _, a := range n.Args {
+			arg := e.emitInsn(a)
+			arg.Last().Next = prev
+			args = append(args, arg.Ident)
+			prev = arg
+		}
+		val = &App{callee.Ident, args}
+		f, ok := callee.Ty.(*typing.Fun)
+		if !ok {
+			panic("Callee of Apply node is not typed as function!")
+		}
+		ty = f.Ret
+	case *ast.Tuple:
+		if len(n.Elems) == 0 {
+			panic("Tuple must not be empty!")
+		}
+		prev = e.emitInsn(n.Elems[0])
+		elems := []string{prev.Ident}
+		types := []typing.Type{prev.Ty}
+		for _, elem := range n.Elems[1:] {
+			elemInsn := e.emitInsn(elem)
+			elemInsn.Last().Next = prev
+			prev = elemInsn
+			elems = append(elems, prev.Ident)
+			types = append(types, prev.Ty)
+		}
+		ty = &typing.Tuple{types}
+		val = &Tuple{elems}
+	case *ast.LetTuple:
+		return e.emitLetTupleInsn(n)
+	case *ast.ArrayCreate:
+		size := e.emitInsn(n.Size)
+		elem := e.emitInsn(n.Elem)
+		elem.Last().Next = size
+		prev = elem
+		ty = &typing.Array{elem.Ty}
+		val = &Array{size.Ident, elem.Ident}
+	case *ast.Get:
+		array := e.emitInsn(n.Array)
+		arrayTy, ok := array.Ty.(*typing.Array)
+		if !ok {
+			panic("'Get' node does not access to array!")
+		}
+		index := e.emitInsn(n.Index)
+		index.Last().Next = array
+		prev = index
+		ty = arrayTy.Elem
+		val = &ArrLoad{array.Ident, index.Ident}
+	case *ast.Put:
+		array := e.emitInsn(n.Array)
+		arrayTy, ok := array.Ty.(*typing.Array)
+		if !ok {
+			panic("'Get' node does not access to array!")
+		}
+		index := e.emitInsn(n.Index)
+		index.Last().Next = array
+		rhs := e.emitInsn(n.Assignee)
+		rhs.Last().Next = index
+		prev = rhs
+		ty = arrayTy.Elem
+		val = &ArrStore{array.Ident, index.Ident, rhs.Ident}
+	}
+
+	if val == nil || ty == nil {
+		panic("Value or type in instruction must not be nil!")
+	}
+	return &Insn{e.genID(), ty, val, prev}
+}
+
+// Return Block instance and its type
+func (e *emitter) emitBlock(name string, node ast.Expr) (*Block, typing.Type) {
+	lastInsn := e.emitInsn(node)
+	// emitInsn() emits instructions in descending order.
+	// Reverse the order to iterate instractions ascending order.
+	return &Block{
+		Insns: Reverse(lastInsn),
+		Name:  name,
+	}, lastInsn.Ty
+}
+
+func EmitIR(root ast.Expr, types *typing.Env) *Block {
+	e := &emitter{0, types}
+	b, _ := e.emitBlock("program", root)
+	return b
+}

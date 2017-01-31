@@ -16,6 +16,9 @@ SRCS := \
 	typing/type.go \
 	alpha/transform.go \
 	alpha/mapping.go \
+	gcil/val.go \
+	gcil/block.go \
+	gcil/emit_ir.go \
 
 TESTS := \
 	alpha/example_test.go \
