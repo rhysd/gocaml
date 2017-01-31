@@ -56,19 +56,15 @@ func (bl *Block) LastInsn() *Insn {
 	if bl.Insns == nil {
 		panic("Block is empty")
 	}
-	i := bl.Insns
-	for i.HasNext() {
-		i = i.Next
-	}
-	return i
+	return bl.Insns.Last()
 }
 
 func (bl *Block) Println(out io.Writer) {
-	fmt.Fprintf(out, "begin %s:\n", bl.Name)
-	for i := bl.Insns; i.HasNext(); i = i.Next {
+	fmt.Fprintf(out, "BEGIN: %s\n", bl.Name)
+	for i := bl.Insns; i != nil; i = i.Next {
 		i.Println(out)
 	}
-	fmt.Fprintf(out, "end %s:\n", bl.Name)
+	fmt.Fprintf(out, "END: %s\n", bl.Name)
 }
 
 // Instruction.

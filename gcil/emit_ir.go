@@ -58,7 +58,7 @@ func (e *emitter) emitFunInsn(node *ast.LetRec) *Insn {
 		params = append(params, s.Name)
 	}
 
-	blk, _ := e.emitBlock(fmt.Sprintf("body of %s", name), node.Func.Body)
+	blk, _ := e.emitBlock(fmt.Sprintf("body (%s)", name), node.Func.Body)
 
 	val := &Fun{
 		params,
@@ -154,9 +154,9 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		ty = typing.BoolType
 	case *ast.If:
 		prev = e.emitInsn(n.Cond)
-		var thenBlk *Block
-		thenBlk, ty = e.emitBlock("then", n.Then)
+		thenBlk, t := e.emitBlock("then", n.Then)
 		elseBlk, _ := e.emitBlock("else", n.Else)
+		ty = t
 		val = &If{
 			prev.Ident,
 			thenBlk,
@@ -262,6 +262,7 @@ func (e *emitter) emitBlock(name string, node ast.Expr) (*Block, typing.Type) {
 	lastInsn := e.emitInsn(node)
 	// emitInsn() emits instructions in descending order.
 	// Reverse the order to iterate instractions ascending order.
+	// XXX: Should we change the direction of instruction list while emitting it?
 	return &Block{
 		Insns: Reverse(lastInsn),
 		Name:  name,

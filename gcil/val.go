@@ -26,7 +26,7 @@ const (
 	EQ
 )
 
-var TokenStrings = [...]string{
+var opTable = [...]string{
 	NOT:  "not",
 	NEG:  "-",
 	FNEG: "-.",
@@ -117,10 +117,10 @@ func (v *Float) Print(out io.Writer) {
 	fmt.Fprintf(out, "float %f", v.Const)
 }
 func (v *Unary) Print(out io.Writer) {
-	fmt.Fprintf(out, "unary %s %s", v.Op, v.Child)
+	fmt.Fprintf(out, "unary %s %s", opTable[v.Op], v.Child)
 }
 func (v *Binary) Print(out io.Writer) {
-	fmt.Fprintf(out, "binary %s %s %s", v.Op, v.Lhs, v.Rhs)
+	fmt.Fprintf(out, "binary %s %s %s", opTable[v.Op], v.Lhs, v.Rhs)
 }
 func (v *Ref) Print(out io.Writer) {
 	fmt.Fprintf(out, "ref %s", v.Ident)
