@@ -104,11 +104,11 @@ exp:
 	| exp LESS_GREATER exp
 		{ $$ = &ast.Not{$2, &ast.Eq{$1, $3}} } /* XXX: Position is not accurate */
 	| exp LESS exp
-		{ $$ = &ast.Not{$2, &ast.Less{$3, $1}} } /* XXX: Position is not accurate */
+		{ $$ = &ast.Less{$1, $3} }
 	| exp GREATER exp
 		{ $$ = &ast.Not{$2, &ast.Less{$1, $3}} } /* XXX: Position is not accurate */
 	| exp LESS_EQUAL exp
-		{ $$ = &ast.Less{$1, $3} }
+		{ $$ = &ast.Not{$2, &ast.Less{$3, $1}} } /* XXX: Position is not accurate */
 	| exp GREATER_EQUAL exp
 		{ $$ = &ast.Less{$3, $1} } /* XXX: Position is not accurate */
 	| IF exp THEN exp ELSE exp

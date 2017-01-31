@@ -240,7 +240,7 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		array := e.emitInsn(n.Array)
 		arrayTy, ok := array.Ty.(*typing.Array)
 		if !ok {
-			panic("'Get' node does not access to array!")
+			panic("'Put' node does not access to array!")
 		}
 		index := e.emitInsn(n.Index)
 		index.Last().Next = array
@@ -260,12 +260,13 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 // Return Block instance and its type
 func (e *emitter) emitBlock(name string, node ast.Expr) (*Block, typing.Type) {
 	lastInsn := e.emitInsn(node)
+	firstInsn := reverseDirection(lastInsn)
 	// emitInsn() emits instructions in descending order.
 	// Reverse the order to iterate instractions ascending order.
-	// XXX: Should we change the direction of instruction list while emitting it?
 	return &Block{
-		Insns: Reverse(lastInsn),
-		Name:  name,
+		Top:    firstInsn,
+		Bottom: lastInsn,
+		Name:   name,
 	}, lastInsn.Ty
 }
 

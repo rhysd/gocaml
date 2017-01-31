@@ -48,20 +48,14 @@ import (
 //     $k15 = unit
 
 type Block struct {
-	Insns *Insn
-	Name  string
-}
-
-func (bl *Block) LastInsn() *Insn {
-	if bl.Insns == nil {
-		panic("Block is empty")
-	}
-	return bl.Insns.Last()
+	Top    *Insn
+	Bottom *Insn
+	Name   string
 }
 
 func (bl *Block) Println(out io.Writer) {
 	fmt.Fprintf(out, "BEGIN: %s\n", bl.Name)
-	for i := bl.Insns; i != nil; i = i.Next {
+	for i := bl.Top; i != nil; i = i.Next {
 		i.Println(out)
 	}
 	fmt.Fprintf(out, "END: %s\n", bl.Name)
@@ -95,7 +89,7 @@ func (insn *Insn) Last() *Insn {
 }
 
 // Reverse the instruction list. `insn` is assumed to point head of the list
-func Reverse(insn *Insn) *Insn {
+func reverseDirection(insn *Insn) *Insn {
 	i, j := insn, insn.Next
 	for j != nil {
 		tmp := j.Next

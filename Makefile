@@ -34,6 +34,9 @@ TESTS := \
 	typing/env_test.go \
 	typing/example_test.go \
 	typing/infer_test.go \
+	gcil/example_test.go \
+	gcil/block_test.go \
+	gcil/emit_ir_test.go \
 
 all: build test
 
