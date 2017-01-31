@@ -22,15 +22,16 @@ print_int (gcd 21600 337500)
 - [x] Parser with [goyacc][] -> ([doc][parser doc])
 - [x] Alpha transform ([doc][alpha transform doc])
 - [x] Type inference (Hindley Milner monomorphic type system) -> ([doc][typing doc])
+- [x] GoCaml intermediate language (GCIL)
+- [x] K normalization from AST into GCIL
 - [ ] Closure transform
-- [ ] GoCaml intermediate language (GCIL)
-- [ ] K nomarization from AST into GCIL
 - [ ] Optimizations
   - [ ] Beta reduction
   - [ ] Inlining
   - [ ] Folding constants
   - [ ] Striping unused variables
 - [ ] Code generation using [LLVM][]
+- [ ] Garbage collection with [Boehm GC][]
 
 ## Difference from original MinCaml
 
@@ -63,3 +64,4 @@ Or clone this repository and execute `make` in the directory.
 [typing doc]: https://godoc.org/github.com/rhysd/gocaml/typing
 [alpha transform doc]: https://godoc.org/github.com/rhysd/gocaml/alpha
 [MinCaml spec]: http://esumii.github.io/min-caml/paper.pdf
+[Boehm GC]: https://github.com/ivmai/bdwgc
