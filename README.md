@@ -45,10 +45,10 @@ print_int (gcd 21600 337500)
 ## Installation
 
 ```
-go get -u github.com/rhysd/gocaml.git
+go get -u github.com/rhysd/gocaml
 ```
 
-Or clone this repository and execute `make` in the directory.
+Or clone this repository into your `$GOPATH/src/github.com/rhysd/gocaml` and execute `make` in the directory.
 
 ## Usage
 
