@@ -21,7 +21,7 @@ func (e *emitter) genID() string {
 func (e *emitter) emitBinaryInsn(op OperatorKind, lhs ast.Expr, rhs ast.Expr) (typing.Type, Val, *Insn) {
 	l := e.emitInsn(lhs)
 	r := e.emitInsn(rhs)
-	r.Last().Next = l
+	r.Append(l)
 	return l.Ty, &Binary{op, l.Ident, r.Ident}, r
 }
 
@@ -38,7 +38,7 @@ func (e *emitter) emitLetInsn(node *ast.Let) *Insn {
 	bound := e.emitInsn(node.Bound)
 	bound.Ident = node.Symbol.Name
 	body := e.emitInsn(node.Body)
-	body.Last().Next = bound
+	body.Append(bound)
 	return body
 }
 
@@ -63,15 +63,10 @@ func (e *emitter) emitFunInsn(node *ast.LetRec) *Insn {
 		blk,
 	}
 
-	insn := &Insn{
-		name,
-		ty,
-		val,
-		nil,
-	}
+	insn := NewInsn(name, ty, val)
 
 	body := e.emitInsn(node.Body)
-	body.Last().Next = insn
+	body.Append(insn)
 	return body
 }
 
@@ -88,19 +83,18 @@ func (e *emitter) emitLetTupleInsn(node *ast.LetTuple) *Insn {
 
 	insn := bound
 	for i, sym := range node.Symbols {
-		insn = &Insn{
+		insn = Concat(NewInsn(
 			sym.Name,
 			boundTy.Elems[i],
 			&TplLoad{
 				From:  bound.Ident,
 				Index: i,
 			},
-			insn,
-		}
+		), insn)
 	}
 
 	body := e.emitInsn(node.Body)
-	body.Last().Next = insn
+	body.Append(insn)
 	return body
 }
 
@@ -190,7 +184,7 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		args := make([]string, 0, len(n.Args))
 		for _, a := range n.Args {
 			arg := e.emitInsn(a)
-			arg.Last().Next = prev
+			arg.Append(prev)
 			args = append(args, arg.Ident)
 			prev = arg
 		}
@@ -209,7 +203,7 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		types := []typing.Type{prev.Ty}
 		for _, elem := range n.Elems[1:] {
 			elemInsn := e.emitInsn(elem)
-			elemInsn.Last().Next = prev
+			elemInsn.Append(prev)
 			prev = elemInsn
 			elems = append(elems, prev.Ident)
 			types = append(types, prev.Ty)
@@ -221,7 +215,7 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 	case *ast.ArrayCreate:
 		size := e.emitInsn(n.Size)
 		elem := e.emitInsn(n.Elem)
-		elem.Last().Next = size
+		elem.Append(size)
 		prev = elem
 		ty = &typing.Array{elem.Ty}
 		val = &Array{size.Ident, elem.Ident}
@@ -232,7 +226,7 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 			panic("'Get' node does not access to array!")
 		}
 		index := e.emitInsn(n.Index)
-		index.Last().Next = array
+		index.Append(array)
 		prev = index
 		ty = arrayTy.Elem
 		val = &ArrLoad{array.Ident, index.Ident}
@@ -243,9 +237,9 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 			panic("'Put' node does not access to array!")
 		}
 		index := e.emitInsn(n.Index)
-		index.Last().Next = array
+		index.Append(array)
 		rhs := e.emitInsn(n.Assignee)
-		rhs.Last().Next = index
+		rhs.Append(index)
 		prev = rhs
 		ty = arrayTy.Elem
 		val = &ArrStore{array.Ident, index.Ident, rhs.Ident}
@@ -257,13 +251,13 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 	if val == nil {
 		panic("Value in instruction must not be nil!")
 	}
-	return &Insn{e.genID(), ty, val, prev}
+	return Concat(NewInsn(e.genID(), ty, val), prev)
 }
 
 // Return Block instance and its type
 func (e *emitter) emitBlock(name string, node ast.Expr) (*Block, typing.Type) {
 	lastInsn := e.emitInsn(node)
-	firstInsn := reverseDirection(lastInsn)
+	firstInsn := Reverse(lastInsn)
 	// emitInsn() emits instructions in descending order.
 	// Reverse the order to iterate instractions ascending order.
 	return &Block{

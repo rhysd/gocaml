@@ -79,6 +79,7 @@ type Insn struct {
 	Ty    typing.Type
 	Val   Val
 	Next  *Insn
+	Prev  *Insn
 }
 
 func (insn *Insn) Println(out io.Writer) {
@@ -93,26 +94,39 @@ func (insn *Insn) Println(out io.Writer) {
 	fmt.Fprintf(out, " ; type=%s\n", s)
 }
 
-func (insn *Insn) HasNext() bool {
-	return insn.Next != nil
-}
-
 func (insn *Insn) Last() *Insn {
 	i := insn
-	for i.HasNext() {
+	for i.Next != nil {
 		i = i.Next
 	}
 	return i
 }
 
-// Reverse the instruction list. `insn` is assumed to point head of the list
-func reverseDirection(insn *Insn) *Insn {
-	i, j := insn, insn.Next
-	for j != nil {
-		tmp := j.Next
-		j.Next = i
-		i, j = j, tmp
+func (insn *Insn) Append(other *Insn) {
+	last := insn.Last()
+	last.Next = other
+	if other != nil {
+		other.Prev = last
 	}
-	insn.Next = nil
-	return i
+}
+
+func NewInsn(n string, t typing.Type, v Val) *Insn {
+	return &Insn{n, t, v, nil, nil}
+}
+
+func Concat(a, b *Insn) *Insn {
+	a.Append(b)
+	return a
+}
+
+// Reverse the instruction list. `insn` is assumed to point head of the list
+func Reverse(insn *Insn) *Insn {
+	i := insn
+	for {
+		i.Next, i.Prev = i.Prev, i.Next
+		if i.Prev == nil {
+			return i
+		}
+		i = i.Prev
+	}
 }
