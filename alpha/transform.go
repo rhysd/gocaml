@@ -1,3 +1,4 @@
+// Package alpha provides alpha transformation for parsed GoCaml AST.
 package alpha
 
 import (
@@ -114,6 +115,9 @@ func (t *transformer) Visit(node ast.Expr) ast.Visitor {
 	return t
 }
 
+// Transform adds identical names to all identifiers in AST nodes.
+// If there are some duplicate names, it causes an error.
+// External symbols are named the same as display names.
 func Transform(root ast.Expr) error {
 	v := newTransformer()
 	ast.Visit(v, root)

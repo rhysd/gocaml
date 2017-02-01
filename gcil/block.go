@@ -1,3 +1,55 @@
+// Package gcil provides definition of GCIL and converter from AST.
+//
+// GCIL is an abbreviation of GoCaml Intermediate Language.
+// It's an original intermediate language to fill the gap between machine code and
+// syntax tree.
+// GCIL is a SSA form and K-normalized, and has high-level type information.
+//
+// It discards many things from syntax tree because it's no longer needed.
+// For example, position of nodes, display name of symbols and nested tree structure are discarded.
+//
+// GCIL consists of block (basic block), instruction and value.
+// There is a one root block. Block contains sequence of instructions.
+// Instruction contains a bound identifier name and its value.
+// Some value (`if`, `fun`, ...) contains recursive blocks.
+//
+// Please see spec file in the gocaml repository.
+//
+// https://github.com/rhysd/gocaml/blob/master/gcil/README.md
+//
+// You can see its string representation by command
+//
+//		gocaml -gcil test.ml
+//
+// e.g.
+//
+//		let x = 1 in
+//		let rec f a b = if a < 0 then a + b - x else x in
+//		if true then print_int (f 3 4) else ()
+//
+//		root:
+//		x$t1 = int 1
+//		f$t2 = fun a$t3,b$t4
+//		  $k1 = int 0
+//		  $k2 = less a$t3 $k1
+//		  $k3 = if $k2
+//		  then:
+//		    $k4 = add $at3 $bt4
+//		    $k5 = sub $k4 x$t1
+//		  else:
+//		    $k6 = ref x$t1
+//		$k7 = bool true
+//		$k8 = if $k7
+//		  then:
+//		    $k9 = xref print_int
+//		    $k10 = ref f$t2
+//		    $k11 = int 3
+//		    $k12 = int 4
+//		    $k13 = app $k10 $k11,$k12
+//		    $k14 = app $k9 $k13
+//		  else:
+//		    $k15 = unit
+//
 package gcil
 
 import (
@@ -5,47 +57,6 @@ import (
 	"github.com/rhysd/gocaml/typing"
 	"io"
 )
-
-// GCIL is an abbreviation of GoCaml Intermediate Language.
-// It's an original intermediate language to fill the gap between machine code and
-// syntax tree.
-// GCIL is a SSA form and K-normalized, and has high-level type information.
-//
-// It discards many things from syntax tree because it's no longer needed.
-//   - Position of nodes
-//   - Display name of symbols
-//   - Nested tree structure
-//
-// GCIL consists of block, instruction, value, branch and function.
-// All 'let' nodes are flatten.
-
-// e.g.
-//
-// let x = 1 in
-// let rec f a b = if a < 0 then a + b - x else x in
-// if true then print_int (f 3 4) else ()
-//
-// x$t1 = int 1
-// f$t2 = fun a$t3,b$t4
-//   $k1 = int 0
-//   $k2 = less a$t3 $k1
-//   $k3 = if $k2
-//   then:
-//     $k4 = add $at3 $bt4
-//     $k5 = sub $k4 x$t1
-//   else:
-//     $k6 = ref x$t1
-// $k7 = bool true
-// $k8 = if $k7
-//   then:
-//	   $k9 = xref print_int
-//     $k10 = ref f$t2
-//     $k11 = int 3
-//     $k12 = int 4
-//     $k13 = app $k10 $k11,$k12
-//     $k14 = app $k9 $k13
-//   else:
-//     $k15 = unit
 
 type Block struct {
 	Top    *Insn

@@ -1,3 +1,4 @@
+// Package typing provides type inference logic for GoCaml.
 package typing
 
 import (
@@ -6,11 +7,7 @@ import (
 	"github.com/rhysd/gocaml/ast"
 )
 
-// Note:
-// MinCaml doesn't have scope. When you want to add scope, you need to implement nested table and each scope
-// should have its table. When some variable reference appears in code, try to find its definition from
-// the nested tables.
-
+// Result of type analysis.
 type Env struct {
 	// Types for declarations. This is referred by type variables to resolve
 	// type variables' actual types
@@ -30,6 +27,7 @@ type Env struct {
 	Externals map[string]Type
 }
 
+// NewEnv creates empty Env instance.
 func NewEnv() *Env {
 	return &Env{
 		map[string]Type{},
@@ -37,6 +35,7 @@ func NewEnv() *Env {
 	}
 }
 
+// ApplyTypeAnalysis executes type inference with the Env instance.
 func (env *Env) ApplyTypeAnalysis(root ast.Expr) error {
 	t, err := env.infer(root)
 	if err != nil {

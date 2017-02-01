@@ -1,3 +1,4 @@
+// Package parser provides a parsing function for GoCaml.
 package parser
 
 import (
@@ -48,6 +49,8 @@ func (l *pseudoLexer) getErrorMessage() error {
 	return fmt.Errorf("%d errors while parsing\n%s", l.errorCount, l.errorMessage.String())
 }
 
+// Parse parses given tokens and returns parsed AST.
+// Tokens are passed via channel.
 func Parse(tokens chan token.Token) (ast.Expr, error) {
 	yyErrorVerbose = true
 

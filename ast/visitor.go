@@ -1,9 +1,14 @@
 package ast
 
+// Visitor is an interface for the structs which is used for traversing AST.
 type Visitor interface {
+	// Visit defines the process when a node is visit.
+	// Visitor is a next visitor to use for visit.
+	// When wanting to stop visiting, return nil.
 	Visit(e Expr) Visitor
 }
 
+// Visit visits the tree with the visitor.
 func Visit(v Visitor, e Expr) {
 	if v = v.Visit(e); v == nil {
 		return

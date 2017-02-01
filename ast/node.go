@@ -1,3 +1,4 @@
+// Package ast provides AST definition for GoCaml.
 package ast
 
 import (
@@ -38,11 +39,12 @@ type AST struct {
 	File *token.Source
 }
 
+// Expr is an interface for node of GoCaml AST.
+// All nodes have its position and name.
 type Expr interface {
 	Pos() token.Position
 	End() token.Position
 	Name() string
-	// Type() *typing.Type
 }
 
 // Note:

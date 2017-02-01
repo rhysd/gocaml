@@ -1,3 +1,4 @@
+// Package lexer provides an instance for lexing GoCaml codes.
 package lexer
 
 import (
@@ -13,6 +14,7 @@ type stateFn func(*Lexer) stateFn
 
 const eof = -1
 
+// Lexer instance which contains lexing states.
 type Lexer struct {
 	state   stateFn
 	start   token.Position
@@ -22,9 +24,12 @@ type Lexer struct {
 	Tokens  chan token.Token
 	top     rune
 	eof     bool
-	Error   func(msg string, pos token.Position)
+	// Function called when error occurs.
+	// By default it outputs an error to stderr.
+	Error func(msg string, pos token.Position)
 }
 
+// NewLexer creates new Lexer instance.
 func NewLexer(src *token.Source) *Lexer {
 	start := token.Position{
 		Offset: 0,
@@ -42,6 +47,7 @@ func NewLexer(src *token.Source) *Lexer {
 	}
 }
 
+// Lex starts lexing. Lexed tokens will be queued into channel in lexer.
 func (l *Lexer) Lex() {
 	// Set top to peek current rune
 	l.forward()

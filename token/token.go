@@ -1,9 +1,12 @@
+// Package token defines tokens of GoCaml source codes.
 package token
 
 import (
 	"fmt"
 )
 
+// Position representation.
+// Offset is a byte offset from the head of file.
 type Position struct {
 	Offset int
 	Line   int
@@ -48,7 +51,7 @@ const (
 	EOF
 )
 
-var TokenStrings = [...]string{
+var tokenTable = [...]string{
 	ILLEGAL:       "ILLEGAL",
 	EOF:           "EOF",
 	COMMENT:       "COMMENT",
@@ -84,6 +87,8 @@ var TokenStrings = [...]string{
 	SEMICOLON:     ";",
 }
 
+// Token instance for GoCaml.
+// It contains its location information and kind.
 type Token struct {
 	Kind  Kind
 	Start Position
@@ -91,15 +96,18 @@ type Token struct {
 	File  *Source
 }
 
+// String returns an information of token. This method is used mainly for
+// debug purpose.
 func (tok *Token) String() string {
 	return fmt.Sprintf(
 		"<%s:%s>(%d:%d:%d-%d:%d:%d)",
-		TokenStrings[tok.Kind],
+		tokenTable[tok.Kind],
 		tok.Value(),
 		tok.Start.Line, tok.Start.Column, tok.Start.Offset,
 		tok.End.Line, tok.End.Column, tok.End.Offset)
 }
 
+// Value returns the corresponding a string part of code.
 func (tok *Token) Value() string {
 	return string(tok.File.Code[tok.Start.Offset:tok.End.Offset])
 }

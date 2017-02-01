@@ -1,3 +1,4 @@
+// Package compiler provides a compiler function for GoCaml codes.
 package compiler
 
 import (
@@ -13,6 +14,7 @@ import (
 	"os"
 )
 
+// Compiler instance to compile GoCaml code into other representations.
 type Compiler struct {
 	// Compiler options (e.g. optimization level) go here.
 }
@@ -22,6 +24,7 @@ func (c *Compiler) Compile(source *token.Source) error {
 	return nil
 }
 
+// PrintTokens returns the lexed tokens for a source code.
 func (c *Compiler) Lex(src *token.Source) chan token.Token {
 	l := lexer.NewLexer(src)
 	l.Error = func(msg string, pos token.Position) {
@@ -31,6 +34,7 @@ func (c *Compiler) Lex(src *token.Source) chan token.Token {
 	return l.Tokens
 }
 
+// PrintTokens show list of tokens lexed.
 func (c *Compiler) PrintTokens(src *token.Source) {
 	tokens := c.Lex(src)
 	for {
@@ -45,6 +49,7 @@ func (c *Compiler) PrintTokens(src *token.Source) {
 	}
 }
 
+// Parse parses the source and returns the parsed AST.
 func (c *Compiler) Parse(src *token.Source) (*ast.AST, error) {
 	tokens := c.Lex(src)
 	root, err := parser.Parse(tokens)
@@ -61,6 +66,7 @@ func (c *Compiler) Parse(src *token.Source) (*ast.AST, error) {
 	return ast, nil
 }
 
+// PrintAST outputs AST structure to stdout.
 func (c *Compiler) PrintAST(src *token.Source) {
 	a, err := c.Parse(src)
 	if err != nil {
@@ -70,6 +76,8 @@ func (c *Compiler) PrintAST(src *token.Source) {
 	ast.Println(a)
 }
 
+// SemanticAnalysis checks types and symbol duplicates.
+// It returns the result of type analysis or an error.
 func (c *Compiler) SemanticAnalysis(a *ast.AST) (*typing.Env, error) {
 	if err := alpha.Transform(a.Root); err != nil {
 		return nil, errors.Wrapf(err, "While semantic analysis (alpha transform) for %s\n", a.File.Name)
@@ -81,8 +89,7 @@ func (c *Compiler) SemanticAnalysis(a *ast.AST) (*typing.Env, error) {
 	return env, nil
 }
 
-// TODO:
-// It should return closure-transformed gcil form program
+// EmitGCIL emits GCIL tree representation.
 func (c *Compiler) EmitGCIL(src *token.Source) (*gcil.Block, error) {
 	ast, err := c.Parse(src)
 	if err != nil {
