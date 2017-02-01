@@ -1,0 +1,18 @@
+version: "{build}"
+clone_depth: 1
+clone_folder: c:\gopath\src\github.com\rhysd\gocaml
+environment:
+    GOPATH: c:\gopath
+install:
+    - echo %PATH%
+    - echo %GOPATH%
+    - go version
+    - go env
+    - go get -v -t -d ./...
+    - go get golang.org/x/tools/cmd/goyacc
+build: off
+test_script:
+    - go tool yacc -o parser/grammar.go parser/grammar.go
+    - go build
+    - go test -v ./...
+deploy: off
