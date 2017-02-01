@@ -49,10 +49,12 @@ func TestEmitInsn(t *testing.T) {
 		},
 		{
 			"unary arithmetic op",
-			"-42",
+			"-42; -.1.0",
 			[]string{
 				"int 42 ; type=int",
 				"unary - $k1 ; type=int",
+				"float 1.000000 ; type=float",
+				"unary -. $k3 ; type=float",
 			},
 		},
 		{
@@ -66,20 +68,32 @@ func TestEmitInsn(t *testing.T) {
 		},
 		{
 			"binary float op",
-			"3.14 *. 2.0",
+			"3.14 *. 2.0; 3.14 +. 2.0; 3.14 -. 2.0; 3.14 /. 2.0",
 			[]string{
 				"float 3.140000 ; type=float",
 				"float 2.000000 ; type=float",
 				"binary *. $k1 $k2 ; type=float",
+				"float 3.140000 ; type=float",
+				"float 2.000000 ; type=float",
+				"binary +. $k4 $k5 ; type=float",
+				"float 3.140000 ; type=float",
+				"float 2.000000 ; type=float",
+				"binary -. $k7 $k8 ; type=float",
+				"float 3.140000 ; type=float",
+				"float 2.000000 ; type=float",
+				"binary /. $k10 $k11 ; type=float",
 			},
 		},
 		{
 			"binary relational op",
-			"1 < 2",
+			"1 < 2; 1 = 2",
 			[]string{
 				"int 1 ; type=int",
 				"int 2 ; type=int",
 				"binary < $k1 $k2 ; type=bool",
+				"int 1 ; type=int",
+				"int 2 ; type=int",
+				"binary = $k4 $k5 ; type=bool",
 			},
 		},
 		{
@@ -193,6 +207,15 @@ func TestEmitInsn(t *testing.T) {
 			"x < 3",
 			[]string{
 				"xref x ; type=int",
+			},
+		},
+		{
+			"sequential expression",
+			"1; true; 1.0",
+			[]string{
+				"int 1 ; type=int",
+				"bool true ; type=bool",
+				"float 1.000000 ; type=float",
 			},
 		},
 		{

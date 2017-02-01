@@ -22,6 +22,7 @@ const (
 	FADD
 	FSUB
 	FMUL
+	FDIV
 	LESS
 	EQ
 )
@@ -35,6 +36,7 @@ var opTable = [...]string{
 	FADD: "+.",
 	FSUB: "-.",
 	FMUL: "*.",
+	FDIV: "/.",
 	LESS: "<",
 	EQ:   "=",
 }

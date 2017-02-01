@@ -47,10 +47,8 @@ func (e *emitter) emitFunInsn(node *ast.LetRec) *Insn {
 
 	ty, ok := e.types.Table[name]
 	if !ok {
-		ty, ok = e.types.Externals[name]
-		if !ok {
-			panic(fmt.Sprintf("Unknown function %s", name))
-		}
+		// Note: Symbol in LetRec cannot be an external symbol.
+		panic(fmt.Sprintf("Unknown function %s", name))
 	}
 
 	params := make([]string, 0, len(node.Func.Params))
@@ -146,6 +144,8 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		ty, val, prev = e.emitBinaryInsn(FSUB, n.Left, n.Right)
 	case *ast.FMul:
 		ty, val, prev = e.emitBinaryInsn(FMUL, n.Left, n.Right)
+	case *ast.FDiv:
+		ty, val, prev = e.emitBinaryInsn(FDIV, n.Left, n.Right)
 	case *ast.Less:
 		_, val, prev = e.emitBinaryInsn(LESS, n.Left, n.Right)
 		ty = typing.BoolType
