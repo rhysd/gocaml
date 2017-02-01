@@ -251,8 +251,11 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		val = &ArrStore{array.Ident, index.Ident, rhs.Ident}
 	}
 
-	if val == nil || ty == nil {
-		panic("Value or type in instruction must not be nil!")
+	// Note:
+	// ty may be nil when it's for unused variable introduced in semicolon
+	// expression.
+	if val == nil {
+		panic("Value in instruction must not be nil!")
 	}
 	return &Insn{e.genID(), ty, val, prev}
 }

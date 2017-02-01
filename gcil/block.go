@@ -84,7 +84,13 @@ type Insn struct {
 func (insn *Insn) Println(out io.Writer) {
 	fmt.Fprintf(out, "%s = ", insn.Ident)
 	insn.Val.Print(out)
-	fmt.Fprintf(out, " ; type=%s\n", insn.Ty.String())
+	var s string
+	if insn.Ty == nil {
+		s = "(unknown)"
+	} else {
+		s = insn.Ty.String()
+	}
+	fmt.Fprintf(out, " ; type=%s\n", s)
 }
 
 func (insn *Insn) HasNext() bool {

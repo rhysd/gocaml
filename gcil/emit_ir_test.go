@@ -181,6 +181,43 @@ func TestEmitInsn(t *testing.T) {
 				"arrstore $k5 $k4 $k6 ; type=bool",
 			},
 		},
+		{
+			"external symbol references",
+			"x",
+			[]string{
+				"xref x ; type=(unknown)",
+			},
+		},
+		{
+			"external symbol references 2",
+			"x < 3",
+			[]string{
+				"xref x ; type=int",
+			},
+		},
+		{
+			"nested blocks",
+			"if true then if false then 1 else 2 else 3",
+			[]string{
+				"bool true ; type=bool",
+				"if $k1",
+				"BEGIN: then",
+				"bool false ; type=bool",
+				"if $k2",
+				"BEGIN: then",
+				"int 1 ; type=int",
+				"END: then",
+				"BEGIN: else",
+				"int 2 ; type=int",
+				"END: else",
+				" ; type=int",
+				"END: then",
+				"BEGIN: else",
+				"int 3 ; type=int",
+				"END: else",
+				" ; type=int",
+			},
+		},
 	}
 
 	for _, tc := range cases {
