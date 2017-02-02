@@ -41,4 +41,7 @@ func Example() {
 		// Type error detected
 		panic(err)
 	}
+
+	// You can dump the type table
+	env.Dump()
 }

@@ -57,5 +57,5 @@ func Example() {
 	// Output: 5
 
 	// Print AST
-	Print(ast)
+	Println(ast)
 }
