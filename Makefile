@@ -24,6 +24,7 @@ TESTS := \
 	alpha/example_test.go \
 	ast/example_test.go \
 	ast/visitor_test.go \
+	ast/printer_test.go \
 	compiler/example_test.go \
 	lexer/example_test.go \
 	lexer/lexer_test.go \

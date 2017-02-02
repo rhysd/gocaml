@@ -1,12 +1,15 @@
 package typing
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/token"
+	"io"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -105,5 +108,43 @@ func TestTypeCheckFail(t *testing.T) {
 	err = env.ApplyTypeAnalysis(root)
 	if err == nil {
 		t.Fatalf("Type check must raise a type error")
+	}
+}
+
+func TestDumpResult(t *testing.T) {
+	s := token.NewDummySource("let x = 42 in x + y; ()")
+	l := lexer.NewLexer(s)
+	go l.Lex()
+	root, err := parser.Parse(l.Tokens)
+	if err != nil {
+		panic(root)
+	}
+
+	env := NewEnv()
+	if err = env.ApplyTypeAnalysis(root); err != nil {
+		t.Fatal(err)
+	}
+
+	old := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	env.Dump()
+
+	ch := make(chan string)
+	go func() {
+		var buf bytes.Buffer
+		io.Copy(&buf, r)
+		ch <- buf.String()
+	}()
+	w.Close()
+	os.Stdout = old
+
+	out := <-ch
+	if !strings.HasPrefix(out, "Variables:\n") {
+		t.Errorf("Output does not contain internal symbols table: %s", out)
+	}
+	if !strings.Contains(out, "External Variables:\n") {
+		t.Errorf("Output does not contain external symbols table: %s", out)
 	}
 }
