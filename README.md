@@ -1,6 +1,8 @@
 GoCaml
 ======
-[![Build Status][]][Travis CI]
+[![Linux and macOS Build Status][]][Travis CI]
+[![Windows Build Status][]][Appveyor]
+[![Coverage Status][]][Coveralls]
 
 GoCaml is a [MinCaml][] implementation in Go using [LLVM][]. MinCaml is a minimal subset of OCaml for educational purpose ([spec][MinCaml spec]).
 
@@ -57,7 +59,7 @@ Or clone this repository into your `$GOPATH/src/github.com/rhysd/gocaml` and exe
 [MinCaml]: https://github.com/esumii/min-caml
 [goyacc]: https://github.com/cznic/goyacc
 [LLVM]: http://llvm.org/
-[Build Status]: https://travis-ci.org/rhysd/gocaml.svg?branch=master
+[Linux and macOS Build Status]: https://travis-ci.org/rhysd/gocaml.svg?branch=master
 [Travis CI]: https://travis-ci.org/rhysd/gocaml
 [lexer doc]: https://godoc.org/github.com/rhysd/gocaml/lexer
 [parser doc]: https://godoc.org/github.com/rhysd/gocaml/parser
@@ -66,3 +68,7 @@ Or clone this repository into your `$GOPATH/src/github.com/rhysd/gocaml` and exe
 [gcil doc]: https://godoc.org/github.com/rhysd/gocaml/gcil
 [MinCaml spec]: http://esumii.github.io/min-caml/paper.pdf
 [Boehm GC]: https://github.com/ivmai/bdwgc
+[Coverage Status]: https://coveralls.io/repos/github/rhysd/gocaml/badge.svg
+[Coveralls]: https://coveralls.io/github/rhysd/gocaml
+[Windows Build Status]: https://ci.appveyor.com/api/projects/status/7lfewhhjg57nek2v/branch/master?svg=true
+[Appveyor]: https://ci.appveyor.com/project/rhysd/gocaml/branch/master
