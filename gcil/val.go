@@ -128,13 +128,10 @@ func (v *Ref) Print(out io.Writer) {
 	fmt.Fprintf(out, "ref %s", v.Ident)
 }
 func (v *If) Print(out io.Writer) {
-	fmt.Fprintf(out, "if %s\n", v.Cond)
-	v.Then.Println(out)
-	v.Else.Println(out)
+	fmt.Fprintf(out, "if %s", v.Cond)
 }
 func (v *Fun) Print(out io.Writer) {
-	fmt.Fprintf(out, "fun %s\n", strings.Join(v.Params, ","))
-	v.Body.Println(out)
+	fmt.Fprintf(out, "fun %s", strings.Join(v.Params, ","))
 }
 func (v *App) Print(out io.Writer) {
 	fmt.Fprintf(out, "app %s %s", v.Callee, strings.Join(v.Args, ","))

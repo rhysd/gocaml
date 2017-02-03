@@ -51,59 +51,55 @@ func Example() {
 	_ = block.Bottom
 
 	// For debug purpose, .Println() method can output instruction sequences
-	block.Println(os.Stdout)
-	// Output:
+	block.Println(os.Stdout, env)
 	// BEGIN: program
-	// ack$t1 = fun x$t2,y$t3
-	// BEGIN: body (ack$t1)
-	// $k1 = int 0 ; type=int
-	// $k2 = ref x$t2 ; type=int
-	// $k3 = binary < $k1 $k2 ; type=bool
-	// $k4 = unary not $k3 ; type=bool
-	// $k30 = if $k4
-	// BEGIN: then
-	// $k5 = ref y$t3 ; type=int
-	// $k6 = int 1 ; type=int
-	// $k7 = binary + $k5 $k6 ; type=int
-	// END: then
-	// BEGIN: else
-	// $k8 = int 0 ; type=int
-	// $k9 = ref y$t3 ; type=int
-	// $k10 = binary < $k8 $k9 ; type=bool
-	// $k11 = unary not $k10 ; type=bool
-	// $k29 = if $k11
-	// BEGIN: then
-	// $k12 = ref ack$t1 ; type=int -> int -> int
-	// $k13 = ref x$t2 ; type=int
-	// $k14 = int 1 ; type=int
-	// $k15 = binary - $k13 $k14 ; type=int
-	// $k16 = int 1 ; type=int
-	// $k17 = app $k12 $k15,$k16 ; type=int
-	// END: then
-	// BEGIN: else
-	// $k18 = ref ack$t1 ; type=int -> int -> int
-	// $k19 = ref x$t2 ; type=int
-	// $k20 = int 1 ; type=int
-	// $k21 = binary - $k19 $k20 ; type=int
-	// $k22 = ref ack$t1 ; type=int -> int -> int
-	// $k23 = ref x$t2 ; type=int
-	// $k24 = ref y$t3 ; type=int
-	// $k25 = int 1 ; type=int
-	// $k26 = binary - $k24 $k25 ; type=int
-	// $k27 = app $k22 $k23,$k26 ; type=int
-	// $k28 = app $k18 $k21,$k27 ; type=int
-	// END: else
-	//  ; type=int
-	// END: else
-	//  ; type=int
-	// END: body (ack$t1)
-	//  ; type=int -> int -> int
-	// $k31 = xref print_int ; type=int -> ()
-	// $k32 = ref ack$t1 ; type=int -> int -> int
-	// $k33 = int 3 ; type=int
-	// $k34 = int 10 ; type=int
-	// $k35 = app $k32 $k33,$k34 ; type=int
-	// $k36 = app $k31 $k35 ; type=()
+	// ack$t1 = fun x$t2,y$t3 ; int -> int -> int
+	//   BEGIN: body (ack$t1)
+	//   $k1 = int 0 ; int
+	//   $k2 = ref x$t2 ; int
+	//   $k3 = binary < $k1 $k2 ; bool
+	//   $k4 = unary not $k3 ; bool
+	//   $k30 = if $k4 ; int
+	//     BEGIN: then
+	//     $k5 = ref y$t3 ; int
+	//     $k6 = int 1 ; int
+	//     $k7 = binary + $k5 $k6 ; int
+	//     END: then
+	//     BEGIN: else
+	//     $k8 = int 0 ; int
+	//     $k9 = ref y$t3 ; int
+	//     $k10 = binary < $k8 $k9 ; bool
+	//     $k11 = unary not $k10 ; bool
+	//     $k29 = if $k11 ; int
+	//       BEGIN: then
+	//       $k12 = ref ack$t1 ; int -> int -> int
+	//       $k13 = ref x$t2 ; int
+	//       $k14 = int 1 ; int
+	//       $k15 = binary - $k13 $k14 ; int
+	//       $k16 = int 1 ; int
+	//       $k17 = app $k12 $k15,$k16 ; int
+	//       END: then
+	//       BEGIN: else
+	//       $k18 = ref ack$t1 ; int -> int -> int
+	//       $k19 = ref x$t2 ; int
+	//       $k20 = int 1 ; int
+	//       $k21 = binary - $k19 $k20 ; int
+	//       $k22 = ref ack$t1 ; int -> int -> int
+	//       $k23 = ref x$t2 ; int
+	//       $k24 = ref y$t3 ; int
+	//       $k25 = int 1 ; int
+	//       $k26 = binary - $k24 $k25 ; int
+	//       $k27 = app $k22 $k23,$k26 ; int
+	//       $k28 = app $k18 $k21,$k27 ; int
+	//       END: else
+	//     END: else
+	//   END: body (ack$t1)
+	// $k31 = xref print_int ; int -> ()
+	// $k32 = ref ack$t1 ; int -> int -> int
+	// $k33 = int 3 ; int
+	// $k34 = int 10 ; int
+	// $k35 = app $k32 $k33,$k34 ; int
+	// $k36 = app $k31 $k35 ; ()
 	// END: program
 
 }

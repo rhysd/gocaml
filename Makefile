@@ -20,6 +20,7 @@ SRCS := \
 	gcil/block.go \
 	gcil/emit_ir.go \
 	gcil/visitor.go \
+	gcil/printer.go \
 
 TESTS := \
 	alpha/example_test.go \

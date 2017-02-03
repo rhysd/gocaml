@@ -103,7 +103,7 @@ func TestEmitInsn(t *testing.T) {
 				"int 1 ; type=int",
 				"int 2 ; type=int",
 				"binary < $k1 $k2 ; type=bool",
-				"if $k3",
+				"if $k3 ; type=int",
 				"BEGIN: then",
 				"int 3 ; type=int",
 				"END: then",
@@ -125,13 +125,12 @@ func TestEmitInsn(t *testing.T) {
 			"function and its application",
 			"let rec f a = a + 1 in f 3",
 			[]string{
-				"fun a$t2",
+				"fun a$t2 ; type=int -> int",
 				"BEGIN: body (f$t1)",
 				"ref a$t2 ; type=int",
 				"int 1 ; type=int",
 				"binary + $k1 $k2 ; type=int",
 				"END: body (f$t1)",
-				"; type=int -> int",
 				"ref f$t1 ; type=int -> int",
 				"int 3 ; type=int",
 				"app $k4 $k5 ; type=int",
@@ -199,7 +198,7 @@ func TestEmitInsn(t *testing.T) {
 			"external symbol references",
 			"x",
 			[]string{
-				"xref x ; type=(unknown)",
+				"xref x ; type=unknown (unused)",
 			},
 		},
 		{
@@ -223,22 +222,20 @@ func TestEmitInsn(t *testing.T) {
 			"if true then if false then 1 else 2 else 3",
 			[]string{
 				"bool true ; type=bool",
-				"if $k1",
+				"if $k1 ; type=int",
 				"BEGIN: then",
 				"bool false ; type=bool",
-				"if $k2",
+				"if $k2 ; type=int",
 				"BEGIN: then",
 				"int 1 ; type=int",
 				"END: then",
 				"BEGIN: else",
 				"int 2 ; type=int",
 				"END: else",
-				" ; type=int",
 				"END: then",
 				"BEGIN: else",
 				"int 3 ; type=int",
 				"END: else",
-				" ; type=int",
 			},
 		},
 	}
@@ -261,7 +258,7 @@ func TestEmitInsn(t *testing.T) {
 			}
 			ir := EmitIR(root, env)
 			var buf bytes.Buffer
-			ir.Println(&buf)
+			ir.Println(&buf, env)
 			r := bufio.NewReader(&buf)
 			line, _, err := r.ReadLine()
 			if err != nil {
@@ -273,7 +270,7 @@ func TestEmitInsn(t *testing.T) {
 			for i, expected := range tc.expected {
 				line, _, err = r.ReadLine()
 				if err != nil {
-					panic(err)
+					t.Fatalf("At line %d of output of ir for code '%s'", i, tc.code)
 				}
 				actual := string(line)
 				if !strings.HasSuffix(actual, expected) {

@@ -90,14 +90,14 @@ func (c *Compiler) SemanticAnalysis(a *ast.AST) (*typing.Env, error) {
 }
 
 // EmitGCIL emits GCIL tree representation.
-func (c *Compiler) EmitGCIL(src *token.Source) (*gcil.Block, error) {
+func (c *Compiler) EmitGCIL(src *token.Source) (*gcil.Block, *typing.Env, error) {
 	ast, err := c.Parse(src)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	env, err := c.SemanticAnalysis(ast)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return gcil.EmitIR(ast.Root, env), nil
+	return gcil.EmitIR(ast.Root, env), env, nil
 }

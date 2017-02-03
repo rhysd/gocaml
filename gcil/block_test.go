@@ -5,8 +5,8 @@ import (
 )
 
 func TestLast(t *testing.T) {
-	i1 := &Insn{"test1", nil, UnitVal, nil, nil}
-	i2 := &Insn{"test1", nil, UnitVal, i1, nil}
+	i1 := &Insn{"test1", nil, nil, nil}
+	i2 := &Insn{"test1", nil, i1, nil}
 	i1.Prev = i2
 
 	if i1 != i2.Last() {
@@ -19,12 +19,12 @@ func TestLast(t *testing.T) {
 }
 
 func TestAppend(t *testing.T) {
-	i1 := &Insn{"test1", nil, UnitVal, nil, nil}
-	i2 := &Insn{"test2", nil, UnitVal, i1, nil}
+	i1 := &Insn{"test1", nil, nil, nil}
+	i2 := &Insn{"test2", nil, i1, nil}
 	i1.Prev = i2
 
-	i3 := &Insn{"test3", nil, UnitVal, nil, nil}
-	i4 := &Insn{"test4", nil, UnitVal, i3, nil}
+	i3 := &Insn{"test3", nil, nil, nil}
+	i4 := &Insn{"test4", nil, i3, nil}
 	i3.Prev = i4
 
 	i2.Append(i4)
@@ -44,12 +44,12 @@ func TestAppend(t *testing.T) {
 }
 
 func TestConcat(t *testing.T) {
-	i1 := &Insn{"test1", nil, UnitVal, nil, nil}
-	i2 := &Insn{"test2", nil, UnitVal, i1, nil}
+	i1 := &Insn{"test1", nil, nil, nil}
+	i2 := &Insn{"test2", nil, i1, nil}
 	i1.Prev = i2
 
-	i3 := &Insn{"test3", nil, UnitVal, nil, nil}
-	i4 := &Insn{"test4", nil, UnitVal, i3, nil}
+	i3 := &Insn{"test3", nil, nil, nil}
+	i4 := &Insn{"test4", nil, i3, nil}
 	i3.Prev = i4
 
 	i5 := Concat(i2, i4)
@@ -69,8 +69,8 @@ func TestConcat(t *testing.T) {
 }
 
 func TestReverse(t *testing.T) {
-	i1 := &Insn{"test1", nil, UnitVal, nil, nil}
-	i2 := &Insn{"test1", nil, UnitVal, i1, nil}
+	i1 := &Insn{"test1", nil, nil, nil}
+	i2 := &Insn{"test1", nil, i1, nil}
 	i1.Prev = i2
 
 	i3 := Reverse(i2)

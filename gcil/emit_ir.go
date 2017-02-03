@@ -18,11 +18,19 @@ func (e *emitter) genID() string {
 	return fmt.Sprintf("$k%d", e.count)
 }
 
+func (e *emitter) typeOf(i *Insn) typing.Type {
+	t, ok := e.types.Table[i.Ident]
+	if !ok {
+		panic(fmt.Sprintf("Type for '%s' not found for %v (bug)", i.Ident, *i))
+	}
+	return t
+}
+
 func (e *emitter) emitBinaryInsn(op OperatorKind, lhs ast.Expr, rhs ast.Expr) (typing.Type, Val, *Insn) {
 	l := e.emitInsn(lhs)
 	r := e.emitInsn(rhs)
 	r.Append(l)
-	return l.Ty, &Binary{op, l.Ident, r.Ident}, r
+	return e.typeOf(l), &Binary{op, l.Ident, r.Ident}, r
 }
 
 func (e *emitter) emitLetInsn(node *ast.Let) *Insn {
@@ -36,7 +44,14 @@ func (e *emitter) emitLetInsn(node *ast.Let) *Insn {
 	// After:
 	//   $sym$t1 = some_insn
 	bound := e.emitInsn(node.Bound)
+	t, found := e.types.Table[bound.Ident]
+	delete(e.types.Table, bound.Ident)
+
 	bound.Ident = node.Symbol.Name
+	if found {
+		e.types.Table[bound.Ident] = t
+	}
+
 	body := e.emitInsn(node.Body)
 	body.Append(bound)
 	return body
@@ -63,7 +78,8 @@ func (e *emitter) emitFunInsn(node *ast.LetRec) *Insn {
 		blk,
 	}
 
-	insn := NewInsn(name, ty, val)
+	e.types.Table[name] = ty
+	insn := NewInsn(name, val)
 
 	body := e.emitInsn(node.Body)
 	body.Append(insn)
@@ -76,16 +92,17 @@ func (e *emitter) emitLetTupleInsn(node *ast.LetTuple) *Insn {
 	}
 
 	bound := e.emitInsn(node.Bound)
-	boundTy, ok := bound.Ty.(*typing.Tuple)
+	boundTy, ok := e.typeOf(bound).(*typing.Tuple)
 	if !ok {
 		panic("LetTuple node does not bound symbols to tuple value")
 	}
 
 	insn := bound
 	for i, sym := range node.Symbols {
+		name := sym.Name
+		e.types.Table[name] = boundTy.Elems[i]
 		insn = Concat(NewInsn(
-			sym.Name,
-			boundTy.Elems[i],
+			name,
 			&TplLoad{
 				From:  bound.Ident,
 				Index: i,
@@ -118,15 +135,15 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		val = &Float{n.Value}
 	case *ast.Not:
 		i := e.emitInsn(n.Child)
-		ty, val = i.Ty, &Unary{NOT, i.Ident}
+		ty, val = e.typeOf(i), &Unary{NOT, i.Ident}
 		prev = i
 	case *ast.Neg:
 		i := e.emitInsn(n.Child)
-		ty, val = i.Ty, &Unary{NEG, i.Ident}
+		ty, val = e.typeOf(i), &Unary{NEG, i.Ident}
 		prev = i
 	case *ast.FNeg:
 		i := e.emitInsn(n.Child)
-		ty, val = i.Ty, &Unary{FNEG, i.Ident}
+		ty, val = e.typeOf(i), &Unary{FNEG, i.Ident}
 		prev = i
 	case *ast.Add:
 		ty, val, prev = e.emitBinaryInsn(ADD, n.Left, n.Right)
@@ -189,9 +206,9 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 			prev = arg
 		}
 		val = &App{callee.Ident, args}
-		f, ok := callee.Ty.(*typing.Fun)
+		f, ok := e.typeOf(callee).(*typing.Fun)
 		if !ok {
-			panic(fmt.Sprintf("Callee of Apply node is not typed as function!: %s", callee.Ty.String()))
+			panic(fmt.Sprintf("Callee of Apply node is not typed as function!: %s", e.typeOf(callee).String()))
 		}
 		ty = f.Ret
 	case *ast.Tuple:
@@ -200,13 +217,13 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		}
 		prev = e.emitInsn(n.Elems[0])
 		elems := []string{prev.Ident}
-		types := []typing.Type{prev.Ty}
+		types := []typing.Type{e.typeOf(prev)}
 		for _, elem := range n.Elems[1:] {
 			elemInsn := e.emitInsn(elem)
 			elemInsn.Append(prev)
+			elems = append(elems, elemInsn.Ident)
+			types = append(types, e.typeOf(elemInsn))
 			prev = elemInsn
-			elems = append(elems, prev.Ident)
-			types = append(types, prev.Ty)
 		}
 		ty = &typing.Tuple{types}
 		val = &Tuple{elems}
@@ -217,11 +234,11 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		elem := e.emitInsn(n.Elem)
 		elem.Append(size)
 		prev = elem
-		ty = &typing.Array{elem.Ty}
+		ty = &typing.Array{e.typeOf(elem)}
 		val = &Array{size.Ident, elem.Ident}
 	case *ast.Get:
 		array := e.emitInsn(n.Array)
-		arrayTy, ok := array.Ty.(*typing.Array)
+		arrayTy, ok := e.typeOf(array).(*typing.Array)
 		if !ok {
 			panic("'Get' node does not access to array!")
 		}
@@ -232,7 +249,7 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		val = &ArrLoad{array.Ident, index.Ident}
 	case *ast.Put:
 		array := e.emitInsn(n.Array)
-		arrayTy, ok := array.Ty.(*typing.Array)
+		arrayTy, ok := e.typeOf(array).(*typing.Array)
 		if !ok {
 			panic("'Put' node does not access to array!")
 		}
@@ -251,7 +268,9 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 	if val == nil {
 		panic("Value in instruction must not be nil!")
 	}
-	return Concat(NewInsn(e.genID(), ty, val), prev)
+	id := e.genID()
+	e.types.Table[id] = ty
+	return Concat(NewInsn(id, val), prev)
 }
 
 // Return Block instance and its type
@@ -264,7 +283,7 @@ func (e *emitter) emitBlock(name string, node ast.Expr) (*Block, typing.Type) {
 		Top:    firstInsn,
 		Bottom: lastInsn,
 		Name:   name,
-	}, lastInsn.Ty
+	}, e.typeOf(lastInsn)
 }
 
 func EmitIR(root ast.Expr, types *typing.Env) *Block {

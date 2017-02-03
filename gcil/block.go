@@ -52,24 +52,10 @@
 //
 package gcil
 
-import (
-	"fmt"
-	"github.com/rhysd/gocaml/typing"
-	"io"
-)
-
 type Block struct {
 	Top    *Insn
 	Bottom *Insn
 	Name   string
-}
-
-func (bl *Block) Println(out io.Writer) {
-	fmt.Fprintf(out, "BEGIN: %s\n", bl.Name)
-	for i := bl.Top; i != nil; i = i.Next {
-		i.Println(out)
-	}
-	fmt.Fprintf(out, "END: %s\n", bl.Name)
 }
 
 func NewBlockFromArray(name string, insns []*Insn) *Block {
@@ -96,22 +82,9 @@ func NewBlockFromArray(name string, insns []*Insn) *Block {
 // Its form is always `ident = val`
 type Insn struct {
 	Ident string
-	Ty    typing.Type
 	Val   Val
 	Next  *Insn
 	Prev  *Insn
-}
-
-func (insn *Insn) Println(out io.Writer) {
-	fmt.Fprintf(out, "%s = ", insn.Ident)
-	insn.Val.Print(out)
-	var s string
-	if insn.Ty == nil {
-		s = "(unknown)"
-	} else {
-		s = insn.Ty.String()
-	}
-	fmt.Fprintf(out, " ; type=%s\n", s)
 }
 
 func (insn *Insn) Last() *Insn {
@@ -130,8 +103,8 @@ func (insn *Insn) Append(other *Insn) {
 	}
 }
 
-func NewInsn(n string, t typing.Type, v Val) *Insn {
-	return &Insn{n, t, v, nil, nil}
+func NewInsn(n string, v Val) *Insn {
+	return &Insn{n, v, nil, nil}
 }
 
 func Concat(a, b *Insn) *Insn {

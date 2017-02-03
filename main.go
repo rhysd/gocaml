@@ -67,12 +67,12 @@ func main() {
 	case *showAST:
 		c.PrintAST(src)
 	case *showGCIL:
-		block, err := c.EmitGCIL(src)
+		block, env, err := c.EmitGCIL(src)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(4)
 		}
-		block.Println(os.Stdout)
+		block.Println(os.Stdout, env)
 	default:
 		ast, err := c.Parse(src)
 		if err != nil {

@@ -1,7 +1,6 @@
 package gcil
 
 import (
-	"github.com/rhysd/gocaml/typing"
 	"testing"
 )
 
@@ -28,41 +27,34 @@ func TestVisitor(t *testing.T) {
 	root := NewBlockFromArray("program", []*Insn{
 		NewInsn(
 			"$k1",
-			typing.IntType,
 			&Int{42},
 		),
 		NewInsn(
 			"$k2",
-			typing.IntType,
 			&Unary{NEG, "$k1"},
 		),
 		NewInsn(
 			"$k3",
-			typing.IntType,
 			&If{
 				"b",
 				NewBlockFromArray("then", []*Insn{
 					NewInsn(
 						"$k4",
-						typing.IntType,
 						&Int{0},
 					),
 				}),
 				NewBlockFromArray("else", []*Insn{
 					NewInsn(
 						"$k5",
-						typing.IntType, // XXX
 						&Fun{
 							[]string{"a", "b"},
 							NewBlockFromArray("body ($k5)", []*Insn{
 								NewInsn(
 									"$k6",
-									typing.IntType,
 									&Int{42},
 								),
 								NewInsn(
 									"$k7",
-									typing.IntType,
 									&Unary{NEG, "$k1"},
 								),
 							}),
@@ -70,7 +62,6 @@ func TestVisitor(t *testing.T) {
 					),
 					NewInsn(
 						"$k8",
-						typing.IntType,
 						&App{
 							"$k5",
 							[]string{"$k1", "$k2"},
@@ -97,7 +88,6 @@ func TestCancel(t *testing.T) {
 	root := NewBlockFromArray("program", []*Insn{
 		NewInsn(
 			"$k1",
-			typing.IntType,
 			&Int{42},
 		),
 	})
