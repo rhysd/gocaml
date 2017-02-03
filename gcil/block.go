@@ -72,6 +72,26 @@ func (bl *Block) Println(out io.Writer) {
 	fmt.Fprintf(out, "END: %s\n", bl.Name)
 }
 
+func NewBlockFromArray(name string, insns []*Insn) *Block {
+	if len(insns) == 0 {
+		panic("Block must contain at least one instruction")
+	}
+
+	top := insns[0]
+	bottom := top
+	for _, insn := range insns[1:] {
+		insn.Prev = bottom
+		bottom.Next = insn
+		bottom = insn
+	}
+
+	return &Block{
+		top,
+		bottom,
+		name,
+	}
+}
+
 // Instruction.
 // Its form is always `ident = val`
 type Insn struct {
