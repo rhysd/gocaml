@@ -100,6 +100,6 @@ func (c *Compiler) EmitGCIL(src *token.Source) (*gcil.Block, *typing.Env, error)
 		return nil, nil, err
 	}
 	ir := gcil.EmitIR(ast.Root, env)
-	gcil.EmitIR(ir, env)
+	gcil.ElimRefs(ir, env)
 	return ir, env, nil
 }
