@@ -98,7 +98,8 @@ func TestCancel(t *testing.T) {
 		t.Errorf("Should have been cancelled but actually not cancelled")
 	}
 
-	root.Top.Ident = "$k2"
+	// First instruction is 'NOP'
+	root.Top.Next.Ident = "$k2"
 
 	if Visit(v, root) {
 		t.Errorf("Should not have been cancelled but actually cancelled")

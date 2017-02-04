@@ -99,5 +99,7 @@ func (c *Compiler) EmitGCIL(src *token.Source) (*gcil.Block, *typing.Env, error)
 	if err != nil {
 		return nil, nil, err
 	}
-	return gcil.EmitIR(ast.Root, env), env, nil
+	ir := gcil.EmitIR(ast.Root, env)
+	gcil.EmitIR(ir, env)
+	return ir, env, nil
 }

@@ -21,6 +21,7 @@ SRCS := \
 	gcil/emit_ir.go \
 	gcil/visitor.go \
 	gcil/printer.go \
+	gcil/elim_ref.go \
 
 TESTS := \
 	alpha/example_test.go \
@@ -41,6 +42,7 @@ TESTS := \
 	gcil/block_test.go \
 	gcil/emit_ir_test.go \
 	gcil/visitor_test.go \
+	gcil/elim_ref_test.go \
 
 all: build test
 
