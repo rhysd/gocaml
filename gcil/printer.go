@@ -44,7 +44,7 @@ func (p *printer) printlnInsn(insn *Insn) {
 
 func (p *printer) printlnBlock(b *Block) {
 	fmt.Fprintf(p.out, "%sBEGIN: %s\n", p.indent, b.Name)
-	for i := b.Top; i != nil; i = i.Next {
+	for i := b.Top.Next; i.Next != nil; i = i.Next {
 		p.printlnInsn(i)
 	}
 	fmt.Fprintf(p.out, "%sEND: %s\n", p.indent, b.Name)

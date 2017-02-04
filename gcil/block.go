@@ -52,10 +52,22 @@
 //
 package gcil
 
+// Block struct represents basic block.
+// It has a name and instruction sequence to execute.
+// Note that top and bottom of the sequence are always NOP instruction in order to
+// make modifying instructions easy.
 type Block struct {
 	Top    *Insn
 	Bottom *Insn
 	Name   string
+}
+
+func NewBlock(name string, top, bottom *Insn) *Block {
+	start := &Insn{"", NOPVal, top, nil}
+	top.Prev = start
+	end := &Insn{"", NOPVal, nil, bottom}
+	bottom.Next = end
+	return &Block{start, end, name}
 }
 
 func NewBlockFromArray(name string, insns []*Insn) *Block {
@@ -71,11 +83,7 @@ func NewBlockFromArray(name string, insns []*Insn) *Block {
 		bottom = insn
 	}
 
-	return &Block{
-		top,
-		bottom,
-		name,
-	}
+	return NewBlock(name, top, bottom)
 }
 
 // Instruction.

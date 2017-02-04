@@ -5,7 +5,11 @@ type Visitor interface {
 }
 
 func Visit(v Visitor, b *Block) bool {
-	for i := b.Top; i != nil; i = i.Next {
+	// Note:
+	// Skip first and last instructions because they are NOP.
+	// Basic block has the NOPs as cushion to modify instruction
+	// sequence easily.
+	for i := b.Top.Next; i.Next != nil; i = i.Next {
 		if v = v.Visit(i); v == nil {
 			return true
 		}

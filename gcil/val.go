@@ -100,10 +100,12 @@ type (
 	XRef struct {
 		Ident string
 	}
+	NOP struct{}
 )
 
 var (
 	UnitVal = &Unit{}
+	NOPVal  = &NOP{}
 )
 
 func (v *Unit) Print(out io.Writer) {
@@ -153,4 +155,7 @@ func (v *ArrStore) Print(out io.Writer) {
 }
 func (v *XRef) Print(out io.Writer) {
 	fmt.Fprintf(out, "xref %s", v.Ident)
+}
+func (v *NOP) Print(out io.Writer) {
+	fmt.Fprintf(out, "nop")
 }

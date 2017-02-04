@@ -279,11 +279,7 @@ func (e *emitter) emitBlock(name string, node ast.Expr) (*Block, typing.Type) {
 	firstInsn := Reverse(lastInsn)
 	// emitInsn() emits instructions in descending order.
 	// Reverse the order to iterate instractions ascending order.
-	return &Block{
-		Top:    firstInsn,
-		Bottom: lastInsn,
-		Name:   name,
-	}, e.typeOf(lastInsn)
+	return NewBlock(name, firstInsn, lastInsn), e.typeOf(lastInsn)
 }
 
 func EmitIR(root ast.Expr, types *typing.Env) *Block {
