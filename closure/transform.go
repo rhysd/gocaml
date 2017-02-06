@@ -22,11 +22,21 @@ type freeVarAnalysis struct {
 	types   *typing.Env
 }
 
+func newFreeVarAnalysis(types *typing.Env) *freeVarAnalysis {
+	return &freeVarAnalysis{
+		map[string]freeVars{},
+		map[string]struct{}{},
+		map[string]struct{}{},
+		types,
+	}
+}
+
 func (fva *freeVarAnalysis) add(name string) {
 	fva.current[name] = struct{}{}
 }
 
 func (fva *freeVarAnalysis) saveFreeVars(ident string) {
+	delete(fva.current, ident)
 	names := make([]string, 0, len(fva.current))
 	for name := range fva.current {
 		names = append(names, name)
@@ -146,7 +156,7 @@ func (fvt *freeVarTransformer) Visit(insn *gcil.Insn) gcil.Visitor {
 
 func Transform(root *gcil.Block, types *typing.Env) {
 	// First pass
-	firstPass := &freeVarAnalysis{map[string]freeVars{}, map[string]struct{}{}, map[string]struct{}{}, types}
+	firstPass := newFreeVarAnalysis(types)
 	firstPass.analyzeBlock(root)
 
 	// Second pass
