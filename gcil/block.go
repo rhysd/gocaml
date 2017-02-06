@@ -86,6 +86,20 @@ func NewBlockFromArray(name string, insns []*Insn) *Block {
 	return NewBlock(name, top, bottom)
 }
 
+func (b *Block) Prepend(i *Insn) {
+	i.Next = b.Top.Next
+	i.Prev = b.Top
+	b.Top.Next.Prev = i
+	b.Top.Next = i
+}
+
+func (b *Block) Append(i *Insn) {
+	i.Next = b.Bottom
+	i.Prev = b.Bottom.Prev
+	b.Bottom.Prev.Next = i
+	b.Bottom.Prev = i
+}
+
 // Instruction.
 // Its form is always `ident = val`
 type Insn struct {
@@ -109,6 +123,11 @@ func (insn *Insn) Append(other *Insn) {
 	if other != nil {
 		other.Prev = last
 	}
+}
+
+func (insn *Insn) RemoveFromList() {
+	insn.Next.Prev = insn.Prev
+	insn.Prev.Next = insn.Next
 }
 
 func NewInsn(n string, v Val) *Insn {

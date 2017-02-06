@@ -100,7 +100,19 @@ type (
 	XRef struct {
 		Ident string
 	}
-	NOP struct{}
+	NOP struct {
+	}
+	// Introduced at closure-transform.
+	MakeCls struct {
+		Vars []string
+		Fun  string
+	}
+	// Introduced at closure-transform.
+	AppCls struct {
+		Callee  string
+		Args    []string
+		Closure string
+	}
 )
 
 var (
@@ -158,4 +170,10 @@ func (v *XRef) Print(out io.Writer) {
 }
 func (v *NOP) Print(out io.Writer) {
 	fmt.Fprintf(out, "nop")
+}
+func (v *MakeCls) Print(out io.Writer) {
+	fmt.Fprintf(out, "makecls %s %s", strings.Join(v.Vars, ","), v.Fun)
+}
+func (v *AppCls) Print(out io.Writer) {
+	fmt.Fprintf(out, "appcls %s %s %s", v.Callee, strings.Join(v.Args, ","), v.Closure)
 }

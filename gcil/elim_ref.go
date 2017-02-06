@@ -21,8 +21,7 @@ func newElimRefVisitor(types *typing.Env) *elimRefVisitor {
 func (vis *elimRefVisitor) elimRef(ident string) string {
 	if entry, ok := vis.refs[ident]; ok {
 		i := entry.insn
-		i.Prev.Next = i.Next
-		i.Next.Prev = i.Prev
+		i.RemoveFromList()
 		delete(vis.types.Table, i.Ident)
 		return entry.ident
 	}

@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/ast"
+	"github.com/rhysd/gocaml/closure"
 	"github.com/rhysd/gocaml/gcil"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
@@ -101,5 +102,6 @@ func (c *Compiler) EmitGCIL(src *token.Source) (*gcil.Block, *typing.Env, error)
 	}
 	ir := gcil.EmitIR(ast.Root, env)
 	gcil.ElimRefs(ir, env)
+	closure.Transform(ir, env)
 	return ir, env, nil
 }
