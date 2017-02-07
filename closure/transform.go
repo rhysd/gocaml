@@ -1,165 +1,58 @@
+// Package closure provides closure transform for GCIL representation.
+//
+// Closure transform is a process to move all functions to toplevel of program.
+// If a function does not contain any free variables, it can be moved to toplevel simply.
+// But when containing any free variables, the function must take a closure struct as
+// hidden parameter. And need to insert a code to make a closure at the definition
+// point of the function.
+//
+// In closure transform, it visits function's body assuming the function is a normal function.
+// As the result of the visit, if some free variables found, it means that the function
+// is actually not a normal function, but a closure. So restore the state and retry
+// visiting its body after adding the function to closures list.
+//
+// Note that applied normal functions are not free variables, but applied closures are
+// free variables. Normal function is not a value but closure is a value.
+// So, considering recursive functions, before visiting function's body, the function must
+// be determined to normal function or closure. That's the reason to assume function is a
+// normal function at first and then backtrack after if needed.
 package closure
 
 import (
-	"fmt"
 	"github.com/rhysd/gocaml/gcil"
 	"github.com/rhysd/gocaml/typing"
 )
 
-type freeVars struct {
-	names       []string
-	appearInRef bool
+type nameSet map[string]struct{}
+
+// Do closure transform with known functions optimization
+type transformWithKFO struct {
+	replacedFuns map[string]*gcil.MakeCls // nil means it's a known normal function
+	promotedApps []*gcil.App
+	closures map[string][]string // Mapping function name to free variables
+	closureBlockFreeVars map[string]nameSet // Known free variables of closures' blocks
 }
 
-func newFreeVars() *freeVars {
-	return &freeVars{[]string{}, false}
-}
-
-type freeVarAnalysis struct {
-	funcs   map[string]freeVars
-	current map[string]struct{}
-	refs    map[string]struct{}
-	types   *typing.Env
-}
-
-func newFreeVarAnalysis(types *typing.Env) *freeVarAnalysis {
-	return &freeVarAnalysis{
-		map[string]freeVars{},
-		map[string]struct{}{},
-		map[string]struct{}{},
-		types,
+func (trans *transformWithKFO) dup() *transformWithKFO{
+	funs := make(map[string]*gcil.MakeCls, len(trans.replacedFuns))
+	for f,v := range trans.replacedFuns {
+		funs[f] = v
 	}
-}
-
-func (fva *freeVarAnalysis) add(name string) {
-	fva.current[name] = struct{}{}
-}
-
-func (fva *freeVarAnalysis) saveFreeVars(ident string) {
-	delete(fva.current, ident)
-	names := make([]string, 0, len(fva.current))
-	for name := range fva.current {
-		names = append(names, name)
+	apps := make([]*gcil.App, 0, len(trans.promotedApps))
+	for _,a := range trans.promotedApps {
+		apps = append(apps, a)
 	}
-	_, appearInBody := fva.refs[ident]
-	fva.funcs[ident] = freeVars{names, appearInBody}
-}
-
-func (fva *freeVarAnalysis) analyzeBlock(b *gcil.Block) {
-	// Traverse instructions in reverse order.
-	// First and last instructions are NOP, so skipped.
-	for i := b.Bottom.Prev; i.Prev != nil; i = i.Prev {
-		fva.analyzeInsn(i)
+	clss := make(map[string][]string, len(trans.closures))
+	for f,fv := range trans.closures {
+		clss[f] = fv
 	}
-}
-
-func (fva *freeVarAnalysis) analyzeInsn(insn *gcil.Insn) {
-	switch val := insn.Val.(type) {
-	case *gcil.Unary:
-		fva.add(val.Child)
-	case *gcil.Binary:
-		fva.add(val.Lhs)
-		fva.add(val.Rhs)
-	case *gcil.Ref:
-		fva.add(val.Ident)
-		if t, ok := fva.types.Table[val.Ident]; ok {
-			if _, ok := t.(*typing.Fun); ok {
-				fva.refs[val.Ident] = struct{}{}
-			}
-		}
-	case *gcil.If:
-		fva.add(val.Cond)
-		fva.analyzeBlock(val.Then)
-		fva.analyzeBlock(val.Else)
-	case *gcil.Fun:
-		fva.analyzeBlock(val.Body)
-		for _, p := range val.Params {
-			delete(fva.current, p)
-		}
-		fva.saveFreeVars(insn.Ident)
-	case *gcil.App:
-		fva.add(val.Callee)
-		for _, a := range val.Args {
-			fva.add(a)
-		}
-	case *gcil.Tuple:
-		for _, e := range val.Elems {
-			fva.add(e)
-		}
-	case *gcil.Array:
-		fva.add(val.Size)
-		fva.add(val.Elem)
-	case *gcil.TplLoad:
-		fva.add(val.From)
-	case *gcil.ArrLoad:
-		fva.add(val.From)
-		fva.add(val.Index)
-	case *gcil.ArrStore:
-		fva.add(val.To)
-		fva.add(val.Index)
-		fva.add(val.Rhs)
+	blks := make(map[string]nameSet, len(trans.closureBlockFreeVars))
+	for f,fv := range trans.closureBlockFreeVars {
+		blks[f] = fv
 	}
-
-	delete(fva.current, insn.Ident)
+	return &transformWithKFO {funs, apps, clss, blks}
 }
 
-type freeVarTransformer struct {
-	funcs    map[string]freeVars
-	closures map[string]string // function variable name -> its closure varible name
-	root     *gcil.Block
-}
-
-func (fvt *freeVarTransformer) genClosureId(fun string) string {
-	id := fmt.Sprintf("$c$%s", fun)
-	fvt.closures[fun] = id
-	return id
-}
-
-func (fvt *freeVarTransformer) Visit(insn *gcil.Insn) gcil.Visitor {
-	switch val := insn.Val.(type) {
-	case *gcil.Fun:
-		// Move 'fun' instruction into toplevel
-		prev := insn.Prev
-		insn.RemoveFromList()
-		fvt.root.Prepend(insn)
-		fv, ok := fvt.funcs[insn.Ident]
-		if !ok {
-			panic(fmt.Sprintf("Function '%s' was not analyzed (%v)", insn.Ident, fvt.funcs))
-		}
-		if len(fv.names) == 0 && !fv.appearInRef {
-			// When a function contains no free var and it does not appear in 'ref'
-			// instruction in its body, it can be moved to toplevel straightforwardly.
-			break
-		}
-		id := fvt.genClosureId(insn.Ident)
-		make := gcil.NewInsn(id, &gcil.MakeCls{fv.names, insn.Ident})
-		// Insert MakeCls instruction
-		make.Prev = prev
-		make.Next = prev.Next
-		make.Prev.Next = make
-		make.Next.Prev = make
-	case *gcil.App:
-		cls, found := fvt.closures[val.Callee]
-		if !found {
-			break
-		}
-		// Promote 'app' to 'appcls'
-		app := gcil.NewInsn(insn.Ident, &gcil.AppCls{val.Callee, val.Args, cls})
-		// Replace 'app' with promoted 'appcls' in instruction sequence
-		app.Prev = insn.Prev
-		app.Next = insn.Next
-		insn.Prev.Next = app
-		insn.Next.Prev = app
-	}
-	return fvt
-}
-
-func Transform(root *gcil.Block, types *typing.Env) {
-	// First pass
-	firstPass := newFreeVarAnalysis(types)
-	firstPass.analyzeBlock(root)
-
-	// Second pass
-	secondPass := &freeVarTransformer{firstPass.funcs, map[string]string{}, root}
-	gcil.Visit(secondPass, root)
+func Transform(ir *gcil.Block, env *typing.Env) {
+	// TODO
 }

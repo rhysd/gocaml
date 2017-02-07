@@ -76,6 +76,7 @@ type (
 	App struct {
 		Callee string
 		Args   []string
+		Closure bool
 	}
 	Tuple struct {
 		Elems []string
@@ -106,12 +107,6 @@ type (
 	MakeCls struct {
 		Vars []string
 		Fun  string
-	}
-	// Introduced at closure-transform.
-	AppCls struct {
-		Callee  string
-		Args    []string
-		Closure string
 	}
 )
 
@@ -148,7 +143,11 @@ func (v *Fun) Print(out io.Writer) {
 	fmt.Fprintf(out, "fun %s", strings.Join(v.Params, ","))
 }
 func (v *App) Print(out io.Writer) {
-	fmt.Fprintf(out, "app %s %s", v.Callee, strings.Join(v.Args, ","))
+	cls := ""
+	if v.Closure {
+		cls = "cls"
+	}
+	fmt.Fprintf(out, "app%s %s %s", cls, v.Callee, strings.Join(v.Args, ","))
 }
 func (v *Tuple) Print(out io.Writer) {
 	fmt.Fprintf(out, "tuple %s", strings.Join(v.Elems, ","))
@@ -173,7 +172,4 @@ func (v *NOP) Print(out io.Writer) {
 }
 func (v *MakeCls) Print(out io.Writer) {
 	fmt.Fprintf(out, "makecls %s %s", strings.Join(v.Vars, ","), v.Fun)
-}
-func (v *AppCls) Print(out io.Writer) {
-	fmt.Fprintf(out, "appcls %s %s %s", v.Callee, strings.Join(v.Args, ","), v.Closure)
 }
