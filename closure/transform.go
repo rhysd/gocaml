@@ -21,15 +21,17 @@ package closure
 import (
 	"fmt"
 	"github.com/rhysd/gocaml/gcil"
+	"sort"
 )
 
 type nameSet map[string]struct{}
 
-func (set nameSet) toArray() []string {
+func (set nameSet) toSortedArray() []string {
 	ns := make([]string, 0, len(set))
 	for n := range set {
 		ns = append(ns, n)
 	}
+	sort.Strings(ns)
 	return ns
 }
 
@@ -99,13 +101,20 @@ func (trans *transformWithKFO) explore(insn *gcil.Insn) {
 			// Assumed the function is not a closure. But there are actually some
 			// free variables. It means that the function is actually a closure.
 			// Discard 'dup' and retry visiting its body with adding it to closures.
+			//
+			// XXX:
+			// We need to register the function to trans.closures because 'app' instruction
+			// checks the callee function is a closure or not by it.
+			// nil is assigned temporarily because free variables of the function are not
+			// determined yet at this point.
+			trans.closures[insn.Ident] = nil
 			trans.start(val.Body)
 			fv = gatherFreeVars(val.Body, trans)
 			for _, p := range val.Params {
 				delete(fv, p)
 			}
 			fmt.Printf("%s: Retried free vars visit has been done: %v\n", insn.Ident, fv)
-			trans.closures[insn.Ident] = fv.toArray()
+			trans.closures[insn.Ident] = fv.toSortedArray()
 		} else {
 			// When the function is actually not a closure, continue to use 'dup' as current visitor
 			fmt.Printf("%s: Function is known function!\n", insn.Ident)
@@ -131,9 +140,13 @@ func (trans *transformWithKFO) explore(insn *gcil.Insn) {
 				// closure even if there is no free variable for the function.
 				// It's because we can't know a passed function variable is a closure or not.
 				vars = []string{}
+				trans.closures[insn.Ident] = vars
+				delete(trans.knownFuns, insn.Ident)
+				fmt.Printf("%s: Function captures nothing but used as function variable. Now it has empty closure\n", insn.Ident)
 			}
 			// If the function is referred from somewhere, we need to  make a closure.
 			replaced = &gcil.MakeCls{vars, insn.Ident}
+			fmt.Printf("%s: Made closure instance. Now %d closures exist. Free vars: %v\n", insn.Ident, len(trans.closures), vars)
 		}
 		trans.replacedFuns[insn] = replaced
 		fmt.Printf("%s: Registered MakeCls replacement %s -> %v. Now number of MakeCls is %d\n", insn.Ident, insn.Ident, replaced, len(trans.replacedFuns))
@@ -144,6 +157,10 @@ func (trans *transformWithKFO) explore(insn *gcil.Insn) {
 		if _, ok := trans.closures[val.Callee]; ok {
 			trans.closureCalls = append(trans.closureCalls, val)
 		}
+		trans.explore(insn.Next)
+	case *gcil.If:
+		trans.start(val.Then)
+		trans.start(val.Else)
 		trans.explore(insn.Next)
 	default:
 		trans.explore(insn.Next)
@@ -162,9 +179,13 @@ func Transform(ir *gcil.Block) *gcil.Program {
 	fmt.Printf("Transform Done!: MakeCls (%d), closureCalls (%d), closures(%d)\n", len(t.replacedFuns), len(t.closureCalls), len(t.closures))
 
 	// Modify instructions in IR
+
+	// Set flags for closure calls
 	for _, app := range t.closureCalls {
 		app.Closure = true
 	}
+
+	// Move all functions to toplevel and put closure instance if needed
 	toplevel := map[string]*gcil.Fun{}
 	for insn, make := range t.replacedFuns {
 		f, ok := insn.Val.(*gcil.Fun)

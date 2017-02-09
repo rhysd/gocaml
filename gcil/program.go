@@ -24,10 +24,10 @@ func (prog *Program) PrintToplevels(out io.Writer, env *typing.Env) {
 }
 
 func (prog *Program) Dump(out io.Writer, env *typing.Env) {
-	fmt.Fprintln(out, "[TOPLEVELS]")
+	fmt.Fprintf(out, "[TOPLEVELS (%d)]\n", len(prog.Toplevel))
 	prog.PrintToplevels(out, env)
 
-	fmt.Fprintln(out, "[CLOSURES]")
+	fmt.Fprintf(out, "[CLOSURES (%d)]\n", len(prog.Closures))
 	for c, fv := range prog.Closures {
 		fmt.Fprintf(out, "%s:\t%s\n", c, strings.Join(fv, ","))
 	}
