@@ -172,6 +172,11 @@ func TestInvalidExpressions(t *testing.T) {
 			code:     "let a = Array.create 3 1.0 in 1.0 = a.(0) <- 2.0",
 			expected: "Type mismatch between 'float' and '()'",
 		},
+		{
+			what: "occur check",
+			code: "let rec f x = f in f 4",
+			expected: "Cyclic dependency found in types.",
+		},
 	}
 
 	for _, testcase := range testcases {
