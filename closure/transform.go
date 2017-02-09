@@ -133,7 +133,7 @@ func (trans *transformWithKFO) explore(insn *gcil.Insn) {
 	}
 }
 
-func Transform(ir *gcil.Block) gcil.Program {
+func Transform(ir *gcil.Block) *gcil.Program {
 	t := &transformWithKFO{
 		map[string]struct{}{},
 		map[*gcil.Insn]*gcil.MakeCls{},
@@ -164,5 +164,5 @@ func Transform(ir *gcil.Block) gcil.Program {
 		}
 	}
 
-	return gcil.Program{toplevel, t.closures, ir}
+	return &gcil.Program{toplevel, t.closures, ir}
 }

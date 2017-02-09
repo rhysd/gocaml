@@ -150,9 +150,3 @@ func Reverse(insn *Insn) *Insn {
 		i = i.Prev
 	}
 }
-
-type Program struct {
-	Toplevel map[string]*Fun     // Mapping from function name to its instruction
-	Closures map[string][]string // Mapping from closure name to it free variables
-	Entry    *Block
-}
