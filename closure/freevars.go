@@ -50,6 +50,9 @@ func (fvg *freeVarsGatherer) exploreInsn(insn *gcil.Insn) {
 		// Should not add val.Callee to free variables if it is not a closure
 		// because a normal function is treated as label, not a variable
 		// (label is a constant).
+		// `_, ok := fvg.transform.closures[val.Callee]; ok` cannot be used
+		// because callee may be a function variable, which also must be treated
+		// as closure call.
 		if _, ok := fvg.transform.knownFuns[val.Callee]; !ok {
 			fvg.add(val.Callee)
 		}

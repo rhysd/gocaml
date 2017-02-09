@@ -72,13 +72,13 @@ func main() {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(4)
 		}
-		prog.Dump(env)
+		prog.Println(os.Stdout, env)
 	default:
 		prog, env, err := c.EmitGCIL(src)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(4)
 		}
-		prog.Dump(env)
+		prog.Dump(os.Stdout, env)
 	}
 }

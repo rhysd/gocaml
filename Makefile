@@ -22,6 +22,7 @@ SRCS := \
 	gcil/visitor.go \
 	gcil/printer.go \
 	gcil/elim_ref.go \
+	gcil/program.go \
 	closure/transform.go \
 
 TESTS := \

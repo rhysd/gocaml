@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/rhysd/gocaml/typing"
 	"io"
-	"os"
 	"strings"
 )
 
@@ -16,13 +15,17 @@ type Program struct {
 	Entry    *Block
 }
 
-func (prog *Program) Println(out io.Writer, env *typing.Env) {
-	fmt.Fprintln(out, "[TOPLEVELS]")
+func (prog *Program) PrintToplevels(out io.Writer, env *typing.Env) {
 	p := printer{env, out, ""}
 	for n, f := range prog.Toplevel {
 		p.printlnInsn(NewInsn(n, f))
 		fmt.Fprintln(out)
 	}
+}
+
+func (prog *Program) Dump(out io.Writer, env *typing.Env) {
+	fmt.Fprintln(out, "[TOPLEVELS]")
+	prog.PrintToplevels(out, env)
 
 	fmt.Fprintln(out, "[CLOSURES]")
 	for c, fv := range prog.Closures {
@@ -34,6 +37,7 @@ func (prog *Program) Println(out io.Writer, env *typing.Env) {
 	prog.Entry.Println(out, env)
 }
 
-func (prog *Program) Dump(env *typing.Env) {
-	prog.Println(os.Stdout, env)
+func (prog *Program) Println(out io.Writer, env *typing.Env) {
+	prog.PrintToplevels(out, env)
+	prog.Entry.Println(out, env)
 }
