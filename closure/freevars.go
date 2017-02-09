@@ -6,7 +6,7 @@ import (
 )
 
 type freeVarsGatherer struct {
-	found         nameSet
+	found     nameSet
 	transform *transformWithKFO
 }
 
@@ -18,6 +18,17 @@ func (fvg *freeVarsGatherer) exploreBlock(block *gcil.Block) {
 	// Traverse instructions in the block in reverse order.
 	// First and last instructions are NOP, so skipped.
 	for i := block.Bottom.Prev; i.Prev != nil; i = i.Prev {
+		fvg.exploreInsn(i)
+	}
+}
+
+func (fvg *freeVarsGatherer) exploreTillTheEnd(insn *gcil.Insn) {
+	end := insn
+	for end.Next.Next != nil {
+		// Find the last instruction before NOP
+		end = end.Next
+	}
+	for i := end; i != insn; i = i.Prev {
 		fvg.exploreInsn(i)
 	}
 }
@@ -36,9 +47,10 @@ func (fvg *freeVarsGatherer) exploreInsn(insn *gcil.Insn) {
 		fvg.exploreBlock(val.Then)
 		fvg.exploreBlock(val.Else)
 	case *gcil.App:
-		// Should not add val.Callee to free variables because a normal function
-		// is treated as label, not a variable (label is a constant).
-		if val.Closure {
+		// Should not add val.Callee to free variables if it is not a closure
+		// because a normal function is treated as label, not a variable
+		// (label is a constant).
+		if _, ok := fvg.transform.knownFuns[val.Callee]; !ok {
 			fvg.add(val.Callee)
 		}
 		for _, a := range val.Args {
@@ -83,5 +95,11 @@ func (fvg *freeVarsGatherer) exploreInsn(insn *gcil.Insn) {
 func gatherFreeVars(block *gcil.Block, trans *transformWithKFO) nameSet {
 	v := &freeVarsGatherer{map[string]struct{}{}, trans}
 	v.exploreBlock(block)
+	return v.found
+}
+
+func gatherFreeVarsTillTheEnd(insn *gcil.Insn, trans *transformWithKFO) nameSet {
+	v := &freeVarsGatherer{map[string]struct{}{}, trans}
+	v.exploreTillTheEnd(insn)
 	return v.found
 }
