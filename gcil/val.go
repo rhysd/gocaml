@@ -74,8 +74,8 @@ type (
 		Body   *Block
 	}
 	App struct {
-		Callee string
-		Args   []string
+		Callee  string
+		Args    []string
 		Closure bool
 	}
 	Tuple struct {
@@ -171,5 +171,5 @@ func (v *NOP) Print(out io.Writer) {
 	fmt.Fprintf(out, "nop")
 }
 func (v *MakeCls) Print(out io.Writer) {
-	fmt.Fprintf(out, "makecls %s %s", strings.Join(v.Vars, ","), v.Fun)
+	fmt.Fprintf(out, "makecls (%s) %s", strings.Join(v.Vars, ","), v.Fun)
 }

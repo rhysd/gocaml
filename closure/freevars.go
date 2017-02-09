@@ -28,7 +28,7 @@ func (fvg *freeVarsGatherer) exploreTillTheEnd(insn *gcil.Insn) {
 		// Find the last instruction before NOP
 		end = end.Next
 	}
-	for i := end; i != insn; i = i.Prev {
+	for i := end; i != insn.Prev; i = i.Prev {
 		fvg.exploreInsn(i)
 	}
 }
@@ -72,18 +72,29 @@ func (fvg *freeVarsGatherer) exploreInsn(insn *gcil.Insn) {
 		fvg.add(val.To)
 		fvg.add(val.Index)
 		fvg.add(val.Rhs)
-	case *gcil.MakeCls:
-		fv, ok := fvg.transform.closureBlockFreeVars[val.Fun]
+	case *gcil.Fun:
+		make, ok := fvg.transform.replacedFuns[insn]
+		if !ok {
+			panic(fmt.Sprintf("Visiting function '%s' for gathering free vars is not visit by transformWithKFO: %v", insn.Ident, val))
+		}
+		if make == nil {
+			// The function is not a closure. Need not to be visit because it is
+			// simply moved to toplevel
+			break
+		}
+		fv, ok := fvg.transform.closureBlockFreeVars[make.Fun]
 		if !ok {
 			panic(fmt.Sprintf("Applying unknown closure '%s'", insn.Ident))
 		}
 		for v := range fv {
 			fvg.add(v)
 		}
-		for _, v := range val.Vars {
+		for _, v := range make.Vars {
 			fvg.add(v)
 		}
-		delete(fvg.found, val.Fun)
+		delete(fvg.found, make.Fun)
+	case *gcil.MakeCls:
+		panic("unreachable")
 	}
 
 	// Note:
@@ -93,13 +104,17 @@ func (fvg *freeVarsGatherer) exploreInsn(insn *gcil.Insn) {
 }
 
 func gatherFreeVars(block *gcil.Block, trans *transformWithKFO) nameSet {
+	fmt.Printf("Gathering free vars start!: %s:\n", block.Name)
 	v := &freeVarsGatherer{map[string]struct{}{}, trans}
 	v.exploreBlock(block)
+	fmt.Printf("Gathering free vars: Found: %s: %v\n", block.Name, v.found)
 	return v.found
 }
 
 func gatherFreeVarsTillTheEnd(insn *gcil.Insn, trans *transformWithKFO) nameSet {
+	fmt.Println("Gathering free vars till the end start!")
 	v := &freeVarsGatherer{map[string]struct{}{}, trans}
 	v.exploreTillTheEnd(insn)
+	fmt.Printf("Gathering free vars till the end: Found: %v\n", v.found)
 	return v.found
 }
