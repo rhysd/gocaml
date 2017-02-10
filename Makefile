@@ -24,12 +24,17 @@ SRCS := \
 	gcil/elim_ref.go \
 	gcil/program.go \
 	closure/transform.go \
+	closure/freevars.go \
 
 TESTS := \
 	alpha/example_test.go \
+	alpha/mapping_test.go \
+	alpha/transform_test.go \
 	ast/example_test.go \
 	ast/visitor_test.go \
 	ast/printer_test.go \
+	closure/example_test.go \
+	closure/transform_test.go \
 	compiler/example_test.go \
 	lexer/example_test.go \
 	lexer/lexer_test.go \

@@ -18,7 +18,7 @@ func TestLast(t *testing.T) {
 	}
 }
 
-func TestAppend(t *testing.T) {
+func TestInsnAppend(t *testing.T) {
 	i1 := &Insn{"test1", nil, nil, nil}
 	i2 := &Insn{"test2", nil, i1, nil}
 	i1.Prev = i2
@@ -90,5 +90,34 @@ func TestReverse(t *testing.T) {
 	}
 	if i2.Prev != i1 {
 		t.Errorf("prev of bottom of reversed list must be i1 but %v", i2.Prev)
+	}
+}
+
+func TestEmptyArrayFail(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("Trying to create empty block should make panic")
+		}
+	}()
+	NewBlockFromArray("test", []*Insn{})
+}
+
+func TestBlockPrepend(t *testing.T) {
+	i := NewInsn("$k1", UnitVal)
+	j := NewInsn("$k2", UnitVal)
+	b := NewBlockFromArray("test", []*Insn{i})
+	b.Prepend(j)
+	if j.Next != i || i.Prev != j || j.Prev != b.Top || b.Top.Next != j {
+		t.Fatalf("Instruction was not prepended correctly")
+	}
+}
+
+func TestBlockAppend(t *testing.T) {
+	i := NewInsn("$k1", UnitVal)
+	j := NewInsn("$k2", UnitVal)
+	b := NewBlockFromArray("test", []*Insn{i})
+	b.Append(j)
+	if i.Next != j || j.Prev != i || b.Bottom.Prev != j || j.Next != b.Bottom {
+		t.Fatalf("Instruction was not appended correctly")
 	}
 }

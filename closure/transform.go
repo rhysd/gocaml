@@ -72,12 +72,12 @@ func (trans *transformWithKFO) duplicate() *transformWithKFO {
 	}
 }
 
-func (trans *transformWithKFO) start(block *gcil.Block) {
+func (trans *transformWithKFO) transformBlock(block *gcil.Block) {
 	// Skip first NOP instruction
-	trans.explore(block.Top.Next)
+	trans.transformInsn(block.Top.Next)
 }
 
-func (trans *transformWithKFO) explore(insn *gcil.Insn) {
+func (trans *transformWithKFO) transformInsn(insn *gcil.Insn) {
 	if insn.Next == nil {
 		// Reaches bottom of the block
 		return
@@ -89,7 +89,7 @@ func (trans *transformWithKFO) explore(insn *gcil.Insn) {
 		dup := trans.duplicate()
 		dup.knownFuns[insn.Ident] = struct{}{}
 		fmt.Printf("%s: Will transform recursively: %v \n", insn.Ident, dup)
-		dup.start(val.Body)
+		dup.transformBlock(val.Body)
 		// Check there is no free variable actually
 		fv := gatherFreeVars(val.Body, dup)
 		for _, p := range val.Params {
@@ -108,7 +108,7 @@ func (trans *transformWithKFO) explore(insn *gcil.Insn) {
 			// nil is assigned temporarily because free variables of the function are not
 			// determined yet at this point.
 			trans.closures[insn.Ident] = nil
-			trans.start(val.Body)
+			trans.transformBlock(val.Body)
 			fv = gatherFreeVars(val.Body, trans)
 			for _, p := range val.Params {
 				delete(fv, p)
@@ -123,10 +123,11 @@ func (trans *transformWithKFO) explore(insn *gcil.Insn) {
 		fmt.Printf("%s: First process done: %v\n", insn.Ident, trans)
 
 		// Visit recursively
-		trans.explore(insn.Next)
+		trans.transformInsn(insn.Next)
 
 		fmt.Printf("%s: Second process start\n", insn.Ident)
 
+		// Visit rest block of the 'fun' instruction
 		fv = gatherFreeVarsTillTheEnd(insn.Next, trans)
 
 		fmt.Printf("%s: Free variables for rest block: %v\n", insn.Ident, fv)
@@ -142,25 +143,22 @@ func (trans *transformWithKFO) explore(insn *gcil.Insn) {
 				vars = []string{}
 				trans.closures[insn.Ident] = vars
 				delete(trans.knownFuns, insn.Ident)
-				fmt.Printf("%s: Function captures nothing but used as function variable. Now it has empty closure\n", insn.Ident)
 			}
 			// If the function is referred from somewhere, we need to  make a closure.
 			replaced = &gcil.MakeCls{vars, insn.Ident}
-			fmt.Printf("%s: Made closure instance. Now %d closures exist. Free vars: %v\n", insn.Ident, len(trans.closures), vars)
 		}
 		trans.replacedFuns[insn] = replaced
-		fmt.Printf("%s: Registered MakeCls replacement %s -> %v. Now number of MakeCls is %d\n", insn.Ident, insn.Ident, replaced, len(trans.replacedFuns))
 	case *gcil.App:
 		if _, ok := trans.knownFuns[val.Callee]; !ok && val.Kind != gcil.EXTERNAL_CALL {
 			trans.closureCalls = append(trans.closureCalls, val)
 		}
-		trans.explore(insn.Next)
+		trans.transformInsn(insn.Next)
 	case *gcil.If:
-		trans.start(val.Then)
-		trans.start(val.Else)
-		trans.explore(insn.Next)
+		trans.transformBlock(val.Then)
+		trans.transformBlock(val.Else)
+		trans.transformInsn(insn.Next)
 	default:
-		trans.explore(insn.Next)
+		trans.transformInsn(insn.Next)
 	}
 }
 
@@ -172,7 +170,7 @@ func Transform(ir *gcil.Block) *gcil.Program {
 		map[string][]string{},
 		map[string]nameSet{},
 	}
-	t.start(ir)
+	t.transformBlock(ir)
 	fmt.Printf("Transform Done!: MakeCls (%d), closureCalls (%d), closures(%d)\n", len(t.replacedFuns), len(t.closureCalls), len(t.closures))
 
 	// Modify instructions in IR

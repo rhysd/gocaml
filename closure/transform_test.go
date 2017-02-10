@@ -233,6 +233,81 @@ func TestClosureTransform(t *testing.T) {
 				"appcls $k",
 			},
 		},
+		{
+			what: "returned function is also refered in function body",
+			code: "let rec f x = x in let rec g x = (f 10; f) in (g ()) 42",
+			closures: map[string][]string{
+				// Need to be closure because returned value from `g ()` can't be determined function or closure.
+				"f$t1": []string{},
+				"g$t3": []string{"f$t1"},
+			},
+			toplevel: []string{
+				"f$t1 = fun x$t2",
+				"g$t3 = fun x$t4",
+				"app f$t1", // Note: 'app' is used. Calling closure with direct call. Here we need to pass NULL as environment frame of closure.
+				"ref f$t1 ; type=int -> int",
+			},
+			entry: []string{
+				"makecls () f$t1",
+				"makecls (f$t1) g$t3",
+				"appcls g$t3",
+				"appcls $k",
+			},
+		},
+		{
+			what: "returned closure as variable",
+			code: "let a = 10 in let rec f x = a + x in let rec g x = f in (g ()) 42",
+			closures: map[string][]string{
+				// Need to be closure because returned value from `g ()` can't be determined function or closure.
+				"f$t2": []string{"a$t1"},
+				"g$t4": []string{"f$t2"},
+			},
+			toplevel: []string{
+				"f$t2 = fun x$t3",
+				"g$t4 = fun x$t5",
+				"ref f$t2 ; type=int -> int",
+			},
+			entry: []string{
+				"makecls (a$t1) f$t2",
+				"makecls (f$t2) g$t4",
+				"appcls g$t4",
+				"appcls $k",
+			},
+		},
+		{
+			what:     "external function call",
+			code:     "print_int 42",
+			closures: empty,
+			toplevel: []string{},
+			entry: []string{
+				"appx print_int $k2",
+			},
+		},
+		{
+			what: "external function call in closure body",
+			code: "let x = 42 in let rec f a = (print_int (a + x); ()) in f 10",
+			closures: map[string][]string{
+				"f$t2": []string{"x$t1"},
+			},
+			toplevel: []string{
+				"f$t2 = fun a$t3",
+				"appx print_int $k",
+			},
+			entry: []string{
+				"makecls (x$t1) f$t2",
+				"appcls f$t2 $k",
+			},
+		},
+		{
+			// This is a test for deep-copy of transform visitor instance
+			what: "sibling closures",
+			code: "let a = 42 in let rec f x = let rec g y = y + a in g x in let rec h p = a - p in f (h 1)",
+			closures: map[string][]string{
+				"f$t2": []string{"a$t1"},
+				"g$t4": []string{"a$t1"},
+				"h$t6": []string{"a$t1"},
+			},
+		},
 	}
 
 	for _, tc := range cases {

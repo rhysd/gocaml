@@ -102,4 +102,7 @@ func Example() {
 	// $k36 = app $k31 $k35 ; ()
 	// END: program
 
+	// Optimization for eliminate unnecessary 'ref' instructions and classify
+	// 'app' instruction for external function calls.
+	ElimRefs(block, env)
 }
