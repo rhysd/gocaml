@@ -88,16 +88,13 @@ func (trans *transformWithKFO) transformInsn(insn *gcil.Insn) {
 		// Assume the function is not a closure and try to transform its body
 		dup := trans.duplicate()
 		dup.knownFuns[insn.Ident] = struct{}{}
-		fmt.Printf("%s: Will transform recursively: %v \n", insn.Ident, dup)
 		dup.transformBlock(val.Body)
 		// Check there is no free variable actually
 		fv := gatherFreeVars(val.Body, dup)
 		for _, p := range val.Params {
 			delete(fv, p)
 		}
-		fmt.Printf("%s: First free vars visit has been done: %v\n", insn.Ident, fv)
 		if len(fv) != 0 {
-			fmt.Printf("%s: Function is NOT a known function, retry!\n", insn.Ident)
 			// Assumed the function is not a closure. But there are actually some
 			// free variables. It means that the function is actually a closure.
 			// Discard 'dup' and retry visiting its body with adding it to closures.
@@ -113,24 +110,17 @@ func (trans *transformWithKFO) transformInsn(insn *gcil.Insn) {
 			for _, p := range val.Params {
 				delete(fv, p)
 			}
-			fmt.Printf("%s: Retried free vars visit has been done: %v\n", insn.Ident, fv)
 			trans.closures[insn.Ident] = fv.toSortedArray()
 		} else {
 			// When the function is actually not a closure, continue to use 'dup' as current visitor
-			fmt.Printf("%s: Function is known function!\n", insn.Ident)
 			*trans = *dup
 		}
-		fmt.Printf("%s: First process done: %v\n", insn.Ident, trans)
 
 		// Visit recursively
 		trans.transformInsn(insn.Next)
 
-		fmt.Printf("%s: Second process start\n", insn.Ident)
-
 		// Visit rest block of the 'fun' instruction
 		fv = gatherFreeVarsTillTheEnd(insn.Next, trans)
-
-		fmt.Printf("%s: Free variables for rest block: %v\n", insn.Ident, fv)
 
 		trans.closureBlockFreeVars[insn.Ident] = fv
 		var replaced *gcil.MakeCls = nil
@@ -171,7 +161,6 @@ func Transform(ir *gcil.Block) *gcil.Program {
 		map[string]nameSet{},
 	}
 	t.transformBlock(ir)
-	fmt.Printf("Transform Done!: MakeCls (%d), closureCalls (%d), closures(%d)\n", len(t.replacedFuns), len(t.closureCalls), len(t.closures))
 
 	// Modify instructions in IR
 

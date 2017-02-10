@@ -107,17 +107,13 @@ func (fvg *freeVarsGatherer) exploreInsn(insn *gcil.Insn) {
 }
 
 func gatherFreeVars(block *gcil.Block, trans *transformWithKFO) nameSet {
-	fmt.Printf("Gathering free vars start!: %s:\n", block.Name)
 	v := &freeVarsGatherer{map[string]struct{}{}, trans}
 	v.exploreBlock(block)
-	fmt.Printf("Gathering free vars: Found: %s: %v\n", block.Name, v.found)
 	return v.found
 }
 
 func gatherFreeVarsTillTheEnd(insn *gcil.Insn, trans *transformWithKFO) nameSet {
-	fmt.Println("Gathering free vars till the end start!")
 	v := &freeVarsGatherer{map[string]struct{}{}, trans}
 	v.exploreTillTheEnd(insn)
-	fmt.Printf("Gathering free vars till the end: Found: %v\n", v.found)
 	return v.found
 }
