@@ -205,7 +205,7 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 			args = append(args, arg.Ident)
 			prev = arg
 		}
-		val = &App{callee.Ident, args}
+		val = &App{callee.Ident, args, DIRECT_CALL}
 		f, ok := e.typeOf(callee).(*typing.Fun)
 		if !ok {
 			panic(fmt.Sprintf("Callee of Apply node is not typed as function!: %s", e.typeOf(callee).String()))

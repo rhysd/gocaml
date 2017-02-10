@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/rhysd/gocaml/typing"
 	"io"
-	"strings"
 )
 
 type printer struct {
@@ -19,10 +18,7 @@ func (p *printer) getTypeNameOf(insn *Insn) string {
 		panic(fmt.Sprintf("Type for identifier '%s' not found", insn.Ident))
 	}
 	if t == nil {
-		if strings.HasPrefix(insn.Ident, "$unused") {
-			return "unknown (unused)"
-		}
-		panic("ERROR!: " + insn.Ident)
+		return "unknown (unused)"
 	}
 	return t.String()
 }

@@ -26,7 +26,7 @@ print_int (gcd 21600 337500)
 - [x] Type inference (Hindley Milner monomorphic type system) -> ([doc][typing doc])
 - [x] GoCaml intermediate language (GCIL) ([doc][gcil doc])
 - [x] K normalization from AST into GCIL ([doc][gcil doc])
-- [ ] Closure transform
+- [x] Closure transform ([doc][closure doc])
 - [ ] Optimizations
   - [ ] Beta reduction
   - [ ] Inlining
@@ -66,6 +66,7 @@ Or clone this repository into your `$GOPATH/src/github.com/rhysd/gocaml` and exe
 [typing doc]: https://godoc.org/github.com/rhysd/gocaml/typing
 [alpha transform doc]: https://godoc.org/github.com/rhysd/gocaml/alpha
 [gcil doc]: https://godoc.org/github.com/rhysd/gocaml/gcil
+[closure doc]: https://godoc.org/github.com/rhysd/gocaml/closure
 [MinCaml spec]: http://esumii.github.io/min-caml/paper.pdf
 [Boehm GC]: https://github.com/ivmai/bdwgc
 [Coverage Status]: https://coveralls.io/repos/github/rhysd/gocaml/badge.svg

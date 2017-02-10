@@ -69,6 +69,20 @@ func TestEliminatingRef(t *testing.T) {
 				"= arrstore x$t1 arr$t2 x$t1",
 			},
 		},
+		{
+			"external variable",
+			"x",
+			[]string{
+				"= xref x",
+			},
+		},
+		{
+			"external function call",
+			"print_int 42",
+			[]string{
+				"= appx print_int",
+			},
+		},
 	}
 
 	for _, tc := range cases {

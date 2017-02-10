@@ -27,6 +27,9 @@ func occur(v *Var, rhs Type) bool {
 			}
 		}
 	case *Var:
+		if v == t {
+			return true
+		}
 		if t.Ref != nil {
 			return occur(v, t.Ref)
 		}
@@ -84,7 +87,7 @@ func unifyVar(l *Var, right Type) error {
 	}
 
 	if occur(l, right) {
-		return errors.Errorf("Cyclic dependency found in types. Type variable '%s' is contained in '%s'\n")
+		return errors.Errorf("Cyclic dependency found in types. Type variable '%s' is contained in '%s'\n", l.String(), right.String())
 	}
 
 	// Assign rhs type to type variable when lhs type variable is unknown

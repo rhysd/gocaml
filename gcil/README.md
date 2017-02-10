@@ -48,22 +48,24 @@ Variable names follow below naming convention.
 
 ## Instructions
 
-| Instruction | Description |
-|--------|---------------------|
-| `unit` | Create a `()` value |
-| `bool {constant}` | Create a boolean value (`true` or `false`) |
-| `int {constant}` | Create an integer value |
-| `float {constant}` | Create an floating point number value |
-| `unary {op} {id}` | Apply unary operator to `{id}`. `{op}` is `-` or `not` or `-.`. |
-| `binary {op} {id} {id}` | Apply binary operator |
-| `ref {id}` | Reference to `{id}` variable. |
-| `if {id} {block} {block}` | When `{id}` is true, then enter to first `{block}` . Otherwise inter to second `{block}`. |
-| `fun {ids...} {block}` | Function. {ids...} are comma separated parameter IDs. `{block}` is its body. |
-| `app {id} {ids...}` | Apply function. First `{id}` is called function. Following comma separated IDs are arguments. |
-| `tuple {ids...}` | Tuple value. |
-| `array {id} {id}` | Array value. First `{id}` is index and second `{id}` is element value. |
-| `tplload {constant} {id}` | Load element value of tuple. Index must be constant. |
-| `arrload {id} {id}` | Load element value of array. First `{id}` is index value.|
+| Instruction               | Description                                                                                     |
+|---------------------------|-------------------------------------------------------------------------------------------------|
+| `unit`                    | Create a `()` value                                                                             |
+| `bool {constant}`         | Create a boolean value (`true` or `false`)                                                      |
+| `int {constant}`          | Create an integer value                                                                         |
+| `float {constant}`        | Create an floating point number value                                                           |
+| `unary {op} {id}`         | Apply unary operator to `{id}`. `{op}` is `-` or `not` or `-.`.                                 |
+| `binary {op} {id} {id}`   | Apply binary operator                                                                           |
+| `ref {id}`                | Reference to `{id}` variable.                                                                   |
+| `if {id} {block} {block}` | When `{id}` is true, then enter to first `{block}` . Otherwise inter to second `{block}`.       |
+| `fun {ids...} {block}`    | Function. {ids...} are comma separated parameter IDs. `{block}` is its body.                    |
+| `app {id} {ids...}`       | Apply function. First `{id}` is called function. Following comma separated IDs are arguments.   |
+| `appcls {id} {ids...}`    | Apply function. First `{id}` is called closure. Following comma separated IDs are arguments.    |
+| `appx {id} {ids...}`      | Apply function. First `{id}` is external symbol. Following comma separated IDs are arguments.   |
+| `tuple {ids...}`          | Tuple value.                                                                                    |
+| `array {id} {id}`         | Array value. First `{id}` is index and second `{id}` is element value.                          |
+| `tplload {constant} {id}` | Load element value of tuple. Index must be constant.                                            |
+| `arrload {id} {id}`       | Load element value of array. First `{id}` is index value.                                       |
 | `arrstore {id} {id} {id}` | Store value to array. First `{id}` is index, second `{id}` is array, third `{id}` is set value. |
-| `xref {id}` | Reference to external symbol. `{id}` represents the symbol. |
+| `xref {id}`               | Reference to external symbol. `{id}` represents the symbol.                                     |
 

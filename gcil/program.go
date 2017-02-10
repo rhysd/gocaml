@@ -1,0 +1,43 @@
+package gcil
+
+import (
+	"fmt"
+	"github.com/rhysd/gocaml/typing"
+	"io"
+	"strings"
+)
+
+// Program representation. Program can be obtained after closure transform because
+// all functions must be at the top.
+type Program struct {
+	Toplevel map[string]*Fun     // Mapping from function name to its instruction
+	Closures map[string][]string // Mapping from closure name to it free variables
+	Entry    *Block
+}
+
+func (prog *Program) PrintToplevels(out io.Writer, env *typing.Env) {
+	p := printer{env, out, ""}
+	for n, f := range prog.Toplevel {
+		p.printlnInsn(NewInsn(n, f))
+		fmt.Fprintln(out)
+	}
+}
+
+func (prog *Program) Dump(out io.Writer, env *typing.Env) {
+	fmt.Fprintf(out, "[TOPLEVELS (%d)]\n", len(prog.Toplevel))
+	prog.PrintToplevels(out, env)
+
+	fmt.Fprintf(out, "[CLOSURES (%d)]\n", len(prog.Closures))
+	for c, fv := range prog.Closures {
+		fmt.Fprintf(out, "%s:\t%s\n", c, strings.Join(fv, ","))
+	}
+	fmt.Fprintln(out)
+
+	fmt.Fprintln(out, "[ENTRY]")
+	prog.Entry.Println(out, env)
+}
+
+func (prog *Program) Println(out io.Writer, env *typing.Env) {
+	prog.PrintToplevels(out, env)
+	prog.Entry.Println(out, env)
+}

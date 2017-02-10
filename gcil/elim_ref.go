@@ -11,30 +11,46 @@ type refEntry struct {
 
 type elimRefVisitor struct {
 	refs  map[string]refEntry
+	xrefs map[string]refEntry
 	types *typing.Env
 }
 
 func newElimRefVisitor(types *typing.Env) *elimRefVisitor {
-	return &elimRefVisitor{map[string]refEntry{}, types}
+	return &elimRefVisitor{
+		map[string]refEntry{},
+		map[string]refEntry{},
+		types,
+	}
 }
 
 func (vis *elimRefVisitor) elimRef(ident string) string {
-	if entry, ok := vis.refs[ident]; ok {
-		i := entry.insn
-		i.RemoveFromList()
-		delete(vis.types.Table, i.Ident)
-		return entry.ident
+	entry, ok := vis.refs[ident]
+	if !ok {
+		return ident
 	}
-	return ident
+
+	i := entry.insn
+	i.RemoveFromList()
+	delete(vis.types.Table, i.Ident)
+	return entry.ident
+}
+
+func (vis *elimRefVisitor) elimXRef(app *App) {
+	entry, ok := vis.xrefs[app.Callee]
+	if !ok {
+		return
+	}
+	entry.insn.RemoveFromList()
+	app.Callee = entry.ident
+	app.Kind = EXTERNAL_CALL
 }
 
 func (vis *elimRefVisitor) Visit(insn *Insn) Visitor {
-	if ref, ok := insn.Val.(*Ref); ok {
-		vis.refs[insn.Ident] = refEntry{insn, ref.Ident}
-		return vis
-	}
-
 	switch val := insn.Val.(type) {
+	case *Ref:
+		vis.refs[insn.Ident] = refEntry{insn, val.Ident}
+	case *XRef:
+		vis.xrefs[insn.Ident] = refEntry{insn, val.Ident}
 	case *Unary:
 		val.Child = vis.elimRef(val.Child)
 	case *Binary:
@@ -51,6 +67,7 @@ func (vis *elimRefVisitor) Visit(insn *Insn) Visitor {
 		for i, a := range val.Args {
 			val.Args[i] = vis.elimRef(a)
 		}
+		vis.elimXRef(val)
 	case *Tuple:
 		for i, e := range val.Elems {
 			val.Elems[i] = vis.elimRef(e)

@@ -67,28 +67,18 @@ func main() {
 	case *showAST:
 		c.PrintAST(src)
 	case *showGCIL:
-		block, env, err := c.EmitGCIL(src)
+		prog, env, err := c.EmitGCIL(src)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(4)
 		}
-		block.Println(os.Stdout, env)
+		prog.Println(os.Stdout, env)
 	default:
-		ast, err := c.Parse(src)
+		prog, env, err := c.EmitGCIL(src)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(4)
 		}
-		env, err := c.SemanticAnalysis(ast)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(4)
-		}
-
-		if *externals {
-			env.DumpExternals()
-		}
-
-		env.Dump() // TODO: Temporary
+		prog.Dump(os.Stdout, env)
 	}
 }
