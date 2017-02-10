@@ -53,9 +53,7 @@ func (fvg *freeVarsGatherer) exploreInsn(insn *gcil.Insn) {
 		// `_, ok := fvg.transform.closures[val.Callee]; ok` cannot be used
 		// because callee may be a function variable, which also must be treated
 		// as closure call.
-		// We need not to consider external function call because external symbol
-		// also should not be added to free variables.
-		if _, ok := fvg.transform.knownFuns[val.Callee]; !ok {
+		if _, ok := fvg.transform.knownFuns[val.Callee]; !ok && val.Kind != gcil.EXTERNAL_CALL {
 			fvg.add(val.Callee)
 		}
 		for _, a := range val.Args {

@@ -65,7 +65,7 @@ func TestVisitor(t *testing.T) {
 						&App{
 							"$k5",
 							[]string{"$k1", "$k2"},
-							false,
+							DIRECT_CALL,
 						},
 					),
 				}),

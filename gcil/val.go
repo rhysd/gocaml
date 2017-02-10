@@ -41,6 +41,22 @@ var opTable = [...]string{
 	EQ:   "=",
 }
 
+// Kind of function call.
+type AppKind int
+
+const (
+	// Means to call a function without closure
+	DIRECT_CALL AppKind = iota
+	CLOSURE_CALL
+	EXTERNAL_CALL
+)
+
+var appTable = [...]string{
+	DIRECT_CALL:   "",
+	CLOSURE_CALL:  "cls",
+	EXTERNAL_CALL: "x",
+}
+
 type (
 	Unit struct{}
 	Bool struct {
@@ -74,9 +90,9 @@ type (
 		Body   *Block
 	}
 	App struct {
-		Callee  string
-		Args    []string
-		Closure bool
+		Callee string
+		Args   []string
+		Kind   AppKind
 	}
 	Tuple struct {
 		Elems []string
@@ -143,11 +159,7 @@ func (v *Fun) Print(out io.Writer) {
 	fmt.Fprintf(out, "fun %s", strings.Join(v.Params, ","))
 }
 func (v *App) Print(out io.Writer) {
-	cls := ""
-	if v.Closure {
-		cls = "cls"
-	}
-	fmt.Fprintf(out, "app%s %s %s", cls, v.Callee, strings.Join(v.Args, ","))
+	fmt.Fprintf(out, "app%s %s %s", appTable[v.Kind], v.Callee, strings.Join(v.Args, ","))
 }
 func (v *Tuple) Print(out io.Writer) {
 	fmt.Fprintf(out, "tuple %s", strings.Join(v.Elems, ","))

@@ -151,10 +151,7 @@ func (trans *transformWithKFO) explore(insn *gcil.Insn) {
 		trans.replacedFuns[insn] = replaced
 		fmt.Printf("%s: Registered MakeCls replacement %s -> %v. Now number of MakeCls is %d\n", insn.Ident, insn.Ident, replaced, len(trans.replacedFuns))
 	case *gcil.App:
-		// Note:
-		// _, ok := trans.knownFuns[val.Callee]; !ok is not available because val.Callee
-		// may refer an external symbol.
-		if _, ok := trans.closures[val.Callee]; ok {
+		if _, ok := trans.knownFuns[val.Callee]; !ok && val.Kind != gcil.EXTERNAL_CALL {
 			trans.closureCalls = append(trans.closureCalls, val)
 		}
 		trans.explore(insn.Next)
@@ -182,7 +179,7 @@ func Transform(ir *gcil.Block) *gcil.Program {
 
 	// Set flags for closure calls
 	for _, app := range t.closureCalls {
-		app.Closure = true
+		app.Kind = gcil.CLOSURE_CALL
 	}
 
 	// Move all functions to toplevel and put closure instance if needed
