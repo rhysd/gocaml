@@ -16,6 +16,7 @@
 // So, considering recursive functions, before visiting function's body, the function must
 // be determined to normal function or closure. That's the reason to assume function is a
 // normal function at first and then backtrack after if needed.
+//
 package closure
 
 import (
@@ -72,12 +73,12 @@ func (trans *transformWithKFO) duplicate() *transformWithKFO {
 	}
 }
 
-func (trans *transformWithKFO) transformBlock(block *gcil.Block) {
+func (trans *transformWithKFO) block(block *gcil.Block) {
 	// Skip first NOP instruction
-	trans.transformInsn(block.Top.Next)
+	trans.insn(block.Top.Next)
 }
 
-func (trans *transformWithKFO) transformInsn(insn *gcil.Insn) {
+func (trans *transformWithKFO) insn(insn *gcil.Insn) {
 	if insn.Next == nil {
 		// Reaches bottom of the block
 		return
@@ -88,7 +89,7 @@ func (trans *transformWithKFO) transformInsn(insn *gcil.Insn) {
 		// Assume the function is not a closure and try to transform its body
 		dup := trans.duplicate()
 		dup.knownFuns[insn.Ident] = struct{}{}
-		dup.transformBlock(val.Body)
+		dup.block(val.Body)
 		// Check there is no free variable actually
 		fv := gatherFreeVars(val.Body, dup)
 		for _, p := range val.Params {
@@ -98,14 +99,7 @@ func (trans *transformWithKFO) transformInsn(insn *gcil.Insn) {
 			// Assumed the function is not a closure. But there are actually some
 			// free variables. It means that the function is actually a closure.
 			// Discard 'dup' and retry visiting its body with adding it to closures.
-			//
-			// XXX:
-			// We need to register the function to trans.closures because 'app' instruction
-			// checks the callee function is a closure or not by it.
-			// nil is assigned temporarily because free variables of the function are not
-			// determined yet at this point.
-			trans.closures[insn.Ident] = nil
-			trans.transformBlock(val.Body)
+			trans.block(val.Body)
 			fv = gatherFreeVars(val.Body, trans)
 			for _, p := range val.Params {
 				delete(fv, p)
@@ -117,12 +111,16 @@ func (trans *transformWithKFO) transformInsn(insn *gcil.Insn) {
 		}
 
 		// Visit recursively
-		trans.transformInsn(insn.Next)
+		trans.insn(insn.Next)
 
 		// Visit rest block of the 'fun' instruction
-		fv = gatherFreeVarsTillTheEnd(insn.Next, trans)
-
+		if cache, ok := trans.closureBlockFreeVars[insn.Ident]; ok {
+			fv = cache
+		} else {
+			fv = gatherFreeVarsTillTheEnd(insn.Next, trans)
+		}
 		trans.closureBlockFreeVars[insn.Ident] = fv
+
 		var replaced *gcil.MakeCls = nil
 		if _, ok := fv[insn.Ident]; ok {
 			vars, ok := trans.closures[insn.Ident]
@@ -142,16 +140,20 @@ func (trans *transformWithKFO) transformInsn(insn *gcil.Insn) {
 		if _, ok := trans.knownFuns[val.Callee]; !ok && val.Kind != gcil.EXTERNAL_CALL {
 			trans.closureCalls = append(trans.closureCalls, val)
 		}
-		trans.transformInsn(insn.Next)
+		trans.insn(insn.Next)
 	case *gcil.If:
-		trans.transformBlock(val.Then)
-		trans.transformBlock(val.Else)
-		trans.transformInsn(insn.Next)
+		trans.block(val.Then)
+		trans.block(val.Else)
+		trans.insn(insn.Next)
 	default:
-		trans.transformInsn(insn.Next)
+		trans.insn(insn.Next)
 	}
 }
 
+// Executes closure transform.
+// The result is a representation of the program. It contains toplevel functions,
+// entry point and closure information.
+// All nested function was moved to toplevel.
 func Transform(ir *gcil.Block) *gcil.Program {
 	t := &transformWithKFO{
 		map[string]struct{}{},
@@ -160,7 +162,7 @@ func Transform(ir *gcil.Block) *gcil.Program {
 		map[string][]string{},
 		map[string]nameSet{},
 	}
-	t.transformBlock(ir)
+	t.block(ir)
 
 	// Modify instructions in IR
 

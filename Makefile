@@ -50,6 +50,7 @@ TESTS := \
 	gcil/emit_ir_test.go \
 	gcil/visitor_test.go \
 	gcil/elim_ref_test.go \
+	gcil/program_test.go \
 
 all: build test
 
