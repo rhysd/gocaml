@@ -25,6 +25,8 @@ SRCS := \
 	gcil/program.go \
 	closure/transform.go \
 	closure/freevars.go \
+	codegen/emitter.go \
+	codegen/module_builder.go \
 
 TESTS := \
 	alpha/example_test.go \

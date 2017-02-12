@@ -12,7 +12,7 @@ LLVM_DIR="${LLVM_ORG_DIR}/llvm"
 LLVM_GO_DIR="${LLVM_DIR}/bindings/go"
 
 if [[ -d "$LLVM_DIR" ]]; then
-    echo 'LLVM is already installed. Skipped.'
+    echo 'LLVM is already installed. Installation skipped.'
     exit
 fi
 
@@ -21,7 +21,8 @@ cd "$LLVM_ORG_DIR"
 
 git clone --depth 1 -b release_40 --single-branch http://llvm.org/git/llvm.git
 cd "$LLVM_GO_DIR"
-./build.sh
 
+# -DCMAKE_BUILD_TYPE=Debug makes `go build` too slow because clang's linker is very slow with dwarf.
+./build.sh -DCMAKE_BUILD_TYPE=Release
 
-
+go install -a ./llvm
