@@ -7,6 +7,7 @@ import (
 	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/ast"
 	"github.com/rhysd/gocaml/closure"
+	"github.com/rhysd/gocaml/codegen"
 	"github.com/rhysd/gocaml/gcil"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
@@ -104,4 +105,15 @@ func (c *Compiler) EmitGCIL(src *token.Source) (*gcil.Program, *typing.Env, erro
 	gcil.ElimRefs(ir, env)
 	prog := closure.Transform(ir)
 	return prog, env, nil
+}
+
+func (c *Compiler) EmitLLVMIR(src *token.Source) (string, error) {
+	prog, env, err := c.EmitGCIL(src)
+	if err != nil {
+		return "", err
+	}
+	if _ /*TODO*/, err := codegen.NewEmitter(prog, env, src); err != nil {
+		return "", err
+	}
+	return "TODO", nil // TODO
 }

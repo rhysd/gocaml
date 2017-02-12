@@ -57,7 +57,8 @@ all: build test
 build: gocaml
 
 gocaml: $(SRCS)
-	go build
+	./install_llvmgo.sh
+	time go build
 
 parser/grammar.go: parser/grammar.go.y
 	go get golang.org/x/tools/cmd/goyacc

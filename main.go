@@ -14,6 +14,8 @@ var (
 	showAST    = flag.Bool("ast", false, "Show AST for input")
 	showGCIL   = flag.Bool("gcil", false, "Emit GoCaml Intermediate Language representation to stdout")
 	externals  = flag.Bool("externals", false, "Display external symbols")
+	llvm       = flag.Bool("llvm", false, "Emit LLVM IR")
+	asm        = flag.Bool("asm", false, "Emit assembler code")
 )
 
 const usageHeader = `Usage: gocaml [flags] [file]
@@ -73,12 +75,21 @@ func main() {
 			os.Exit(4)
 		}
 		prog.Println(os.Stdout, env)
-	default:
-		prog, env, err := c.EmitGCIL(src)
+	case *llvm:
+		ir, err := c.EmitLLVMIR(src)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(4)
 		}
-		prog.Dump(os.Stdout, env)
+		fmt.Println(ir)
+	case *asm:
+		panic("not implemented yet")
+	default:
+		ir, err := c.EmitLLVMIR(src)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(4)
+		}
+		fmt.Println(ir)
 	}
 }

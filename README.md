@@ -44,13 +44,21 @@ print_int (gcd 21600 337500)
 - MinCaml allows `-` unary operator for float literal. So for example `-3.14` is valid but `-f` (where `f` is `float`) is not valid.
   GoCaml does not allow `-` unary operator for float values totally.
 
+## Requirements
+
+- Go 1.2+ (Go 1.7+ is recommended)
+- make
+- Clang
+- cmake (for building LLVM)
+- Git
+
 ## Installation
 
 ```
-go get -u github.com/rhysd/gocaml
+$ go get -d github.com/rhysd/gocaml
+$ cd $GOPATH/src/github.com/rhysd/gocaml
+$ make
 ```
-
-Or clone this repository into your `$GOPATH/src/github.com/rhysd/gocaml` and execute `make` in the directory.
 
 ## Usage
 
