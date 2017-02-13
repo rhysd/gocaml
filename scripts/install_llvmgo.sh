@@ -11,7 +11,7 @@ LLVM_ORG_DIR="${GOPATH}/src/llvm.org"
 LLVM_DIR="${LLVM_ORG_DIR}/llvm"
 LLVM_GO_DIR="${LLVM_DIR}/bindings/go"
 LLVM_GO_LLVM_DIR="${LLVM_GO_DIR}/llvm"
-LLVM_ARCHIVE="$GOPATH/pkg/llvm.org/llvm/bindings/go/llvm.a"
+LLVM_ARCHIVE="${GOPATH}/pkg/$(go env GOOS)_$(go env GOARCH)/llvm.org/llvm/bindings/go/llvm.a"
 
 if [[ -f "$LLVM_ARCHIVE" ]]; then
     echo "LLVM is already installed: ${LLVM_ARCHIVE}. Installation skipped."
