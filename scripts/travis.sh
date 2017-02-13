@@ -15,6 +15,8 @@ else
     go get golang.org/x/tools/cmd/cover
     go get github.com/haya14busa/goverage
     go get github.com/mattn/goveralls
+    export USE_SYSTEM_LLVM=true
+    export LLVM_CONFIG="llvm-config-4.0"
     make build
     go test -v ./...
     make cover.out
