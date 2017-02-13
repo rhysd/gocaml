@@ -27,6 +27,7 @@ SRCS := \
 	closure/freevars.go \
 	codegen/emitter.go \
 	codegen/module_builder.go \
+	codegen/triple.go \
 
 TESTS := \
 	alpha/example_test.go \
@@ -61,7 +62,7 @@ build: gocaml
 gocaml: $(SRCS)
 	./scripts/install_llvmgo.sh
 	go get -t -d ./...
-	if which > /dev/null; then time go build; else go build; fi
+	if which time > /dev/null; then time go build; else go build; fi
 
 parser/grammar.go: parser/grammar.go.y
 	go get golang.org/x/tools/cmd/goyacc

@@ -6,8 +6,9 @@ import (
 )
 
 type Source struct {
-	Name string
-	Code []byte
+	Name   string
+	Code   []byte
+	Exists bool
 }
 
 func NewSourceFromFile(name string) (*Source, error) {
@@ -15,7 +16,7 @@ func NewSourceFromFile(name string) (*Source, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Source{name, b}, nil
+	return &Source{name, b, true}, nil
 }
 
 func NewSourceFromStdin() (*Source, error) {
@@ -23,9 +24,9 @@ func NewSourceFromStdin() (*Source, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Source{"<stdin>", b}, nil
+	return &Source{"<stdin>", b, false}, nil
 }
 
 func NewDummySource(code string) *Source {
-	return &Source{"dummy", []byte(code)}
+	return &Source{"dummy", []byte(code), false}
 }

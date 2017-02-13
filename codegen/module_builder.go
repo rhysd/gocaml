@@ -16,8 +16,8 @@ type moduleBuilder struct {
 	// TODO: Data layout, LLVM context, IRBuilder, ...
 }
 
-func lookupTargetInfo(triple string) (llvm.Target, error) {
-	arch := triple[:strings.IndexRune(triple, '-')+1]
+func lookupTargetInfo(triple Triple) (llvm.Target, error) {
+	arch := triple.Arch()
 	for target := llvm.FirstTarget(); target.C != nil; target = target.NextTarget() {
 		if strings.HasPrefix(target.Name(), arch) {
 			return target, nil
@@ -28,10 +28,7 @@ func lookupTargetInfo(triple string) (llvm.Target, error) {
 
 func newModuleBuilder(env *typing.Env, name string, opts EmitOptions) (*moduleBuilder, error) {
 
-	triple := opts.Triple
-	if triple == "" {
-		triple = llvm.DefaultTargetTriple()
-	}
+	triple := NewTriple(opts.Triple)
 
 	optLevel := llvm.CodeGenLevelDefault
 	switch opts.Optimization {
@@ -47,7 +44,7 @@ func newModuleBuilder(env *typing.Env, name string, opts EmitOptions) (*moduleBu
 	}
 
 	machine := target.CreateTargetMachine(
-		triple,
+		string(triple),
 		"", // CPU
 		"", // Features
 		optLevel,
@@ -61,7 +58,7 @@ func newModuleBuilder(env *typing.Env, name string, opts EmitOptions) (*moduleBu
 	machine.Dispose()
 
 	module := llvm.NewModule(name)
-	module.SetTarget(triple)
+	module.SetTarget(string(triple))
 	module.SetDataLayout(dataLayout)
 
 	return &moduleBuilder{module, env, dataLayout, llvm.GlobalContext()}, nil

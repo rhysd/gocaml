@@ -17,6 +17,10 @@ func TestReadFromFile(t *testing.T) {
 	if s.Code == nil {
 		t.Errorf("Code was not read properly")
 	}
+
+	if !s.Exists {
+		t.Errorf("File must exist")
+	}
 }
 
 func TestUnexistFile(t *testing.T) {
@@ -38,5 +42,9 @@ func TestReadFromStdin(t *testing.T) {
 
 	if s.Code == nil {
 		t.Errorf("Code was not read properly")
+	}
+
+	if s.Exists {
+		t.Errorf("File must not exist")
 	}
 }

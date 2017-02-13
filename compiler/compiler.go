@@ -134,8 +134,12 @@ func (c *Compiler) EmitLLVMIR(src *token.Source) (string, error) {
 		return "", err
 	}
 	opts := c.makeEmitOptions()
-	if _ /*TODO*/, err := codegen.NewEmitter(prog, env, src, opts); err != nil {
+
+	emitter, err := codegen.NewEmitter(prog, env, src, opts)
+	if err != nil {
 		return "", err
 	}
-	return "TODO", nil // TODO
+	defer emitter.Dispose()
+
+	return emitter.EmitLLVMIR(), nil
 }

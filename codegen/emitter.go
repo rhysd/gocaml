@@ -5,7 +5,17 @@ import (
 	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/gocaml/typing"
 	"llvm.org/llvm/bindings/go/llvm"
+	"path/filepath"
+	"strings"
 )
+
+func init() {
+	llvm.InitializeAllTargets()
+	llvm.InitializeAllTargetMCs()
+	llvm.InitializeAllTargetInfos()
+	llvm.InitializeAllAsmParsers()
+	llvm.InitializeAllAsmPrinters()
+}
 
 type OptLevel int
 
@@ -29,8 +39,23 @@ type Emitter struct {
 }
 
 func (emitter *Emitter) Dispose() {
+	if emitter.Disposed {
+		return
+	}
 	emitter.Module.Dispose()
 	emitter.Disposed = true
+}
+
+func (emitter *Emitter) baseName() string {
+	if !emitter.Source.Exists {
+		return "out"
+	}
+	b := filepath.Base(emitter.Source.Name)
+	return strings.TrimSuffix(b, filepath.Ext(b))
+}
+
+func (emitter *Emitter) EmitLLVMIR() string {
+	return emitter.Module.String()
 }
 
 func NewEmitter(prog *gcil.Program, env *typing.Env, src *token.Source, opts EmitOptions) (*Emitter, error) {
