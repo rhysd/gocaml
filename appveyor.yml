@@ -13,6 +13,5 @@ install:
 build: off
 test_script:
     - go tool yacc -o parser/grammar.go parser/grammar.go.y
-    - go build
-    - go test -v ./...
+    - go test -v ./alpha ./ast ./closure ./compiler ./gcil ./lexer ./parser ./token ./typing
 deploy: off

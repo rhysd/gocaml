@@ -59,7 +59,7 @@ all: build test
 build: gocaml
 
 gocaml: $(SRCS)
-	./install_llvmgo.sh
+	./scripts/install_llvmgo.sh
 	time go build
 
 parser/grammar.go: parser/grammar.go.y
