@@ -1,6 +1,25 @@
 language: go
+go: 1.x
+dist: trusty
 os:
   - linux
   - osx
+install:
+  - cmake --version
 script:
   - bash ./scripts/travis.sh
+addons:
+  apt:
+    sources:
+      - llvm-toolchain-trusty-4.0
+    packages:
+      - libllvm4.0
+      - llvm-4.0-dev
+      - clang-4.0
+      - cmake
+      - time
+cache:
+  apt: true
+  directories:
+    - $GOPATH/pkg/llvm.org/llvm
+    - $GOPATH/src/llvm.org/llvm

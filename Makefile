@@ -60,7 +60,8 @@ build: gocaml
 
 gocaml: $(SRCS)
 	./scripts/install_llvmgo.sh
-	time go build
+	go get -t -d ./...
+	if which > /dev/null; then time go build; else go build; fi
 
 parser/grammar.go: parser/grammar.go.y
 	go get golang.org/x/tools/cmd/goyacc
