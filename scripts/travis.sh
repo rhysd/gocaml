@@ -2,11 +2,14 @@
 
 set -e
 
+PACKAGES="./alpha ./ast ./gcil ./closure ./lexer ./parser ./token ./typing"
+
 if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-    brew update
-    brew upgrade go
-    make build
-    go test -v ./...
+    # Avoid building LLVM
+    go get -v -t -d $PACKAGES
+    go get golang.org/x/tools/cmd/goyacc
+    go build -v $PACKAGES
+    go test -v $PACKAGES
 else
     go get golang.org/x/tools/cmd/cover
     go get github.com/haya14busa/goverage

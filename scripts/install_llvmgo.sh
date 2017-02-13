@@ -10,12 +10,14 @@ fi
 LLVM_ORG_DIR="${GOPATH}/src/llvm.org"
 LLVM_DIR="${LLVM_ORG_DIR}/llvm"
 LLVM_GO_DIR="${LLVM_DIR}/bindings/go"
+LLVM_ARCHIVE="$GOPATH/pkg/llvm.org/llvm/bindings/go/llvm/llvm.a"
 
-if [[ -d "$LLVM_DIR" ]]; then
-    echo 'LLVM is already installed. Installation skipped.'
+if [[ -f "$LLVM_ARCHIVE" ]]; then
+    echo "LLVM is already installed: ${LLVM_ARCHIVE}. Installation skipped."
     exit
 fi
 
+rm -rf "$LLVM_DIR"
 mkdir -p "$LLVM_ORG_DIR"
 cd "$LLVM_ORG_DIR"
 

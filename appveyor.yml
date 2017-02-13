@@ -8,7 +8,7 @@ install:
     - echo %GOPATH%
     - go version
     - go env
-    - go get -v -t -d ./...
+    - go get -v -t -d ./alpha ./ast ./closure ./compiler ./gcil ./lexer ./parser ./token ./typing
     - go get golang.org/x/tools/cmd/goyacc
 build: off
 test_script:

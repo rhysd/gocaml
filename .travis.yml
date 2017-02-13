@@ -1,6 +1,13 @@
 language: go
+go: 1.x
+dist: trusty
 os:
   - linux
   - osx
 script:
   - bash ./scripts/travis.sh
+cache:
+  apt: true
+  directories:
+    - $GOPATH/src/llvm.org/llvm/bindings/go/llvm
+    - $GOPATH/pkg/llvm.org/llvm/bindings/go/llvm
