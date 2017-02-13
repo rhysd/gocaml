@@ -8,10 +8,10 @@ install:
     - echo %GOPATH%
     - go version
     - go env
-    - go get -v -t -d ./alpha ./ast ./closure ./compiler ./gcil ./lexer ./parser ./token ./typing
+    - go get -v -t -d ./alpha ./ast ./closure ./gcil ./lexer ./parser ./token ./typing
     - go get golang.org/x/tools/cmd/goyacc
 build: off
 test_script:
     - go tool yacc -o parser/grammar.go parser/grammar.go.y
-    - go test -v ./alpha ./ast ./closure ./compiler ./gcil ./lexer ./parser ./token ./typing
+    - go test -v ./alpha ./ast ./closure ./gcil ./lexer ./parser ./token ./typing
 deploy: off
