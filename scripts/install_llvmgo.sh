@@ -10,6 +10,7 @@ fi
 LLVM_ORG_DIR="${GOPATH}/src/llvm.org"
 LLVM_DIR="${LLVM_ORG_DIR}/llvm"
 LLVM_GO_DIR="${LLVM_DIR}/bindings/go"
+LLVM_GO_PKG_DIR="${LLVM_GO_DIR}/llvm"
 LLVM_ARCHIVE="$GOPATH/pkg/llvm.org/llvm/bindings/go/llvm.a"
 
 if [[ -f "$LLVM_ARCHIVE" ]]; then
@@ -51,7 +52,7 @@ else
     exit 1
 fi
 
-cd ./llvm
+cd "$LLVM_GO_PKG_DIR"
 
 export CGO_CPPFLAGS="$($LLVM_CONFIG --cppflags)"
 export CGO_CXXFLAGS="$($LLVM_CONFIG --cxxflags)"
@@ -59,6 +60,11 @@ export CGO_LDFLAGS="$($LLVM_CONFIG --ldflags --libs --system-libs all | tr '\n' 
 echo "CGO_CPPFLAGS=$CGO_CPPFLAGS"
 echo "CGO_CXXFLAGS=$CGO_CXXFLAGS"
 echo "CGO_LDFLAGS=$CGO_LDFLAGS"
+
+cat ${LLVM_GO_PKG_DIR}/llvm_config.go.in | \
+    sed "s#@LLVM_CFLAGS@#${CGO_CPPFLAGS}#" | \
+    sed "s#@LLVM_LDFLAGS@#${CGO_LDFLAGS}#" > \
+    ${LLVM_GO_PKG_DIR}/llvm_config.go
 
 go build -v -tags byollvm
 go install
