@@ -7,16 +7,38 @@ import (
 	"llvm.org/llvm/bindings/go/llvm"
 )
 
-type Emitter struct {
-	GCIL   *gcil.Program
-	Env    *typing.Env
-	Source *token.Source
-	Module llvm.Module
+type OptLevel int
+
+const (
+	OptimizeAggressive OptLevel = iota
+	OptimizeDefault
+	OptimizeNone
+)
+
+type EmitOptions struct {
+	Optimization OptLevel
+	Triple       string
 }
 
-func NewEmitter(prog *gcil.Program, env *typing.Env, src *token.Source) (*Emitter, error) {
-	builder := newModuleBuilder(env, src.Name)
-	if err := builder.build(prog); err != nil {
+type Emitter struct {
+	GCIL     *gcil.Program
+	Env      *typing.Env
+	Source   *token.Source
+	Module   llvm.Module
+	Disposed bool
+}
+
+func (emitter *Emitter) Dispose() {
+	emitter.Module.Dispose()
+	emitter.Disposed = true
+}
+
+func NewEmitter(prog *gcil.Program, env *typing.Env, src *token.Source, opts EmitOptions) (*Emitter, error) {
+	builder, err := newModuleBuilder(env, src.Name, opts)
+	if err != nil {
+		return nil, err
+	}
+	if err = builder.build(prog); err != nil {
 		return nil, err
 	}
 
@@ -25,5 +47,6 @@ func NewEmitter(prog *gcil.Program, env *typing.Env, src *token.Source) (*Emitte
 		env,
 		src,
 		builder.module,
+		false,
 	}, nil
 }

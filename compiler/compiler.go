@@ -16,9 +16,18 @@ import (
 	"os"
 )
 
+type OptimizationLevel int
+
+const (
+	OptimizationDefault OptimizationLevel = iota
+	OptimizationNone
+	OptimizationAggressive
+)
+
 // Compiler instance to compile GoCaml code into other representations.
 type Compiler struct {
-	// Compiler options (e.g. optimization level) go here.
+	Optimization OptimizationLevel
+	TargetTriple string
 }
 
 func (c *Compiler) Compile(source *token.Source) error {
@@ -107,12 +116,25 @@ func (c *Compiler) EmitGCIL(src *token.Source) (*gcil.Program, *typing.Env, erro
 	return prog, env, nil
 }
 
+func (c *Compiler) makeEmitOptions() codegen.EmitOptions {
+	l := codegen.OptimizeDefault
+	switch c.Optimization {
+	case OptimizationNone:
+		l = codegen.OptimizeNone
+	case OptimizationAggressive:
+		l = codegen.OptimizeAggressive
+	}
+
+	return codegen.EmitOptions{l, c.TargetTriple}
+}
+
 func (c *Compiler) EmitLLVMIR(src *token.Source) (string, error) {
 	prog, env, err := c.EmitGCIL(src)
 	if err != nil {
 		return "", err
 	}
-	if _ /*TODO*/, err := codegen.NewEmitter(prog, env, src); err != nil {
+	opts := c.makeEmitOptions()
+	if _ /*TODO*/, err := codegen.NewEmitter(prog, env, src, opts); err != nil {
 		return "", err
 	}
 	return "TODO", nil // TODO
