@@ -65,6 +65,9 @@ func (emitter *Emitter) RunOptimizationPasses() {
 	defer funcPasses.Dispose()
 	builder.PopulateFunc(funcPasses)
 	for fun := emitter.Module.FirstFunction(); fun.C != nil; fun = llvm.NextFunction(fun) {
+		if fun.IsDeclaration() {
+			continue
+		}
 		funcPasses.InitializeFunc()
 		funcPasses.RunFunc(fun)
 		funcPasses.FinalizeFunc()
