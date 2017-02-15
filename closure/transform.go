@@ -41,8 +41,8 @@ type transformWithKFO struct {
 	knownFuns            nameSet
 	replacedFuns         map[*gcil.Insn]*gcil.MakeCls // nil means simply removing the function
 	closureCalls         []*gcil.App
-	closures             map[string][]string // Mapping function name to free variables
-	closureBlockFreeVars map[string]nameSet  // Known free variables of closures' blocks
+	closures             gcil.Closures      // Mapping function name to free variables
+	closureBlockFreeVars map[string]nameSet // Known free variables of closures' blocks
 }
 
 func (trans *transformWithKFO) duplicate() *transformWithKFO {

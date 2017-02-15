@@ -14,8 +14,9 @@ var (
 	showAST    = flag.Bool("ast", false, "Show AST for input")
 	showGCIL   = flag.Bool("gcil", false, "Emit GoCaml Intermediate Language representation to stdout")
 	externals  = flag.Bool("externals", false, "Display external symbols")
-	llvm       = flag.Bool("llvm", false, "Emit LLVM IR")
-	asm        = flag.Bool("asm", false, "Emit assembler code")
+	llvm       = flag.Bool("llvm", false, "Emit LLVM IR to stdout")
+	asm        = flag.Bool("asm", false, "Emit assembler code to stdout")
+	opt        = flag.Uint("opt", 2, "Optimization level (0~3). 0: none, 1: less, 2: default, 3: aggressive")
 )
 
 const usageHeader = `Usage: gocaml [flags] [file]
@@ -36,6 +37,21 @@ func getSource(args []string) (*token.Source, error) {
 		return token.NewSourceFromStdin()
 	}
 	return token.NewSourceFromFile(args[1])
+}
+
+func getOptLevel() compiler.OptLevel {
+	switch *opt {
+	case 0:
+		return compiler.O0
+	case 1:
+		return compiler.O1
+	case 2:
+		return compiler.O2
+	case 3:
+		return compiler.O3
+	default:
+		return compiler.O2
+	}
 }
 
 func main() {
@@ -61,7 +77,10 @@ func main() {
 		os.Exit(4)
 	}
 
-	c := compiler.Compiler{}
+	c := compiler.Compiler{
+		Optimization: getOptLevel(),
+		TargetTriple: "",
+	}
 
 	switch {
 	case *showTokens:

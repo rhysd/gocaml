@@ -1,12 +1,13 @@
 package codegen
 
 import (
+	"path/filepath"
+	"strings"
+
 	"github.com/rhysd/gocaml/gcil"
 	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/gocaml/typing"
 	"llvm.org/llvm/bindings/go/llvm"
-	"path/filepath"
-	"strings"
 )
 
 func init() {
@@ -20,9 +21,10 @@ func init() {
 type OptLevel int
 
 const (
-	OptimizeAggressive OptLevel = iota
+	OptimizeNone OptLevel = iota
+	OptimizeLess
 	OptimizeDefault
-	OptimizeNone
+	OptimizeAggressive
 )
 
 type EmitOptions struct {
@@ -63,6 +65,7 @@ func NewEmitter(prog *gcil.Program, env *typing.Env, src *token.Source, opts Emi
 	if err != nil {
 		return nil, err
 	}
+
 	if err = builder.build(prog); err != nil {
 		return nil, err
 	}

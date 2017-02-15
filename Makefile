@@ -27,7 +27,8 @@ SRCS := \
 	closure/freevars.go \
 	codegen/emitter.go \
 	codegen/module_builder.go \
-	codegen/triple.go \
+	codegen/type_builder.go \
+	codegen/block_builder.go \
 
 TESTS := \
 	alpha/example_test.go \

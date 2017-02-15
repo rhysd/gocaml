@@ -16,17 +16,18 @@ import (
 	"os"
 )
 
-type OptimizationLevel int
+type OptLevel int
 
 const (
-	OptimizationDefault OptimizationLevel = iota
-	OptimizationNone
-	OptimizationAggressive
+	O0 OptLevel = iota
+	O1
+	O2
+	O3
 )
 
 // Compiler instance to compile GoCaml code into other representations.
 type Compiler struct {
-	Optimization OptimizationLevel
+	Optimization OptLevel
 	TargetTriple string
 }
 
@@ -119,9 +120,11 @@ func (c *Compiler) EmitGCIL(src *token.Source) (*gcil.Program, *typing.Env, erro
 func (c *Compiler) makeEmitOptions() codegen.EmitOptions {
 	l := codegen.OptimizeDefault
 	switch c.Optimization {
-	case OptimizationNone:
+	case O0:
 		l = codegen.OptimizeNone
-	case OptimizationAggressive:
+	case O1:
+		l = codegen.OptimizeLess
+	case O3:
 		l = codegen.OptimizeAggressive
 	}
 

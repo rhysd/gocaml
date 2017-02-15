@@ -32,6 +32,8 @@ print_int (gcd 21600 337500)
   - [ ] Inlining
   - [ ] Folding constants
   - [ ] Striping unused variables
+  - [ ] Reduce `()` type to `void`
+  - [ ] LLVM IR optimization passes
 - [ ] Code generation using [LLVM][]
 - [ ] Garbage collection with [Boehm GC][]
 

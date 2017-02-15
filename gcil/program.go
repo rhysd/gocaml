@@ -7,11 +7,13 @@ import (
 	"strings"
 )
 
+type Closures map[string][]string
+
 // Program representation. Program can be obtained after closure transform because
 // all functions must be at the top.
 type Program struct {
-	Toplevel map[string]*Fun     // Mapping from function name to its instruction
-	Closures map[string][]string // Mapping from closure name to it free variables
+	Toplevel map[string]*Fun // Mapping from function name to its instruction
+	Closures Closures        // Mapping from closure name to it free variables
 	Entry    *Block
 }
 
