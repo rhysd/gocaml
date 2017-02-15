@@ -143,6 +143,7 @@ func (c *Compiler) EmitLLVMIR(src *token.Source) (string, error) {
 		return "", err
 	}
 	defer emitter.Dispose()
+	emitter.RunOptimizationPasses()
 
 	return emitter.EmitLLVMIR(), nil
 }
@@ -153,6 +154,7 @@ func (c *Compiler) EmitAsm(src *token.Source) (string, error) {
 		return "", err
 	}
 	defer emitter.Dispose()
+	emitter.RunOptimizationPasses()
 
 	return emitter.EmitAsm()
 }

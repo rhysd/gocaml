@@ -38,6 +38,7 @@ type Emitter struct {
 	Source   *token.Source
 	Module   llvm.Module
 	Machine  llvm.TargetMachine
+	Options  EmitOptions
 	Disposed bool
 }
 
@@ -48,6 +49,31 @@ func (emitter *Emitter) Dispose() {
 	emitter.Module.Dispose()
 	emitter.Machine.Dispose()
 	emitter.Disposed = true
+}
+
+func (emitter *Emitter) RunOptimizationPasses() {
+	if emitter.Options.Optimization == OptimizeNone {
+		return
+	}
+	level := int(emitter.Options.Optimization)
+
+	builder := llvm.NewPassManagerBuilder()
+	defer builder.Dispose()
+	builder.SetOptLevel(level)
+
+	funcPasses := llvm.NewFunctionPassManagerForModule(emitter.Module)
+	defer funcPasses.Dispose()
+	builder.PopulateFunc(funcPasses)
+	for fun := emitter.Module.FirstFunction(); fun.C != nil; fun = llvm.NextFunction(fun) {
+		funcPasses.InitializeFunc()
+		funcPasses.RunFunc(fun)
+		funcPasses.FinalizeFunc()
+	}
+
+	modPasses := llvm.NewPassManager()
+	defer modPasses.Dispose()
+	builder.Populate(modPasses)
+	modPasses.Run(emitter.Module)
 }
 
 func (emitter *Emitter) baseName() string {
@@ -88,6 +114,7 @@ func NewEmitter(prog *gcil.Program, env *typing.Env, src *token.Source, opts Emi
 		src,
 		builder.module,
 		builder.machine,
+		opts,
 		false,
 	}, nil
 }

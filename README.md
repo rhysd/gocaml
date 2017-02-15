@@ -27,13 +27,13 @@ print_int (gcd 21600 337500)
 - [x] GoCaml intermediate language (GCIL) ([doc][gcil doc])
 - [x] K normalization from AST into GCIL ([doc][gcil doc])
 - [x] Closure transform ([doc][closure doc])
-- [ ] Optimizations
+- Optimizations
   - [ ] Beta reduction
   - [ ] Inlining
   - [ ] Folding constants
   - [ ] Striping unused variables
   - [ ] Reduce `()` type to `void`
-  - [ ] LLVM IR optimization passes
+  - [x] LLVM IR optimization passes
 - [ ] Code generation using [LLVM][]
 - [ ] Garbage collection with [Boehm GC][]
 
