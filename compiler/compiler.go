@@ -117,32 +117,42 @@ func (c *Compiler) EmitGCIL(src *token.Source) (*gcil.Program, *typing.Env, erro
 	return prog, env, nil
 }
 
-func (c *Compiler) makeEmitOptions() codegen.EmitOptions {
-	l := codegen.OptimizeDefault
-	switch c.Optimization {
-	case O0:
-		l = codegen.OptimizeNone
-	case O1:
-		l = codegen.OptimizeLess
-	case O3:
-		l = codegen.OptimizeAggressive
+func (c *Compiler) emitterFromSource(src *token.Source) (*codegen.Emitter, error) {
+	prog, env, err := c.EmitGCIL(src)
+	if err != nil {
+		return nil, err
 	}
 
-	return codegen.EmitOptions{l, c.TargetTriple}
+	level := codegen.OptimizeDefault
+	switch c.Optimization {
+	case O0:
+		level = codegen.OptimizeNone
+	case O1:
+		level = codegen.OptimizeLess
+	case O3:
+		level = codegen.OptimizeAggressive
+	}
+	opts := codegen.EmitOptions{level, c.TargetTriple}
+
+	return codegen.NewEmitter(prog, env, src, opts)
 }
 
 func (c *Compiler) EmitLLVMIR(src *token.Source) (string, error) {
-	prog, env, err := c.EmitGCIL(src)
-	if err != nil {
-		return "", err
-	}
-	opts := c.makeEmitOptions()
-
-	emitter, err := codegen.NewEmitter(prog, env, src, opts)
+	emitter, err := c.emitterFromSource(src)
 	if err != nil {
 		return "", err
 	}
 	defer emitter.Dispose()
 
 	return emitter.EmitLLVMIR(), nil
+}
+
+func (c *Compiler) EmitAsm(src *token.Source) (string, error) {
+	emitter, err := c.emitterFromSource(src)
+	if err != nil {
+		return "", err
+	}
+	defer emitter.Dispose()
+
+	return emitter.EmitAsm()
 }

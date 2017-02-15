@@ -12,6 +12,7 @@ type moduleBuilder struct {
 	module      llvm.Module
 	env         *typing.Env
 	dataLayout  string
+	machine     llvm.TargetMachine
 	context     llvm.Context
 	builder     llvm.Builder
 	typeBuilder *typeBuilder
@@ -53,7 +54,6 @@ func newModuleBuilder(env *typing.Env, name string, opts EmitOptions) (*moduleBu
 	targetData := machine.CreateTargetData()
 	dataLayout := targetData.String()
 	targetData.Dispose()
-	machine.Dispose()
 
 	// XXX: Should make a new instance
 	ctx := llvm.GlobalContext()
@@ -70,6 +70,7 @@ func newModuleBuilder(env *typing.Env, name string, opts EmitOptions) (*moduleBu
 		module,
 		env,
 		dataLayout,
+		machine,
 		ctx,
 		ctx.NewBuilder(),
 		newTypeBuilder(ctx, env),

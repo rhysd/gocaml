@@ -37,6 +37,7 @@ type Emitter struct {
 	Env      *typing.Env
 	Source   *token.Source
 	Module   llvm.Module
+	Machine  llvm.TargetMachine
 	Disposed bool
 }
 
@@ -45,6 +46,7 @@ func (emitter *Emitter) Dispose() {
 		return
 	}
 	emitter.Module.Dispose()
+	emitter.Machine.Dispose()
 	emitter.Disposed = true
 }
 
@@ -58,6 +60,16 @@ func (emitter *Emitter) baseName() string {
 
 func (emitter *Emitter) EmitLLVMIR() string {
 	return emitter.Module.String()
+}
+
+func (emitter *Emitter) EmitAsm() (string, error) {
+	buf, err := emitter.Machine.EmitToMemoryBuffer(emitter.Module, llvm.AssemblyFile)
+	if err != nil {
+		return "", err
+	}
+	asm := string(buf.Bytes())
+	buf.Dispose()
+	return asm, nil
 }
 
 func NewEmitter(prog *gcil.Program, env *typing.Env, src *token.Source, opts EmitOptions) (*Emitter, error) {
@@ -75,6 +87,7 @@ func NewEmitter(prog *gcil.Program, env *typing.Env, src *token.Source, opts Emi
 		env,
 		src,
 		builder.module,
+		builder.machine,
 		false,
 	}, nil
 }

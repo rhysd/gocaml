@@ -15,7 +15,7 @@ var (
 	showGCIL   = flag.Bool("gcil", false, "Emit GoCaml Intermediate Language representation to stdout")
 	externals  = flag.Bool("externals", false, "Display external symbols")
 	llvm       = flag.Bool("llvm", false, "Emit LLVM IR to stdout")
-	asm        = flag.Bool("asm", false, "Emit assembler code to stdout")
+	asm        = flag.Bool("asm", false, "Emit assembler code to file")
 	opt        = flag.Uint("opt", 2, "Optimization level (0~3). 0: none, 1: less, 2: default, 3: aggressive")
 )
 
@@ -102,7 +102,12 @@ func main() {
 		}
 		fmt.Println(ir)
 	case *asm:
-		panic("not implemented yet")
+		asm, err := c.EmitAsm(src)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(4)
+		}
+		fmt.Println(asm)
 	default:
 		ir, err := c.EmitLLVMIR(src)
 		if err != nil {
