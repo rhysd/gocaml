@@ -1,13 +1,13 @@
 package codegen
 
 import (
-	"path/filepath"
-	"strings"
-
+	"fmt"
 	"github.com/rhysd/gocaml/gcil"
 	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/gocaml/typing"
+	"io/ioutil"
 	"llvm.org/llvm/bindings/go/llvm"
+	"os"
 )
 
 func init() {
@@ -30,6 +30,7 @@ const (
 type EmitOptions struct {
 	Optimization OptLevel
 	Triple       string
+	LinkerFlags  string
 }
 
 type Emitter struct {
@@ -79,14 +80,6 @@ func (emitter *Emitter) RunOptimizationPasses() {
 	modPasses.Run(emitter.Module)
 }
 
-func (emitter *Emitter) baseName() string {
-	if !emitter.Source.Exists {
-		return "out"
-	}
-	b := filepath.Base(emitter.Source.Name)
-	return strings.TrimSuffix(b, filepath.Ext(b))
-}
-
 func (emitter *Emitter) EmitLLVMIR() string {
 	return emitter.Module.String()
 }
@@ -99,6 +92,32 @@ func (emitter *Emitter) EmitAsm() (string, error) {
 	asm := string(buf.Bytes())
 	buf.Dispose()
 	return asm, nil
+}
+
+func (emitter *Emitter) EmitObject() ([]byte, error) {
+	buf, err := emitter.Machine.EmitToMemoryBuffer(emitter.Module, llvm.ObjectFile)
+	if err != nil {
+		return nil, err
+	}
+	obj := buf.Bytes()
+	buf.Dispose()
+	return obj, nil
+}
+
+func (emitter *Emitter) EmitExecutable(executable string) (err error) {
+	objfile := fmt.Sprintf("_%s.o", executable)
+	obj, err := emitter.EmitObject()
+	if err != nil {
+		return
+	}
+	if err = ioutil.WriteFile(objfile, obj, 0666); err != nil {
+		return
+	}
+	defer os.Remove(objfile)
+	linker := newDefaultLinker(emitter.Options.LinkerFlags)
+	err = linker.link(executable, []string{objfile})
+	// Linker link runtime and make an executable
+	return
 }
 
 func NewEmitter(prog *gcil.Program, env *typing.Env, src *token.Source, opts EmitOptions) (*Emitter, error) {

@@ -15,8 +15,10 @@ var (
 	showGCIL   = flag.Bool("gcil", false, "Emit GoCaml Intermediate Language representation to stdout")
 	externals  = flag.Bool("externals", false, "Display external symbols")
 	llvm       = flag.Bool("llvm", false, "Emit LLVM IR to stdout")
-	asm        = flag.Bool("asm", false, "Emit assembler code to file")
+	asm        = flag.Bool("asm", false, "Emit assembler code to stdout")
 	opt        = flag.Uint("opt", 2, "Optimization level (0~3). 0: none, 1: less, 2: default, 3: aggressive")
+	obj        = flag.Bool("obj", false, "Compile to object file")
+	ldflags    = flag.String("ldflags", "", "Flags passed to underlying linker")
 )
 
 const usageHeader = `Usage: gocaml [flags] [file]
@@ -80,6 +82,7 @@ func main() {
 	c := compiler.Compiler{
 		Optimization: getOptLevel(),
 		TargetTriple: "",
+		LinkFlags:    *ldflags,
 	}
 
 	switch {
@@ -108,12 +111,15 @@ func main() {
 			os.Exit(4)
 		}
 		fmt.Println(asm)
-	default:
-		ir, err := c.EmitLLVMIR(src)
-		if err != nil {
+	case *obj:
+		if err := c.EmitObjFile(src); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(4)
 		}
-		fmt.Println(ir)
+	default:
+		if err := c.Compile(src); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(4)
+		}
 	}
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/gocaml/typing"
+	"io/ioutil"
 	"os"
 )
 
@@ -28,12 +29,8 @@ const (
 // Compiler instance to compile GoCaml code into other representations.
 type Compiler struct {
 	Optimization OptLevel
+	LinkFlags    string
 	TargetTriple string
-}
-
-func (c *Compiler) Compile(source *token.Source) error {
-	// TODO
-	return nil
 }
 
 // PrintTokens returns the lexed tokens for a source code.
@@ -132,9 +129,24 @@ func (c *Compiler) emitterFromSource(src *token.Source) (*codegen.Emitter, error
 	case O3:
 		level = codegen.OptimizeAggressive
 	}
-	opts := codegen.EmitOptions{level, c.TargetTriple}
+	opts := codegen.EmitOptions{level, c.TargetTriple, c.LinkFlags}
 
 	return codegen.NewEmitter(prog, env, src, opts)
+}
+
+func (c *Compiler) EmitObjFile(src *token.Source) error {
+	emitter, err := c.emitterFromSource(src)
+	if err != nil {
+		return err
+	}
+	defer emitter.Dispose()
+	emitter.RunOptimizationPasses()
+	obj, err := emitter.EmitObject()
+	if err != nil {
+		return err
+	}
+	filename := fmt.Sprintf("%s.o", src.BaseName())
+	return ioutil.WriteFile(filename, obj, 0666)
 }
 
 func (c *Compiler) EmitLLVMIR(src *token.Source) (string, error) {
@@ -157,4 +169,20 @@ func (c *Compiler) EmitAsm(src *token.Source) (string, error) {
 	emitter.RunOptimizationPasses()
 
 	return emitter.EmitAsm()
+}
+
+func (c *Compiler) Compile(source *token.Source) error {
+	emitter, err := c.emitterFromSource(source)
+	if err != nil {
+		return err
+	}
+	defer emitter.Dispose()
+	emitter.RunOptimizationPasses()
+	var executable string
+	if source.Exists {
+		executable = source.BaseName()
+	} else {
+		executable = "a.out"
+	}
+	return emitter.EmitExecutable(executable)
 }

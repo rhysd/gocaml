@@ -3,6 +3,8 @@ package token
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 type Source struct {
@@ -29,4 +31,12 @@ func NewSourceFromStdin() (*Source, error) {
 
 func NewDummySource(code string) *Source {
 	return &Source{"dummy", []byte(code), false}
+}
+
+func (src *Source) BaseName() string {
+	if !src.Exists {
+		return "out"
+	}
+	b := filepath.Base(src.Name)
+	return strings.TrimSuffix(b, filepath.Ext(b))
 }
