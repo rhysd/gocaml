@@ -16,9 +16,38 @@ type moduleBuilder struct {
 	context     llvm.Context
 	builder     llvm.Builder
 	typeBuilder *typeBuilder
+	attributes  map[string]llvm.Attribute
 	globalTable map[string]llvm.Value
 	funcTable   map[string]llvm.Value
 	closures    gcil.Closures
+}
+
+func createAttributeTable(ctx llvm.Context) map[string]llvm.Attribute {
+	attrs := map[string]llvm.Attribute{}
+
+	// Enum attributes
+	for _, attr := range []string{
+		"nounwind",
+		"noreturn",
+		"inlinehint",
+		"ssp",
+		"uwtable",
+	} {
+		kind := llvm.AttributeKindID(attr)
+		attrs[attr] = ctx.CreateEnumAttribute(kind, 0)
+	}
+
+	// String attributes
+	for _, attr := range []struct {
+		kind  string
+		value string
+	}{
+		{"disable-tail-calls", "false"},
+	} {
+		attrs[attr.kind] = ctx.CreateStringAttribute(attr.kind, attr.value)
+	}
+
+	return attrs
 }
 
 func newModuleBuilder(env *typing.Env, name string, opts EmitOptions) (*moduleBuilder, error) {
@@ -74,6 +103,7 @@ func newModuleBuilder(env *typing.Env, name string, opts EmitOptions) (*moduleBu
 		ctx,
 		ctx.NewBuilder(),
 		newTypeBuilder(ctx, env),
+		createAttributeTable(ctx),
 		nil,
 		nil,
 		nil,
@@ -91,7 +121,7 @@ func (b *moduleBuilder) declareExternalDecl(name string, from typing.Type) llvm.
 		t := b.typeBuilder.buildExternalFun(ty)
 		v := llvm.AddFunction(b.module, name, t)
 		v.SetLinkage(llvm.ExternalLinkage)
-		// TODO Add attributes for external functions
+		v.AddFunctionAttr(b.attributes["disable-tail-calls"])
 		return v
 	default:
 		t := b.typeBuilder.build(from)
@@ -127,7 +157,11 @@ func (b *moduleBuilder) declareFun(name string, params []string) llvm.Value {
 		index++
 	}
 
-	// TODO: Add attributes for internal functions
+	v.AddFunctionAttr(b.attributes["inlinehint"])
+	v.AddFunctionAttr(b.attributes["nounwind"])
+	v.AddFunctionAttr(b.attributes["ssp"])
+	v.AddFunctionAttr(b.attributes["uwtable"])
+	v.AddFunctionAttr(b.attributes["disable-tail-calls"])
 
 	return v
 }
@@ -172,6 +206,10 @@ func (b *moduleBuilder) buildMain(entry *gcil.Block) {
 	int32T := b.context.Int32Type()
 	t := llvm.FunctionType(int32T, []llvm.Type{}, false /*varargs*/)
 	funVal := llvm.AddFunction(b.module, "main", t)
+	funVal.AddFunctionAttr(b.attributes["ssp"])
+	funVal.AddFunctionAttr(b.attributes["uwtable"])
+	funVal.AddFunctionAttr(b.attributes["disable-tail-calls"])
+
 	body := b.context.AddBasicBlock(funVal, "entry")
 	b.builder.SetInsertPointAtEnd(body)
 
