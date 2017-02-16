@@ -12,7 +12,7 @@ LLVM_DIR="${LLVM_ORG_DIR}/llvm"
 LLVM_GO_DIR="${LLVM_DIR}/bindings/go"
 LLVM_GO_LLVM_DIR="${LLVM_GO_DIR}/llvm"
 LLVM_ARCHIVE="${GOPATH}/pkg/$(go env GOOS)_$(go env GOARCH)/llvm.org/llvm/bindings/go/llvm.a"
-LLVM_GO_PATCH_PATH="$(dirname "$(realpath "$0")")/go-llvm.patch"
+LLVM_GO_PATCH="$(dirname "$(realpath "$0")")/go-llvm.patch"
 
 if [[ -f "$LLVM_ARCHIVE" ]]; then
     echo "LLVM is already installed: ${LLVM_ARCHIVE}. Installation skipped."
@@ -31,7 +31,8 @@ echo "Cloning LLVM branch: ${LLVM_BRANCH}..."
 git clone --depth 1 -b $LLVM_BRANCH --single-branch http://llvm.org/git/llvm.git
 cd "$LLVM_GO_DIR"
 
-git apply "$LLVM_GO_PATCH_PATH"
+echo "Applying a patch to go-llvm: ${LLVM_GO_PATCH}"
+git apply "$LLVM_GO_PATCH"
 
 if [[ "$USE_SYSTEM_LLVM" == "" ]]; then
     echo "Building LLVM locally: ${LLVM_DIR}"

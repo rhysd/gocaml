@@ -16,6 +16,7 @@ addons:
       - clang-4.0
       - cmake
       - time
+      - realpath
 cache:
   apt: true
   directories:

@@ -2,9 +2,9 @@ package codegen
 
 import (
 	"fmt"
-	"llvm.org/llvm/tools/llgo/third_party/gofrontend/libgo/go/path/filepath"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
