@@ -2,3 +2,5 @@
 /y.output
 /cover.out
 /parser/grammar.go
+/runtime/gocamlrt.o
+/runtime/gocamlrt.a

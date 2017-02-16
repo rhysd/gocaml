@@ -59,7 +59,7 @@ TESTS := \
 
 all: build test
 
-build: gocaml
+build: gocaml runtime/gocamlrt.a
 
 gocaml: $(SRCS)
 	./scripts/install_llvmgo.sh
@@ -69,6 +69,11 @@ gocaml: $(SRCS)
 parser/grammar.go: parser/grammar.go.y
 	go get golang.org/x/tools/cmd/goyacc
 	go tool yacc -o parser/grammar.go parser/grammar.go.y
+
+runtime/gocamlrt.o: runtime/gocamlrt.c
+	$(CC) -c runtime/gocamlrt.c -o runtime/gocamlrt.o
+runtime/gocamlrt.a: runtime/gocamlrt.o
+	ar -r runtime/gocamlrt.a runtime/gocamlrt.o
 
 test: $(TESTS)
 	go test ./...
