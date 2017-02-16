@@ -62,6 +62,14 @@ func (emitter *Emitter) RunOptimizationPasses() {
 	defer builder.Dispose()
 	builder.SetOptLevel(level)
 
+	// Threshold magic numbers came from computeThresholdFromOptLevels() in llvm/lib/Analysis/InlineCost.cpp
+	threshold := uint(225) // O2
+	if emitter.Options.Optimization == OptimizeAggressive {
+		// -O1 is the same inline level as -O2
+		threshold = 275
+	}
+	builder.UseInlinerWithThreshold(threshold)
+
 	funcPasses := llvm.NewFunctionPassManagerForModule(emitter.Module)
 	defer funcPasses.Dispose()
 	builder.PopulateFunc(funcPasses)
