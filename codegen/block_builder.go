@@ -138,7 +138,7 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		elseBlock := llvm.AddBasicBlock(parent, "if.else")
 		endBlock := llvm.AddBasicBlock(parent, "if.end")
 
-		ty := b.typeBuilder.build(b.typeOf(ident))
+		ty := b.typeBuilder.convertGCIL(b.typeOf(ident))
 		cond := b.resolve(val.Cond)
 		b.builder.CreateCondBr(cond, thenBlock, elseBlock)
 
@@ -177,14 +177,20 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		}
 		funVal, ok := table[val.Callee]
 		if !ok {
-			panic("Value for function is not found in table: " + val.Callee)
+			if val.Kind != gcil.CLOSURE_CALL {
+				panic("Value for function is not found in table: " + val.Callee)
+			}
+			// If callee is a function variable and not well-known, we need to fetch the function pointer
+			// to call from closure value.
+			ptr := b.builder.CreateStructGEP(argVals[0], 0, "")
+			funVal = b.builder.CreateLoad(ptr, "funptr")
 		}
 
 		// Note:
 		// Call inst cannot have a name when the return type is void.
 		return b.builder.CreateCall(funVal, argVals, "")
 	case *gcil.Tuple:
-		ty := b.typeBuilder.build(b.typeOf(ident))
+		ty := b.typeBuilder.convertGCIL(b.typeOf(ident))
 		ptr := b.builder.CreateAlloca(ty, ident)
 		for i, e := range val.Elems {
 			v := b.resolve(e)
@@ -198,8 +204,8 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 			panic("Type of array literal is not array")
 		}
 
-		ty := b.typeBuilder.build(t)
-		elemTy := b.typeBuilder.build(t.Elem)
+		ty := b.typeBuilder.convertGCIL(t)
+		elemTy := b.typeBuilder.convertGCIL(t.Elem)
 		ptr := b.builder.CreateAlloca(ty, ident)
 
 		sizeVal := b.resolve(val.Size)
@@ -248,18 +254,28 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		}
 		return b.builder.CreateLoad(x, val.Ident)
 	case *gcil.MakeCls:
-		freevarVals := make([]llvm.Value, 0, len(val.Vars))
-		for _, v := range val.Vars {
-			freevarVals = append(freevarVals, b.resolve(v))
-		}
-
 		closure, ok := b.closures[val.Fun]
 		if !ok {
-			panic("closure for function not found: " + val.Fun)
+			panic("Closure for function not found: " + val.Fun)
 		}
 		closureTy := b.typeBuilder.buildCapturesStruct(val.Fun, closure)
-		alloca := b.builder.CreateAlloca(closureTy, fmt.Sprintf("closure.%s", val.Fun))
-		ptr := b.builder.CreateBitCast(alloca, b.typeBuilder.voidPtrT, "closure.ptr")
+		alloca := b.builder.CreateAlloca(closureTy, "")
+
+		// Set function pointer to first field of closure
+		funVal, ok := b.funcTable[val.Fun]
+		if !ok {
+			panic("Value for function not found: " + val.Fun)
+		}
+		b.builder.CreateStore(funVal, b.builder.CreateStructGEP(alloca, 0, ""))
+
+		// Set captures to rest of struct
+		for i, v := range val.Vars {
+			ptr := b.builder.CreateStructGEP(alloca, i+1, "")
+			freevar := b.resolve(v)
+			b.builder.CreateStore(freevar, ptr)
+		}
+
+		ptr := b.builder.CreateBitCast(alloca, b.typeBuilder.voidPtrT, fmt.Sprintf("closure.%s", val.Fun))
 		return ptr
 	case *gcil.NOP:
 		panic("unreachable")

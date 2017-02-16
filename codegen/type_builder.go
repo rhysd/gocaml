@@ -20,7 +20,7 @@ type typeBuilder struct {
 
 func newTypeBuilder(ctx llvm.Context, env *typing.Env) *typeBuilder {
 	unit := ctx.StructCreateNamed("gocaml.unit")
-	unit.StructSetBody([]llvm.Type{} /*packed*/, false)
+	unit.StructSetBody([]llvm.Type{}, false /*packed*/)
 	return &typeBuilder{
 		ctx,
 		env,
@@ -38,28 +38,35 @@ func (b *typeBuilder) buildCapturesStruct(name string, closure []string) llvm.Ty
 	if cached, ok := b.captures[name]; ok {
 		return cached
 	}
-	fields := make([]llvm.Type, 0, len(closure))
+	fields := make([]llvm.Type, 0, len(closure)+1)
+
+	funcTy, ok := b.env.Table[name].(*typing.Fun)
+	if !ok {
+		panic(fmt.Sprintf("Type of function '%s' not found!", name))
+	}
+	fields = append(fields, llvm.PointerType(b.buildFun(funcTy, false), 0 /*address space*/))
+
 	for _, capture := range closure {
 		t, ok := b.env.Table[capture]
 		if !ok {
 			panic(fmt.Sprintf("Type of capture '%s' not found!", capture))
 		}
-		fields = append(fields, b.build(t))
+		fields = append(fields, b.convertGCIL(t))
 	}
-	ty := b.context.StructCreateNamed(fmt.Sprintf("%s.capture", name))
-	ty.StructSetBody(fields /*packed*/, false)
+	ty := b.context.StructCreateNamed(fmt.Sprintf("%s.closure", name))
+	ty.StructSetBody(fields, false /*packed*/)
 	b.captures[name] = ty
 	return ty
 }
 
 func (b *typeBuilder) buildExternalFun(from *typing.Fun) llvm.Type {
-	ret := b.build(from.Ret)
+	ret := b.convertGCIL(from.Ret)
 	if ret == b.unitT {
 		ret = b.voidT
 	}
 	params := make([]llvm.Type, 0, len(from.Params))
 	for _, p := range from.Params {
-		params = append(params, b.build(p))
+		params = append(params, b.convertGCIL(p))
 	}
 	return llvm.FunctionType(ret, params, false /*varargs*/)
 }
@@ -68,7 +75,7 @@ func (b *typeBuilder) buildExternalFun(from *typing.Fun) llvm.Type {
 // Function type is basically closure type. Only when applying function directly
 // or applying external function, callee should not be closure.
 func (b *typeBuilder) buildFun(from *typing.Fun, known bool) llvm.Type {
-	ret := b.build(from.Ret)
+	ret := b.convertGCIL(from.Ret)
 	l := len(from.Params)
 	if !known {
 		l++
@@ -78,12 +85,12 @@ func (b *typeBuilder) buildFun(from *typing.Fun, known bool) llvm.Type {
 		params = append(params, b.voidPtrT) // Closure
 	}
 	for _, p := range from.Params {
-		params = append(params, b.build(p))
+		params = append(params, b.convertGCIL(p))
 	}
 	return llvm.FunctionType(ret, params /*varargs*/, false)
 }
 
-func (b *typeBuilder) build(from typing.Type) llvm.Type {
+func (b *typeBuilder) convertGCIL(from typing.Type) llvm.Type {
 	switch ty := from.(type) {
 	case *typing.Unit:
 		return b.unitT
@@ -94,26 +101,30 @@ func (b *typeBuilder) build(from typing.Type) llvm.Type {
 	case *typing.Float:
 		return b.floatT
 	case *typing.Fun:
-		return b.buildFun(ty, true)
+		// Function type which occurs in normal expression's type is always closure because
+		// function type variable is always closure. Normal function pointer never occurs in value context.
+		// It must be a callee of direct function call (optimized by known function optimization).
+		// So, function types in variable types are closure type and closure type is void* (i8*).
+		return b.voidPtrT
 	case *typing.Tuple:
 		elems := make([]llvm.Type, 0, len(ty.Elems))
 		for _, e := range ty.Elems {
-			elems = append(elems, b.build(e))
+			elems = append(elems, b.convertGCIL(e))
 		}
-		return b.context.StructType(elems /*packed*/, false)
+		return b.context.StructType(elems, false /*packed*/)
 	case *typing.Array:
 		array := b.context.StructCreateNamed("array")
 		array.StructSetBody([]llvm.Type{
-			llvm.PointerType(b.build(ty.Elem) /*address space*/, 0),
+			llvm.PointerType(b.convertGCIL(ty.Elem), 0 /*address space*/),
 			// size
 			b.intT,
-		}, /*packed*/ false)
+		}, false /*packed*/)
 		return array
 	case *typing.Var:
 		if ty.Ref == nil {
 			panic("Unknown type variable while building LLVM type value!")
 		}
-		return b.build(ty.Ref)
+		return b.convertGCIL(ty.Ref)
 	}
 	panic("unreachable")
 }

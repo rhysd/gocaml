@@ -124,7 +124,7 @@ func (b *moduleBuilder) declareExternalDecl(name string, from typing.Type) llvm.
 		v.AddFunctionAttr(b.attributes["disable-tail-calls"])
 		return v
 	default:
-		t := b.typeBuilder.build(from)
+		t := b.typeBuilder.convertGCIL(from)
 		v := llvm.AddGlobal(b.module, t, name)
 		v.SetLinkage(llvm.ExternalLinkage)
 		return v
@@ -148,7 +148,7 @@ func (b *moduleBuilder) declareFun(name string, params []string) llvm.Value {
 
 	index := 0
 	if isClosure {
-		v.Param(index).SetName("captures")
+		v.Param(index).SetName("closure")
 		index++
 	}
 
@@ -192,7 +192,10 @@ func (b *moduleBuilder) buildFunBody(name string, fun *gcil.Fun) llvm.Value {
 		closureVal := llvmFun.Param(0)
 		closureVal = b.builder.CreateBitCast(closureVal, closureTy, fmt.Sprintf("%s.closure", name))
 		for i, n := range closure {
-			ptr := b.builder.CreateStructGEP(closureVal, i, "")
+			// Note:
+			// First field of closure is a pointer to the function to call.
+			// It should be ignored at exposing captures.
+			ptr := b.builder.CreateStructGEP(closureVal, i+1, "")
 			exposed := b.builder.CreateLoad(ptr, fmt.Sprintf("%s.closure.%s", name, n))
 			blockBuilder.registers[n] = exposed
 		}
