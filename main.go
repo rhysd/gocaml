@@ -16,7 +16,7 @@ var (
 	externals  = flag.Bool("externals", false, "Display external symbols")
 	llvm       = flag.Bool("llvm", false, "Emit LLVM IR to stdout")
 	asm        = flag.Bool("asm", false, "Emit assembler code to stdout")
-	opt        = flag.Uint("opt", 2, "Optimization level (0~3). 0: none, 1: less, 2: default, 3: aggressive")
+	opt        = flag.Int("opt", -1, "Optimization level (0~3). 0: none, 1: less, 2: default, 3: aggressive")
 	obj        = flag.Bool("obj", false, "Compile to object file")
 	ldflags    = flag.String("ldflags", "", "Flags passed to underlying linker")
 )
@@ -52,6 +52,9 @@ func getOptLevel() compiler.OptLevel {
 	case 3:
 		return compiler.O3
 	default:
+		if *llvm {
+			return compiler.O0
+		}
 		return compiler.O2
 	}
 }
