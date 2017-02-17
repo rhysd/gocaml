@@ -34,12 +34,12 @@ type EmitOptions struct {
 }
 
 type Emitter struct {
+	EmitOptions
 	GCIL     *gcil.Program
 	Env      *typing.Env
 	Source   *token.Source
 	Module   llvm.Module
 	Machine  llvm.TargetMachine
-	Options  EmitOptions
 	Disposed bool
 }
 
@@ -53,10 +53,10 @@ func (emitter *Emitter) Dispose() {
 }
 
 func (emitter *Emitter) RunOptimizationPasses() {
-	if emitter.Options.Optimization == OptimizeNone {
+	if emitter.Optimization == OptimizeNone {
 		return
 	}
-	level := int(emitter.Options.Optimization)
+	level := int(emitter.Optimization)
 
 	builder := llvm.NewPassManagerBuilder()
 	defer builder.Dispose()
@@ -64,7 +64,7 @@ func (emitter *Emitter) RunOptimizationPasses() {
 
 	// Threshold magic numbers came from computeThresholdFromOptLevels() in llvm/lib/Analysis/InlineCost.cpp
 	threshold := uint(225) // O2
-	if emitter.Options.Optimization == OptimizeAggressive {
+	if emitter.Optimization == OptimizeAggressive {
 		// -O1 is the same inline level as -O2
 		threshold = 275
 	}
@@ -122,7 +122,7 @@ func (emitter *Emitter) EmitExecutable(executable string) (err error) {
 		return
 	}
 	defer os.Remove(objfile)
-	linker := newDefaultLinker(emitter.Options.LinkerFlags)
+	linker := newDefaultLinker(emitter.LinkerFlags)
 	err = linker.link(executable, []string{objfile})
 	// Linker link runtime and make an executable
 	return
@@ -139,12 +139,12 @@ func NewEmitter(prog *gcil.Program, env *typing.Env, src *token.Source, opts Emi
 	}
 
 	return &Emitter{
+		opts,
 		prog,
 		env,
 		src,
 		builder.module,
 		builder.machine,
-		opts,
 		false,
 	}, nil
 }

@@ -235,7 +235,7 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 	case *gcil.ArrLoad:
 		fromVal := b.resolve(val.From)
 		idxVal := b.resolve(val.Index)
-		arrPtr := b.builder.CreateStructGEP(fromVal, 0, "")
+		arrPtr := b.builder.CreateLoad(b.builder.CreateStructGEP(fromVal, 0, ""), "")
 		elemPtr := b.builder.CreateInBoundsGEP(arrPtr, []llvm.Value{idxVal}, "")
 		return b.builder.CreateLoad(elemPtr, "arrload")
 	case *gcil.ArrStore:
