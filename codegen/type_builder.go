@@ -111,7 +111,7 @@ func (b *typeBuilder) convertGCIL(from typing.Type) llvm.Type {
 		for _, e := range ty.Elems {
 			elems = append(elems, b.convertGCIL(e))
 		}
-		return b.context.StructType(elems, false /*packed*/)
+		return llvm.PointerType(b.context.StructType(elems, false /*packed*/), 0 /*address space*/)
 	case *typing.Array:
 		array := b.context.StructCreateNamed("array")
 		array.StructSetBody([]llvm.Type{

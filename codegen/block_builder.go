@@ -190,8 +190,13 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		// Call inst cannot have a name when the return type is void.
 		return b.builder.CreateCall(funVal, argVals, "")
 	case *gcil.Tuple:
-		ty := b.typeBuilder.convertGCIL(b.typeOf(ident))
-		ptr := b.builder.CreateAlloca(ty, ident)
+		// Note:
+		// Type of tuple is a pointer to struct. To obtain the value for tuple, we need underlying
+		// struct type because 'alloca' instruction returns the pointer to allocated memory.
+		ptrTy := b.typeBuilder.convertGCIL(b.typeOf(ident))
+		allocTy := ptrTy.ElementType()
+
+		ptr := b.builder.CreateAlloca(allocTy, ident)
 		for i, e := range val.Elems {
 			v := b.resolve(e)
 			p := b.builder.CreateStructGEP(ptr, i, fmt.Sprintf("%s.%d", ident, i))
@@ -219,9 +224,7 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		b.builder.CreateStore(arrVal, arrPtr)
 
 		// XXX:
-		// Need to store rhs value deeply (consider tuple or array as element of array)
-		// We need to implement array creation as a function in runtime.
-		//
+		// Copy elem value to array
 		// elemVal := b.resolve(val.Elem)
 
 		sizePtr := b.builder.CreateStructGEP(ptr, 1, "")
@@ -239,8 +242,6 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		elemPtr := b.builder.CreateInBoundsGEP(arrPtr, []llvm.Value{idxVal}, "")
 		return b.builder.CreateLoad(elemPtr, "arrload")
 	case *gcil.ArrStore:
-		// XXX:
-		// Need to store rhs value deeply (consider tuple or array as element of array)
 		toVal := b.resolve(val.To)
 		idxVal := b.resolve(val.Index)
 		rhsVal := b.resolve(val.Rhs)
