@@ -223,10 +223,28 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		arrPtr := b.builder.CreateStructGEP(ptr, 0, "")
 		b.builder.CreateStore(arrVal, arrPtr)
 
-		// XXX:
-		// Copy elem value to array
-		// elemVal := b.resolve(val.Elem)
+		// Copy second argument to all elements of allocated array
+		elemVal := b.resolve(val.Elem)
+		iterPtr := b.builder.CreateAlloca(b.typeBuilder.intT, "arr.init.iter")
+		b.builder.CreateStore(llvm.ConstInt(b.typeBuilder.intT, 0, false), iterPtr)
 
+		parent := b.builder.GetInsertBlock().Parent()
+		loopBlock := llvm.AddBasicBlock(parent, "arr.init.setelem")
+		endBlock := llvm.AddBasicBlock(parent, "arr.init.end")
+
+		b.builder.CreateBr(loopBlock)
+		b.builder.SetInsertPointAtEnd(loopBlock)
+
+		iterVal := b.builder.CreateLoad(iterPtr, "")
+		elemPtr := b.builder.CreateInBoundsGEP(arrVal, []llvm.Value{iterVal}, "")
+		b.builder.CreateStore(elemVal, elemPtr)
+		iterVal = b.builder.CreateAdd(iterVal, llvm.ConstInt(b.typeBuilder.intT, 1, false), "arr.init.inc")
+		b.builder.CreateStore(iterVal, iterPtr)
+		compVal := b.builder.CreateICmp(llvm.IntEQ, iterVal, sizeVal, "")
+		b.builder.CreateCondBr(compVal, endBlock, loopBlock)
+		b.builder.SetInsertPointAtEnd(endBlock)
+
+		// Set size value
 		sizePtr := b.builder.CreateStructGEP(ptr, 1, "")
 		b.builder.CreateStore(sizeVal, sizePtr)
 
