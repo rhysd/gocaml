@@ -131,7 +131,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 			return env.infer(n.Body)
 		}
 
-		t := NewVar()
+		t := &Var{}
 		if err = Unify(t, bound); err != nil {
 			return nil, typeError(err, fmt.Sprintf("type of variable '%s'", n.Symbol.DisplayName), n.Body.Pos())
 		}
@@ -147,11 +147,11 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		}
 		// Assume as free variable. If free variable's type is not identified,
 		// It falls into compilation error
-		t := NewVar()
+		t := &Var{}
 		env.Externals[n.Symbol.DisplayName] = t
 		return t, nil
 	case *ast.LetRec:
-		f := NewVar()
+		f := &Var{}
 		// Need to register function here because of recursive functions
 		env.Table[n.Func.Symbol.Name] = f
 
@@ -159,7 +159,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		params := make([]Type, len(n.Func.Params))
 		for i, p := range n.Func.Params {
 			// Types of parameters are unknown at definition
-			t := NewVar()
+			t := &Var{}
 			env.Table[p.Name] = t
 			params[i] = t
 		}
@@ -194,7 +194,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 
 		// Return type of callee is unknown in this point.
 		// So make a new type variable and allocate it as return type.
-		ret := NewVar()
+		ret := &Var{}
 		fun := &Fun{
 			Ret:    ret,
 			Params: args,
@@ -224,7 +224,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		elems := make([]Type, len(n.Symbols))
 		for i, sym := range n.Symbols {
 			// Bound elements' types are unknown in this point
-			t := NewVar()
+			t := &Var{}
 			env.Table[sym.Name] = t
 			elems[i] = t
 		}
@@ -247,7 +247,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 	case *ast.Get:
 		// Lhs of Get must be array but its element type is unknown.
 		// So introduce new type variable for it.
-		elem := NewVar()
+		elem := &Var{}
 		array := &Array{Elem: elem}
 
 		if err := env.checkNodeType("array value in index access", n.Array, array); err != nil {

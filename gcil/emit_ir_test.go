@@ -196,9 +196,9 @@ func TestEmitInsn(t *testing.T) {
 		},
 		{
 			"external symbol references",
-			"x",
+			"x + 0",
 			[]string{
-				"xref x ; type=unknown (unused)",
+				"xref x ; type=int",
 			},
 		},
 		{
@@ -247,14 +247,14 @@ func TestEmitInsn(t *testing.T) {
 			go l.Lex()
 			root, err := parser.Parse(l.Tokens)
 			if err != nil {
-				panic(err)
+				t.Fatal(err)
 			}
 			if err = alpha.Transform(root); err != nil {
-				panic(err)
+				t.Fatal(err)
 			}
 			env := typing.NewEnv()
 			if err := env.ApplyTypeAnalysis(root); err != nil {
-				panic(err)
+				t.Fatal(err)
 			}
 			ir := EmitIR(root, env)
 			var buf bytes.Buffer
@@ -262,7 +262,7 @@ func TestEmitInsn(t *testing.T) {
 			r := bufio.NewReader(&buf)
 			line, _, err := r.ReadLine()
 			if err != nil {
-				panic(err)
+				t.Fatal(err)
 			}
 			if string(line) != "BEGIN: program" {
 				t.Fatalf("First line must begin with 'BEGIN: program' because it's root block")

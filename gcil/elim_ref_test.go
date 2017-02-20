@@ -71,7 +71,7 @@ func TestEliminatingRef(t *testing.T) {
 		},
 		{
 			"external variable",
-			"x",
+			"x + 0",
 			[]string{
 				"= xref x",
 			},
@@ -92,14 +92,14 @@ func TestEliminatingRef(t *testing.T) {
 			go l.Lex()
 			root, err := parser.Parse(l.Tokens)
 			if err != nil {
-				panic(err)
+				t.Fatal(err)
 			}
 			if err = alpha.Transform(root); err != nil {
-				panic(err)
+				t.Fatal(err)
 			}
 			env := typing.NewEnv()
 			if err := env.ApplyTypeAnalysis(root); err != nil {
-				panic(err)
+				t.Fatal(err)
 			}
 			ir := EmitIR(root, env)
 			ElimRefs(ir, env)
