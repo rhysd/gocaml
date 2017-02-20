@@ -54,6 +54,36 @@ func (b *blockBuilder) typeOf(ident string) typing.Type {
 	panic("Type was not found for ident: " + ident)
 }
 
+func (b *blockBuilder) buildEq(ty typing.Type, lhs, rhs llvm.Value) llvm.Value {
+	switch ty := ty.(type) {
+	case *typing.Unit:
+		// `() = ()` is always true.
+		return llvm.ConstInt(b.typeBuilder.boolT, 1, false /*sign extend*/)
+	case *typing.Bool, *typing.Int:
+		return b.builder.CreateICmp(llvm.IntEQ, lhs, rhs, "eql")
+	case *typing.Float:
+		return b.builder.CreateFCmp(llvm.FloatOEQ, lhs, rhs, "eql")
+	case *typing.Tuple:
+		cmp := llvm.Value{}
+		for i, elemTy := range ty.Elems {
+			l := b.builder.CreateLoad(b.builder.CreateStructGEP(lhs, i, "tpl.left"), "")
+			r := b.builder.CreateLoad(b.builder.CreateStructGEP(rhs, i, "tpl.right"), "")
+			elemCmp := b.buildEq(elemTy, l, r)
+			if cmp.C == nil {
+				cmp = elemCmp
+			} else {
+				cmp = b.builder.CreateAnd(cmp, elemCmp, "")
+			}
+		}
+		cmp.SetName("eql.tpl")
+		return cmp
+	case *typing.Array:
+		panic("unreachable")
+	default:
+		panic("unreachable")
+	}
+}
+
 func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 	switch val := val.(type) {
 	case *gcil.Unit:
@@ -107,22 +137,7 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 				panic("Invalid type for '<' operator: " + lty.String())
 			}
 		case gcil.EQ:
-			lty := b.typeOf(val.Lhs)
-			switch lty.(type) {
-			case *typing.Unit:
-				// `() = ()` is always true.
-				return llvm.ConstInt(b.typeBuilder.boolT, 1, false /*sign extend*/)
-			case *typing.Bool, *typing.Int:
-				return b.builder.CreateICmp(llvm.IntEQ, lhs, rhs, "eql")
-			case *typing.Float:
-				return b.builder.CreateFCmp(llvm.FloatOEQ, lhs, rhs, "eql")
-			case *typing.Tuple:
-				panic("not implemented yet: comparing tuples")
-			case *typing.Array:
-				panic("not implemented yet: comparing arrays")
-			default:
-				panic("unreachable")
-			}
+			return b.buildEq(b.typeOf(val.Lhs), lhs, rhs)
 		default:
 			panic("unreachable")
 		}
