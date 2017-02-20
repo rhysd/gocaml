@@ -54,27 +54,6 @@ func (b *blockBuilder) typeOf(ident string) typing.Type {
 	panic("Type was not found for ident: " + ident)
 }
 
-func (b *blockBuilder) buildIndexLoop(name string, until llvm.Value, pred func(index llvm.Value)) {
-	idxPtr := b.builder.CreateAlloca(b.typeBuilder.intT, name+".index")
-	b.builder.CreateStore(llvm.ConstInt(b.typeBuilder.intT, 0, false), idxPtr)
-
-	parent := b.builder.GetInsertBlock().Parent()
-	loopBlock := llvm.AddBasicBlock(parent, name+".loop")
-	endBlock := llvm.AddBasicBlock(parent, name+".end")
-
-	b.builder.CreateBr(loopBlock)
-	b.builder.SetInsertPointAtEnd(loopBlock)
-
-	idxVal := b.builder.CreateLoad(idxPtr, "")
-	pred(idxVal)
-
-	idxVal = b.builder.CreateAdd(idxVal, llvm.ConstInt(b.typeBuilder.intT, 1, false), name+".inc")
-	b.builder.CreateStore(idxVal, idxPtr)
-	compVal := b.builder.CreateICmp(llvm.IntEQ, idxVal, until, "")
-	b.builder.CreateCondBr(compVal, endBlock, loopBlock)
-	b.builder.SetInsertPointAtEnd(endBlock)
-}
-
 func (b *blockBuilder) buildEq(ty typing.Type, lhs, rhs llvm.Value) llvm.Value {
 	switch ty := ty.(type) {
 	case *typing.Unit:
@@ -99,37 +78,7 @@ func (b *blockBuilder) buildEq(ty typing.Type, lhs, rhs llvm.Value) llvm.Value {
 		cmp.SetName("eql.tpl")
 		return cmp
 	case *typing.Array:
-		prevBlock := b.builder.GetInsertBlock()
-		parent := prevBlock.Parent()
-		elemsBlock := llvm.AddBasicBlock(parent, "cmp.arr.elems")
-		endBlock := llvm.AddBasicBlock(parent, "cmp.arr.end")
-
-		// Check size is equivalent
-		lSize := b.builder.CreateLoad(b.builder.CreateStructGEP(lhs, 1, ""), "arr.left.size")
-		rSize := b.builder.CreateLoad(b.builder.CreateStructGEP(rhs, 1, ""), "arr.right.size")
-
-		cmpSize := b.builder.CreateICmp(llvm.IntNE, lSize, rSize, "")
-		b.builder.CreateCondBr(cmpSize, endBlock, elemsBlock)
-
-		// Check all elements are equivalent
-		b.builder.SetInsertPointAtEnd(elemsBlock)
-		lArr := b.builder.CreateLoad(b.builder.CreateStructGEP(lhs, 0, ""), "arr.left")
-		rArr := b.builder.CreateLoad(b.builder.CreateStructGEP(lhs, 0, ""), "arr.right")
-		cmp := cmpSize
-		b.buildIndexLoop("cmp.arr.elems", lSize, func(idxVal llvm.Value) {
-			l := b.builder.CreateLoad(b.builder.CreateInBoundsGEP(lArr, []llvm.Value{idxVal}, ""), "arr.elem.left")
-			r := b.builder.CreateLoad(b.builder.CreateInBoundsGEP(rArr, []llvm.Value{idxVal}, ""), "arr.elem.right")
-			elemCmp := b.buildEq(ty.Elem, l, r)
-			cmp = b.builder.CreateAnd(cmp, elemCmp, "")
-		})
-		b.builder.CreateBr(endBlock)
-
-		// Merge size check and elems check
-		b.builder.SetInsertPointAtEnd(endBlock)
-		phi := b.builder.CreatePHI(b.typeBuilder.boolT, "eql.arr")
-		phi.AddIncoming([]llvm.Value{cmpSize, cmp}, []llvm.BasicBlock{prevBlock, elemsBlock})
-
-		return phi
+		panic("unreachable")
 	default:
 		panic("unreachable")
 	}
@@ -285,14 +234,30 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		// Arrays are allocated on stack. So returning array value from function
 		// now breaks the array value.
 		arrVal := b.builder.CreateArrayAlloca(elemTy, sizeVal, "array.ptr")
-		b.builder.CreateStore(arrVal, b.builder.CreateStructGEP(ptr, 0, ""))
+
+		arrPtr := b.builder.CreateStructGEP(ptr, 0, "")
+		b.builder.CreateStore(arrVal, arrPtr)
 
 		// Copy second argument to all elements of allocated array
 		elemVal := b.resolve(val.Elem)
-		b.buildIndexLoop("arr.init", sizeVal, func(idxVal llvm.Value) {
-			elemPtr := b.builder.CreateInBoundsGEP(arrVal, []llvm.Value{idxVal}, "")
-			b.builder.CreateStore(elemVal, elemPtr)
-		})
+		iterPtr := b.builder.CreateAlloca(b.typeBuilder.intT, "arr.init.iter")
+		b.builder.CreateStore(llvm.ConstInt(b.typeBuilder.intT, 0, false), iterPtr)
+
+		parent := b.builder.GetInsertBlock().Parent()
+		loopBlock := llvm.AddBasicBlock(parent, "arr.init.setelem")
+		endBlock := llvm.AddBasicBlock(parent, "arr.init.end")
+
+		b.builder.CreateBr(loopBlock)
+		b.builder.SetInsertPointAtEnd(loopBlock)
+
+		iterVal := b.builder.CreateLoad(iterPtr, "")
+		elemPtr := b.builder.CreateInBoundsGEP(arrVal, []llvm.Value{iterVal}, "")
+		b.builder.CreateStore(elemVal, elemPtr)
+		iterVal = b.builder.CreateAdd(iterVal, llvm.ConstInt(b.typeBuilder.intT, 1, false), "arr.init.inc")
+		b.builder.CreateStore(iterVal, iterPtr)
+		compVal := b.builder.CreateICmp(llvm.IntEQ, iterVal, sizeVal, "")
+		b.builder.CreateCondBr(compVal, endBlock, loopBlock)
+		b.builder.SetInsertPointAtEnd(endBlock)
 
 		// Set size value
 		sizePtr := b.builder.CreateStructGEP(ptr, 1, "")
