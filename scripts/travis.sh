@@ -8,7 +8,7 @@ if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
     # Avoid building LLVM
     go get -v -t -d $PACKAGES
     go get golang.org/x/tools/cmd/goyacc
-    go tool yacc -o parser/grammar.go parser/grammar.go.y
+    goyacc -o parser/grammar.go parser/grammar.go.y
     go build -v $PACKAGES
     go test -v $PACKAGES
 else

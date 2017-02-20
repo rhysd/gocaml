@@ -10,8 +10,9 @@ install:
     - go env
     - go get -v -t -d ./alpha ./ast ./closure ./gcil ./lexer ./parser ./token ./typing
     - go get golang.org/x/tools/cmd/goyacc
+    - set PATH=%PATH%;%GOPATH%\bin
 build: off
 test_script:
-    - go tool yacc -o parser/grammar.go parser/grammar.go.y
+    - goyacc -o parser/grammar.go parser/grammar.go.y
     - go test -v ./alpha ./ast ./closure ./gcil ./lexer ./parser ./token ./typing
 deploy: off

@@ -68,7 +68,7 @@ gocaml: $(SRCS)
 
 parser/grammar.go: parser/grammar.go.y
 	go get golang.org/x/tools/cmd/goyacc
-	go tool yacc -o parser/grammar.go parser/grammar.go.y
+	goyacc -o parser/grammar.go parser/grammar.go.y
 
 runtime/gocamlrt.o: runtime/gocamlrt.c
 	$(CC) -c runtime/gocamlrt.c -o runtime/gocamlrt.o
