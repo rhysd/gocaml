@@ -177,17 +177,9 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		return e.emitLetInsn(n)
 	case *ast.VarRef:
 		if t, ok := e.types.Table[n.Symbol.Name]; ok {
-			v, ok := t.(*typing.Var)
-			if ok {
-				t = v.Ref
-			}
 			ty = t
 			val = &Ref{n.Symbol.Name}
 		} else if t, ok := e.types.Externals[n.Symbol.Name]; ok {
-			v, ok := t.(*typing.Var)
-			if ok {
-				t = v.Ref
-			}
 			ty = t
 			val = &XRef{n.Symbol.Name}
 		} else {

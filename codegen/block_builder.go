@@ -28,28 +28,10 @@ func (b *blockBuilder) resolve(ident string) llvm.Value {
 
 func (b *blockBuilder) typeOf(ident string) typing.Type {
 	if t, ok := b.env.Table[ident]; ok {
-		for {
-			v, ok := t.(*typing.Var)
-			if !ok {
-				return t
-			}
-			if v.Ref == nil {
-				panic("Empty type variable while searching variable: " + ident)
-			}
-			t = v.Ref
-		}
+		return t
 	}
 	if t, ok := b.env.Externals[ident]; ok {
-		for {
-			v, ok := t.(*typing.Var)
-			if !ok {
-				return t
-			}
-			if v.Ref == nil {
-				panic("Empty type variable while searching external variable: " + ident)
-			}
-			t = v.Ref
-		}
+		return t
 	}
 	panic("Type was not found for ident: " + ident)
 }
