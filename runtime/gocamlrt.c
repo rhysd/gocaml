@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <stdlib.h>
 
 void print_int(int64_t const i)
 {
-    printf("%lld", i);
+    printf("%" PRId64, i);
 }
 
 void print_bool(int const i)
@@ -19,7 +20,7 @@ void print_float(double const d)
 
 void println_int(int64_t const i)
 {
-    printf("%lld\n", i);
+    printf("%" PRId64 "\n", i);
 }
 
 void println_bool(int const i)
@@ -30,5 +31,15 @@ void println_bool(int const i)
 void println_float(double const d)
 {
     printf("%lg\n", d);
+}
+
+int64_t float_to_int(double const f)
+{
+    return (int64_t) f;
+}
+
+double float_of_int(int64_t const i)
+{
+    return (double) i;
 }
 

@@ -72,7 +72,7 @@ parser/grammar.go: parser/grammar.go.y
 	goyacc -o parser/grammar.go parser/grammar.go.y
 
 runtime/gocamlrt.o: runtime/gocamlrt.c
-	$(CC) -c runtime/gocamlrt.c -o runtime/gocamlrt.o
+	$(CC) -Wall -Wextra -pedantic -c runtime/gocamlrt.c -o runtime/gocamlrt.o
 runtime/gocamlrt.a: runtime/gocamlrt.o
 	ar -r runtime/gocamlrt.a runtime/gocamlrt.o
 
@@ -88,6 +88,6 @@ cov: cover.out
 	go tool cover -html=cover.out
 
 clean:
-	rm -f gocaml y.output parser/grammar.go
+	rm -f gocaml y.output parser/grammar.go runtime/gocamlrt.o runtime/gocamlrt.a
 
 .PHONY: all build clean test cov

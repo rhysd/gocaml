@@ -14,6 +14,9 @@ guard :shell do
       system "make build"
     end
   end
+  watch /\.c$/ do |m|
+    system "make build"
+  end
   watch /\.go\.y$/ do |m|
     system "make build"
   end
