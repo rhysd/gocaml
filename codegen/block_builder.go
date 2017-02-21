@@ -10,10 +10,12 @@ import (
 type blockBuilder struct {
 	*moduleBuilder
 	registers map[string]llvm.Value
+	unitVal   llvm.Value
 }
 
 func newBlockBuilder(b *moduleBuilder) *blockBuilder {
-	return &blockBuilder{b, map[string]llvm.Value{}}
+	unit := llvm.ConstNamedStruct(b.typeBuilder.unitT, []llvm.Value{})
+	return &blockBuilder{b, map[string]llvm.Value{}, unit}
 }
 
 func (b *blockBuilder) resolve(ident string) llvm.Value {
@@ -69,7 +71,7 @@ func (b *blockBuilder) buildEq(ty typing.Type, lhs, rhs llvm.Value) llvm.Value {
 func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 	switch val := val.(type) {
 	case *gcil.Unit:
-		return llvm.ConstStruct([]llvm.Value{}, false /*packed*/)
+		return b.unitVal
 	case *gcil.Bool:
 		c := uint64(1)
 		if !val.Const {
@@ -185,7 +187,12 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 
 		// Note:
 		// Call inst cannot have a name when the return type is void.
-		return b.builder.CreateCall(funVal, argVals, "")
+		ret := b.builder.CreateCall(funVal, argVals, "")
+		if ret.Type().TypeKind() == llvm.VoidTypeKind {
+			// When returned value is void
+			ret = b.unitVal
+		}
+		return ret
 	case *gcil.Tuple:
 		// Note:
 		// Type of tuple is a pointer to struct. To obtain the value for tuple, we need underlying
