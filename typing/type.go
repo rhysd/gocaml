@@ -74,7 +74,6 @@ func (t *Array) String() string {
 }
 
 type Var struct {
-	ID  int
 	Ref Type
 }
 

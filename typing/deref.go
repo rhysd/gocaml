@@ -6,14 +6,9 @@ import (
 	"strings"
 )
 
-type typeVarDereferencer struct {
-	errors []string
-	env    *Env
-}
-
-func (d *typeVarDereferencer) unwrapVar(variable *Var) (Type, bool) {
+func unwrapVar(variable *Var) (Type, bool) {
 	if variable.Ref != nil {
-		r, ok := d.unwrap(variable.Ref)
+		r, ok := unwrap(variable.Ref)
 		if ok {
 			return r, true
 		}
@@ -22,14 +17,14 @@ func (d *typeVarDereferencer) unwrapVar(variable *Var) (Type, bool) {
 	return nil, false
 }
 
-func (d *typeVarDereferencer) unwrapFun(fun *Fun) (Type, bool) {
-	r, ok := d.unwrap(fun.Ret)
+func unwrapFun(fun *Fun) (Type, bool) {
+	r, ok := unwrap(fun.Ret)
 	if !ok {
 		return nil, false
 	}
 	fun.Ret = r
 	for i, param := range fun.Params {
-		p, ok := d.unwrap(param)
+		p, ok := unwrap(param)
 		if !ok {
 			return nil, false
 		}
@@ -38,28 +33,33 @@ func (d *typeVarDereferencer) unwrapFun(fun *Fun) (Type, bool) {
 	return fun, true
 }
 
-func (d *typeVarDereferencer) unwrap(target Type) (Type, bool) {
+func unwrap(target Type) (Type, bool) {
 	switch t := target.(type) {
 	case *Fun:
-		return d.unwrapFun(t)
+		return unwrapFun(t)
 	case *Tuple:
 		for i, elem := range t.Elems {
-			e, ok := d.unwrap(elem)
+			e, ok := unwrap(elem)
 			if !ok {
 				return nil, false
 			}
 			t.Elems[i] = e
 		}
 	case *Array:
-		e, ok := d.unwrap(t.Elem)
+		e, ok := unwrap(t.Elem)
 		if !ok {
 			return nil, false
 		}
 		t.Elem = e
 	case *Var:
-		return d.unwrapVar(t)
+		return unwrapVar(t)
 	}
 	return target, true
+}
+
+type typeVarDereferencer struct {
+	errors []string
+	env    *Env
 }
 
 func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
@@ -74,7 +74,7 @@ func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
 		return
 	}
 
-	t, ok := d.unwrap(symType)
+	t, ok := unwrap(symType)
 	if !ok {
 		pos := node.Pos()
 		d.errors = append(d.errors, fmt.Sprintf("Cannot infer type of variable '%s' in node %s (line:%d, column:%d). Inferred type was '%s'", sym.Name, node.Name(), pos.Line, pos.Column, symType.String()))
@@ -129,14 +129,14 @@ func (d *typeVarDereferencer) derefExternalSym(name string, symType Type) Type {
 		return d.derefExternalSym(name, ty.Ref)
 	case *Fun:
 		ty.Ret = d.fixExternalFuncRet(ty.Ret)
-		t, ok := d.unwrapFun(ty)
+		t, ok := unwrapFun(ty)
 		if !ok {
 			d.externalSymError(name, symType)
 			return ty
 		}
 		return t
 	default:
-		t, ok := d.unwrap(symType)
+		t, ok := unwrap(symType)
 		if !ok {
 			d.externalSymError(name, symType)
 			return symType
