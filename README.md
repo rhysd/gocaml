@@ -66,6 +66,48 @@ $ make
 
 `gocaml` command is available to compile sources. Please refer `gocaml -help`.
 
+Compiled code will be linked to [small runtime][]. In runtime, some functions are defined to print values and it includes
+`<stdlib.h>` and `<stdio.h>`. So you can use them from GoCaml codes.
+
+## How to Work with C
+
+All symbols not defined in source are treated as external symbols. So you can define it in C source and link it to compiled GoCaml
+code after.
+
+Let's say to write C code.
+
+```c
+#include <stdint.h>
+
+// Please use int64_t for int in GoCaml, double for float in GoCaml, int for bool
+int64_t plus100(int64_t const i)
+{
+    return i + 100;
+}
+```
+
+Then compile it to an object file:
+
+```
+$ clang -Wall -c plus100.c -o plus100.o
+```
+
+Then you can refer the function from GoCaml code:
+
+```ml
+println_int ((plus100 10) + 0)
+```
+
+`println_int` is a function defined in runtime. So you don't need to care about it.
+Finally comile the GoCaml code and the object file together with `gocaml` compiler. You need to link `.o` file after compiling
+GoCaml code by passing the object file to `-ldflags`.
+
+```
+$ gocaml -ldflags plus100.o test.ml
+```
+
+After the command, you can find `test` executable. Executing by `./test` will show `110`.
+
 [MinCaml]: https://github.com/esumii/min-caml
 [goyacc]: https://github.com/cznic/goyacc
 [LLVM]: http://llvm.org/
@@ -83,3 +125,4 @@ $ make
 [Coveralls]: https://coveralls.io/github/rhysd/gocaml
 [Windows Build Status]: https://ci.appveyor.com/api/projects/status/7lfewhhjg57nek2v/branch/master?svg=true
 [Appveyor]: https://ci.appveyor.com/project/rhysd/gocaml/branch/master
+[small runtime]: ./runtime/gocamlrt.c
