@@ -113,10 +113,7 @@ func newModuleBuilder(env *typing.Env, name string, opts EmitOptions) (*moduleBu
 func (b *moduleBuilder) declareExternalDecl(name string, from typing.Type) llvm.Value {
 	switch ty := from.(type) {
 	case *typing.Var:
-		if ty.Ref == nil {
-			panic("Type variable is empty")
-		}
-		return b.declareExternalDecl(name, ty.Ref)
+		panic("unreachable") // because type variables are dereferenced at type analysis
 	case *typing.Fun:
 		t := b.typeBuilder.buildExternalFun(ty)
 		v := llvm.AddFunction(b.module, name, t)

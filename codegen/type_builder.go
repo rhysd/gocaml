@@ -121,10 +121,8 @@ func (b *typeBuilder) convertGCIL(from typing.Type) llvm.Type {
 		}, false /*packed*/)
 		return array
 	case *typing.Var:
-		if ty.Ref == nil {
-			panic("Unknown type variable while building LLVM type value!")
-		}
-		return b.convertGCIL(ty.Ref)
+		panic("unreachable")
+	default:
+		panic("unreachable")
 	}
-	panic("unreachable")
 }
