@@ -76,10 +76,8 @@ func unifyFun(left, right *Fun) error {
 }
 
 func unifyVar(l *Var, right Type) error {
-	if r, ok := right.(*Var); ok {
-		if l.ID == r.ID {
-			return nil
-		}
+	if l == right {
+		return nil
 	}
 
 	if l.Ref != nil {

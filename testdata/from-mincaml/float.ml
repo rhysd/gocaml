@@ -3,7 +3,7 @@
    外部関数の型を陽に指定する必要があります（そうしないと
    MinCamlでは勝手にint -> intと推論されるため）。 *)
 print_int
-  (int_of_float
-     ((sin (cos (sqrt (abs_float (-.12.3))))
-	 +. 4.5 -. 6.7 *. 8.9 /. 1.23456789)
-	*. float_of_int 1000000))
+  ((int_of_float
+     (((sin ((cos ((sqrt ((abs_float (-.12.3)) +. 0.0)) +. 0.0)) +. 0.0)
+	 +. 4.5 -. 6.7 *. 8.9 /. 1.23456789) +. 0.0)
+	*. float_of_int 1000000)) + 0)

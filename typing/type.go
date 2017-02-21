@@ -74,7 +74,6 @@ func (t *Array) String() string {
 }
 
 type Var struct {
-	ID  int
 	Ref Type
 }
 
@@ -91,15 +90,4 @@ var (
 	BoolType  = &Bool{}
 	IntType   = &Int{}
 	FloatType = &Float{}
-
-	// ID to identify type variables
-	typeVarID = 0
 )
-
-func NewVar() *Var {
-	typeVarID++
-	return &Var{
-		ID:  typeVarID,
-		Ref: nil,
-	}
-}
