@@ -2,20 +2,26 @@
 
 set -e
 
-PACKAGES="./alpha ./ast ./gcil ./closure ./lexer ./parser ./token ./typing"
+export USE_SYSTEM_LLVM=true
 
 if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-    # Avoid building LLVM
-    go get -v -t -d $PACKAGES
-    go get golang.org/x/tools/cmd/goyacc
-    goyacc -o parser/grammar.go parser/grammar.go.y
-    go build -v $PACKAGES
-    go test -v $PACKAGES
+    # brew update
+    # brew install llvm
+    #
+    # Fallback until LLVM 4.0 comes to Homebrew
+    mkdir -p llvm-4.0.0-rc2-workaround
+    if [ ! -d llvm-4.0.0-rc2-workaround/bin ]; then
+        wget -O clang+llvm-4.0.0-rc2.tar.xz http://www.llvm.org/pre-releases/4.0.0/rc2/clang+llvm-4.0.0-rc2-x86_64-apple-darwin.tar.xz
+        tar -xvf clang+llvm-4.0.0-rc2.tar.xz --strip 1 -C llvm-4.0.0-rc2-workaround
+    fi
+    export LLVM_CONFIG="$(pwd)/llvm-4.0.0-rc2-workaround/bin/llvm-config"
+
+    make build
+    go test -v ./...
 else
     go get golang.org/x/tools/cmd/cover
     go get github.com/haya14busa/goverage
     go get github.com/mattn/goveralls
-    export USE_SYSTEM_LLVM=true
     export LLVM_CONFIG="llvm-config-4.0"
     make build
     go test -v ./...
