@@ -108,7 +108,10 @@ func (c *Compiler) EmitGCIL(src *token.Source) (*gcil.Program, *typing.Env, erro
 	if err != nil {
 		return nil, nil, err
 	}
-	ir := gcil.EmitIR(ast.Root, env)
+	ir, err := gcil.FromAST(ast.Root, env)
+	if err != nil {
+		return nil, nil, err
+	}
 	gcil.ElimRefs(ir, env)
 	prog := closure.Transform(ir)
 	return prog, env, nil

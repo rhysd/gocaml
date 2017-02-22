@@ -101,7 +101,10 @@ func TestEliminatingRef(t *testing.T) {
 			if err := env.ApplyTypeAnalysis(root); err != nil {
 				t.Fatal(err)
 			}
-			ir := EmitIR(root, env)
+			ir, err := FromAST(root, env)
+			if err != nil {
+				t.Fatal(err)
+			}
 			ElimRefs(ir, env)
 			var buf bytes.Buffer
 			ir.Println(&buf, env)

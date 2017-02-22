@@ -2,15 +2,19 @@ package gcil
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"github.com/rhysd/gocaml/ast"
+	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/gocaml/typing"
+	"strings"
 )
 
 // Convert AST into GCIL with K-Normalization
 
 type emitter struct {
-	count uint
-	types *typing.Env
+	count  uint
+	types  *typing.Env
+	errors []string
 }
 
 func (e *emitter) genID() string {
@@ -24,6 +28,12 @@ func (e *emitter) typeOf(i *Insn) typing.Type {
 		panic(fmt.Sprintf("Type for '%s' not found for %v (bug)", i.Ident, *i))
 	}
 	return t
+}
+
+func (e *emitter) semanticError(msg string, pos token.Position) {
+	e.errors = append(
+		e.errors, fmt.Sprintf("%s at (line:%d, column:%d)", msg, pos.Line, pos.Column),
+	)
 }
 
 func (e *emitter) emitBinaryInsn(op OperatorKind, lhs ast.Expr, rhs ast.Expr) (typing.Type, Val, *Insn) {
@@ -158,10 +168,25 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 	case *ast.FDiv:
 		ty, val, prev = e.emitBinaryInsn(FDIV, n.Left, n.Right)
 	case *ast.Less:
-		_, val, prev = e.emitBinaryInsn(LESS, n.Left, n.Right)
+		var operand typing.Type
+		operand, val, prev = e.emitBinaryInsn(LESS, n.Left, n.Right)
+		// Note:
+		// This type constraint may be useful for type inference. But current HM type inference algorithm cannot
+		// handle a union type. In this context, the operand should be `int | float`
+		switch operand.(type) {
+		case *typing.Unit, *typing.Bool, *typing.Fun, *typing.Tuple, *typing.Array:
+			e.semanticError(fmt.Sprintf("'%s' can't be compared with operator '<'", operand.String()), n.Pos())
+		}
 		ty = typing.BoolType
 	case *ast.Eq:
-		_, val, prev = e.emitBinaryInsn(EQ, n.Left, n.Right)
+		var operand typing.Type
+		operand, val, prev = e.emitBinaryInsn(EQ, n.Left, n.Right)
+		// Note:
+		// This type constraint may be useful for type inference. But current HM type inference algorithm cannot
+		// handle a union type. In this context, the operand should be `() | bool | int | float | fun<R, TS...> | tuple<Args...>`
+		if _, ok := operand.(*typing.Array); ok {
+			e.semanticError(fmt.Sprintf("'%s' can't be compared with operator '='", operand.String()), n.Pos())
+		}
 		ty = typing.BoolType
 	case *ast.If:
 		prev = e.emitInsn(n.Cond)
@@ -274,8 +299,11 @@ func (e *emitter) emitBlock(name string, node ast.Expr) (*Block, typing.Type) {
 	return NewBlock(name, firstInsn, lastInsn), e.typeOf(lastInsn)
 }
 
-func EmitIR(root ast.Expr, types *typing.Env) *Block {
-	e := &emitter{0, types}
+func FromAST(root ast.Expr, types *typing.Env) (*Block, error) {
+	e := &emitter{0, types, []string{}}
 	b, _ := e.emitBlock("program", root)
-	return b
+	if len(e.errors) > 0 {
+		return nil, errors.New("Semantics error:\n  " + strings.Join(e.errors, "\n  "))
+	}
+	return b, nil
 }

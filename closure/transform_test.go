@@ -317,16 +317,19 @@ func TestClosureTransform(t *testing.T) {
 			go l.Lex()
 			root, err := parser.Parse(l.Tokens)
 			if err != nil {
-				panic(err)
+				t.Fatal(err)
 			}
 			if err = alpha.Transform(root); err != nil {
-				panic(err)
+				t.Fatal(err)
 			}
 			env := typing.NewEnv()
 			if err := env.ApplyTypeAnalysis(root); err != nil {
-				panic(err)
+				t.Fatal(err)
 			}
-			ir := gcil.EmitIR(root, env)
+			ir, err := gcil.FromAST(root, env)
+			if err != nil {
+				t.Fatal(err)
+			}
 			gcil.ElimRefs(ir, env)
 			prog := Transform(ir)
 
@@ -458,16 +461,19 @@ func TestClosureCaptureInInsn(t *testing.T) {
 	go l.Lex()
 	root, err := parser.Parse(l.Tokens)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 	if err = alpha.Transform(root); err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 	env := typing.NewEnv()
 	if err := env.ApplyTypeAnalysis(root); err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
-	ir := gcil.EmitIR(root, env)
+	ir, err := gcil.FromAST(root, env)
+	if err != nil {
+		t.Fatal(err)
+	}
 	gcil.ElimRefs(ir, env)
 	prog := Transform(ir)
 

@@ -42,7 +42,10 @@ func Example() {
 	}
 
 	// Convert AST into GCIL instruction block
-	block := gcil.EmitIR(root, env)
+	block, err := gcil.FromAST(root, env)
+	if err != nil {
+		panic(err)
+	}
 	gcil.ElimRefs(block, env)
 
 	// Closure transform.

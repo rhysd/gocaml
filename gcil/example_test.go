@@ -42,7 +42,10 @@ func Example() {
 
 	// Convert AST into GCIL instruction block
 	// Returned block represents the root block of program
-	block := EmitIR(root, env)
+	block, err := FromAST(root, env)
+	if err != nil {
+		panic(err)
+	}
 
 	// Instructions are represented as list of instructions.
 	// Block has pointers to access to the head and tail of the list.

@@ -256,7 +256,10 @@ func TestEmitInsn(t *testing.T) {
 			if err := env.ApplyTypeAnalysis(root); err != nil {
 				t.Fatal(err)
 			}
-			ir := EmitIR(root, env)
+			ir, err := FromAST(root, env)
+			if err != nil {
+				t.Fatal(err)
+			}
 			var buf bytes.Buffer
 			ir.Println(&buf, env)
 			r := bufio.NewReader(&buf)
@@ -276,6 +279,56 @@ func TestEmitInsn(t *testing.T) {
 				if !strings.HasSuffix(actual, expected) {
 					t.Errorf("Expected to end with '%s' for line %d of output of code '%s'. But actually output was '%s'", expected, i, tc.code, actual)
 				}
+			}
+		})
+	}
+}
+
+func TestSemanticError(t *testing.T) {
+	cases := []struct {
+		what     string
+		code     string
+		expected string
+	}{
+		{
+			what:     "unit is invalid for operator '<'",
+			code:     "() < ()",
+			expected: "'()' can't be compared with operator '<'",
+		},
+		{
+			what:     "tuple is invalid for operator '<'",
+			code:     "let t = (1, 2) in t < t",
+			expected: "'(int, int)' can't be compared with operator '<'",
+		},
+		{
+			what:     "array is invalid for operator '='",
+			code:     "let a = Array.create  3 3 in a = a",
+			expected: "'int array' can't be compared with operator '='",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.what, func(t *testing.T) {
+			s := token.NewDummySource(fmt.Sprintf("%s; ()", tc.code))
+			l := lexer.NewLexer(s)
+			go l.Lex()
+			root, err := parser.Parse(l.Tokens)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err = alpha.Transform(root); err != nil {
+				t.Fatal(err)
+			}
+			env := typing.NewEnv()
+			if err := env.ApplyTypeAnalysis(root); err != nil {
+				t.Fatal(err)
+			}
+			_, err = FromAST(root, env)
+			if err == nil {
+				t.Fatalf("Expected code '%s' to cause an error '%s' but acutally there is no error", tc.code, tc.expected)
+			}
+			if !strings.Contains(err.Error(), tc.expected) {
+				t.Fatalf("Error message '%s' does not contain '%s'", err.Error(), tc.expected)
 			}
 		})
 	}
