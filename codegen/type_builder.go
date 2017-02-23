@@ -90,6 +90,16 @@ func (b *typeBuilder) buildFun(from *typing.Fun, known bool) llvm.Type {
 	return llvm.FunctionType(ret, params /*varargs*/, false)
 }
 
+// Creates closure type for the specified function ignoring capture fields
+// This function is used for retrieving function pointer from i8* closure value.
+func (b *typeBuilder) buildFakedClosure(ty *typing.Fun) llvm.Type {
+	funPtr := llvm.PointerType(b.buildFun(ty, false), 0 /*address space*/)
+	return llvm.PointerType(
+		b.context.StructType([]llvm.Type{funPtr}, false /*packed*/),
+		0, /*address space*/
+	)
+}
+
 func (b *typeBuilder) convertGCIL(from typing.Type) llvm.Type {
 	switch ty := from.(type) {
 	case *typing.Unit:

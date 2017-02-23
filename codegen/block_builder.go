@@ -61,6 +61,16 @@ func (b *blockBuilder) buildEq(ty typing.Type, lhs, rhs llvm.Value) llvm.Value {
 		}
 		cmp.SetName("eql.tpl")
 		return cmp
+	case *typing.Fun:
+		// Note:
+		// The function instance must be a closure because all functions which is used
+		// as variable are treated as closure in closure-transform.
+		faked := b.typeBuilder.buildFakedClosure(ty)
+		lhs = b.builder.CreateBitCast(lhs, faked, "")
+		rhs = b.builder.CreateBitCast(rhs, faked, "")
+		lhs = b.builder.CreateLoad(b.builder.CreateStructGEP(lhs, 0, ""), "")
+		rhs = b.builder.CreateLoad(b.builder.CreateStructGEP(rhs, 0, ""), "")
+		return b.builder.CreateICmp(llvm.IntEQ, lhs, rhs, "eql.fun")
 	case *typing.Array:
 		panic("unreachable")
 	default:
@@ -179,10 +189,16 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 			if val.Kind != gcil.CLOSURE_CALL {
 				panic("Value for function is not found in table: " + val.Callee)
 			}
+
 			// If callee is a function variable and not well-known, we need to fetch the function pointer
 			// to call from closure value.
-			ptr := b.builder.CreateStructGEP(argVals[0], 0, "")
-			funVal = b.builder.CreateLoad(ptr, "funptr")
+			calleeT, ok := b.env.Table[val.Callee].(*typing.Fun)
+			if !ok {
+				panic("Function type is not found for callee " + val.Callee)
+			}
+			faked := b.typeBuilder.buildFakedClosure(calleeT)
+			casted := b.builder.CreateBitCast(argVals[0], faked, "")
+			funVal = b.builder.CreateLoad(b.builder.CreateStructGEP(casted, 0, ""), "funptr")
 		}
 
 		// Note:
