@@ -34,7 +34,7 @@ print_int (gcd 21600 337500)
   - [ ] Striping unused variables
   - [ ] Reduce `()` type to `void`
   - [x] LLVM IR optimization passes
-- [ ] Code generation using [LLVM][]
+- [x] Code generation using [LLVM][]
 - [ ] Garbage collection with [Boehm GC][]
 
 ## Difference from original MinCaml
@@ -59,7 +59,29 @@ print_int (gcd 21600 337500)
 ```
 $ go get -d github.com/rhysd/gocaml
 $ cd $GOPATH/src/github.com/rhysd/gocaml
+
+# Full-installation with building LLVM locally
 $ make
+
+# Use system-installed LLVM. You need to install LLVM in advance (see below)
+$ USE_SYSTEM_LLVM=true make
+```
+
+If you want to use `USE_SYSTEM_LLVM`, you need to install LLVM 4.0.0 in advance.
+
+If you use Debian-family Linux, use [LLVM apt repository][]
+
+```
+$ sudo apt-get install libllvm4.0 llvm-4.0-dev
+```
+
+If you use macOS, use [Homebrew][]. GoCaml's installation script will automatically detect LLVM
+installed with Homebrew.
+
+*Note:* LLVM 4.0 is now on an RC stage. So it doesn't come to Homebrew yet.
+
+```
+$ brew install llvm
 ```
 
 ## Usage
@@ -126,3 +148,5 @@ After the command, you can find `test` executable. Executing by `./test` will sh
 [Windows Build Status]: https://ci.appveyor.com/api/projects/status/7lfewhhjg57nek2v/branch/master?svg=true
 [Appveyor]: https://ci.appveyor.com/project/rhysd/gocaml/branch/master
 [small runtime]: ./runtime/gocamlrt.c
+[LLVM apt repository]: http://apt.llvm.org/
+[Homebrew]: https://brew.sh/index.html
