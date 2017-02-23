@@ -47,9 +47,20 @@ echo "Building go-llvm with system installed LLVM..."
 
 if [[ "$LLVM_CONFIG" == "" ]]; then
     LLVM_CONFIG="llvm-config"
+    case "$OSTYPE" in
+        darwin*)
+            BREW_LLVM="$(ls -1 /usr/local/Cellar/llvm/*/bin/llvm-config | tail -1)"
+            if [[ "$BREW_LLVM" != "" ]]; then
+                LLVM_CONFIG="$BREW_LLVM"
+                # libffi is needed to build Go bindings
+                CGO_LDFLAGS="$CGO_LDFLAGS -L/usr/local/opt/libffi/lib -lffi"
+                echo "Detected LLVM installed with Homebrew: $BREW_LLVM"
+            fi
+            ;;
+    esac
 fi
 
-if which llvm-config 2>&1 > /dev/null; then
+if which "$LLVM_CONFIG" 2>&1 > /dev/null; then
     echo "llvm-config version: $($LLVM_CONFIG --version)"
 else
     echo "llvm-config command not found: $LLVM_CONFIG" >&2
@@ -58,12 +69,13 @@ fi
 
 cd "$LLVM_GO_LLVM_DIR"
 
-export CGO_CPPFLAGS="$($LLVM_CONFIG --cppflags)"
-export CGO_CXXFLAGS="$($LLVM_CONFIG --cxxflags)"
-export CGO_LDFLAGS="$($LLVM_CONFIG --ldflags --libs --system-libs all | tr '\n' ' ')"
-echo "CGO_CPPFLAGS=$CGO_CPPFLAGS"
-echo "CGO_CXXFLAGS=$CGO_CXXFLAGS"
-echo "CGO_LDFLAGS=$CGO_LDFLAGS"
+export CGO_CPPFLAGS="${CGO_CPPFLAGS} $($LLVM_CONFIG --cppflags)"
+export CGO_CXXFLAGS="${CGO_CXXFLAGS} $($LLVM_CONFIG --cxxflags)"
+export CGO_LDFLAGS="${CGO_LDFLAGS} $($LLVM_CONFIG --ldflags --libs --system-libs all | tr '\n' ' ')"
+
+echo "CGO_CPPFLAGS='$CGO_CPPFLAGS'"
+echo "CGO_CXXFLAGS='$CGO_CXXFLAGS'"
+echo "CGO_LDFLAGS='$CGO_LDFLAGS'"
 
 cat ${LLVM_GO_LLVM_DIR}/llvm_config.go.in | \
     sed "s#@LLVM_CFLAGS@#${CGO_CPPFLAGS}#" | \
