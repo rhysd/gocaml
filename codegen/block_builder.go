@@ -231,7 +231,7 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 			panic("Type of array literal is not array")
 		}
 
-		ty := b.typeBuilder.convertGCIL(t)
+		ty := b.typeBuilder.convertGCIL(t).ElementType()
 		elemTy := b.typeBuilder.convertGCIL(t.Elem)
 		ptr := b.builder.CreateAlloca(ty, ident)
 
