@@ -65,7 +65,7 @@ func (b *blockBuilder) buildEq(ty typing.Type, lhs, rhs llvm.Value) llvm.Value {
 		// Note:
 		// The function instance must be a closure because all functions which is used
 		// as variable are treated as closure in closure-transform.
-		faked := b.typeBuilder.buildFakedClosure(ty)
+		faked := b.typeBuilder.buildClosure(ty)
 		lhs = b.builder.CreateBitCast(lhs, faked, "")
 		rhs = b.builder.CreateBitCast(rhs, faked, "")
 		lhs = b.builder.CreateLoad(b.builder.CreateStructGEP(lhs, 0, ""), "")
@@ -172,33 +172,31 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		}
 		argVals := make([]llvm.Value, 0, argsLen)
 
-		if val.Kind == gcil.CLOSURE_CALL {
-			// Add pointer to closure captures
-			argVals = append(argVals, b.resolve(val.Callee))
-		}
-		for _, a := range val.Args {
-			argVals = append(argVals, b.resolve(a))
-		}
-
 		table := b.funcTable
 		if val.Kind == gcil.EXTERNAL_CALL {
 			table = b.globalTable
 		}
-		funVal, ok := table[val.Callee]
-		if !ok {
-			if val.Kind != gcil.CLOSURE_CALL {
-				panic("Value for function is not found in table: " + val.Callee)
+		// Find function pointer for invoking a function directly
+		funVal, funFound := table[val.Callee]
+		if !funFound && val.Kind != gcil.CLOSURE_CALL {
+			panic("Value for function is not found in table: " + val.Callee)
+		}
+
+		if val.Kind == gcil.CLOSURE_CALL {
+			closureVal := b.resolve(val.Callee)
+
+			// Extract function pointer from closure instance if callee does not indicates well-known function
+			if !funFound {
+				funVal = b.builder.CreateExtractValue(closureVal, 0, "funptr")
 			}
 
-			// If callee is a function variable and not well-known, we need to fetch the function pointer
-			// to call from closure value.
-			calleeT, ok := b.env.Table[val.Callee].(*typing.Fun)
-			if !ok {
-				panic("Function type is not found for callee " + val.Callee)
-			}
-			faked := b.typeBuilder.buildFakedClosure(calleeT)
-			casted := b.builder.CreateBitCast(argVals[0], faked, "")
-			funVal = b.builder.CreateLoad(b.builder.CreateStructGEP(casted, 0, ""), "funptr")
+			// Extract pointer to captures object
+			capturesPtr := b.builder.CreateExtractValue(closureVal, 1, "capturesptr")
+			argVals = append(argVals, capturesPtr)
+		}
+
+		for _, a := range val.Args {
+			argVals = append(argVals, b.resolve(a))
 		}
 
 		// Note:
@@ -297,25 +295,41 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		if !ok {
 			panic("Closure for function not found: " + val.Fun)
 		}
-		closureTy := b.typeBuilder.buildCapturesStruct(val.Fun, closure)
-		alloca := b.builder.CreateAlloca(closureTy, "")
+
+		funcT, ok := b.env.Table[val.Fun].(*typing.Fun)
+		if !ok {
+			panic(fmt.Sprintf("Type of function '%s' not found!", val.Fun))
+		}
+		funPtrTy := llvm.PointerType(b.typeBuilder.buildFun(funcT, false), 0 /*address space*/)
+
+		closureTy := b.context.StructCreateNamed(fmt.Sprintf("%s.clsobj", val.Fun))
+		capturesTy := b.typeBuilder.buildClosureCaptures(val.Fun, closure)
+		closureTy.StructSetBody([]llvm.Type{funPtrTy, llvm.PointerType(capturesTy, 0 /*address space*/)}, false /*packed*/)
+
+		closureVal := b.builder.CreateAlloca(closureTy, "")
 
 		// Set function pointer to first field of closure
-		funVal, ok := b.funcTable[val.Fun]
+		funPtr, ok := b.funcTable[val.Fun]
 		if !ok {
 			panic("Value for function not found: " + val.Fun)
 		}
-		b.builder.CreateStore(funVal, b.builder.CreateStructGEP(alloca, 0, ""))
+		b.builder.CreateStore(funPtr, b.builder.CreateStructGEP(closureVal, 0, ""))
 
-		// Set captures to rest of struct
+		capturesVal := b.builder.CreateAlloca(capturesTy, fmt.Sprintf("captures.%s", val.Fun))
 		for i, v := range val.Vars {
-			ptr := b.builder.CreateStructGEP(alloca, i+1, "")
+			ptr := b.builder.CreateStructGEP(capturesVal, i, "")
 			freevar := b.resolve(v)
 			b.builder.CreateStore(freevar, ptr)
 		}
+		b.builder.CreateStore(capturesVal, b.builder.CreateStructGEP(closureVal, 1, ""))
 
-		ptr := b.builder.CreateBitCast(alloca, b.typeBuilder.voidPtrT, fmt.Sprintf("closure.%s", val.Fun))
-		return ptr
+		castedTy := llvm.PointerType(
+			b.context.StructType([]llvm.Type{funPtrTy, b.typeBuilder.voidPtrT}, false /*packed*/),
+			0, /*address space*/
+		)
+		castedVal := b.builder.CreateBitCast(closureVal, castedTy, "")
+
+		return b.builder.CreateLoad(castedVal, fmt.Sprintf("closure.%s", val.Fun))
 	case *gcil.NOP:
 		panic("unreachable")
 	default:

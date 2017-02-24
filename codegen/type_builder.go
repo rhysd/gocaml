@@ -34,18 +34,12 @@ func newTypeBuilder(ctx llvm.Context, env *typing.Env) *typeBuilder {
 	}
 }
 
-func (b *typeBuilder) buildCapturesStruct(name string, closure []string) llvm.Type {
+func (b *typeBuilder) buildClosureCaptures(name string, closure []string) llvm.Type {
 	if cached, ok := b.captures[name]; ok {
 		return cached
 	}
-	fields := make([]llvm.Type, 0, len(closure)+1)
 
-	funcTy, ok := b.env.Table[name].(*typing.Fun)
-	if !ok {
-		panic(fmt.Sprintf("Type of function '%s' not found!", name))
-	}
-	fields = append(fields, llvm.PointerType(b.buildFun(funcTy, false), 0 /*address space*/))
-
+	fields := make([]llvm.Type, 0, len(closure))
 	for _, capture := range closure {
 		t, ok := b.env.Table[capture]
 		if !ok {
@@ -53,10 +47,10 @@ func (b *typeBuilder) buildCapturesStruct(name string, closure []string) llvm.Ty
 		}
 		fields = append(fields, b.convertGCIL(t))
 	}
-	ty := b.context.StructCreateNamed(fmt.Sprintf("%s.closure", name))
-	ty.StructSetBody(fields, false /*packed*/)
-	b.captures[name] = ty
-	return ty
+
+	captures := b.context.StructType(fields, false /*packed*/)
+	b.captures[name] = captures
+	return captures
 }
 
 func (b *typeBuilder) buildExternalFun(from *typing.Fun) llvm.Type {
@@ -92,12 +86,9 @@ func (b *typeBuilder) buildFun(from *typing.Fun, known bool) llvm.Type {
 
 // Creates closure type for the specified function ignoring capture fields
 // This function is used for retrieving function pointer from i8* closure value.
-func (b *typeBuilder) buildFakedClosure(ty *typing.Fun) llvm.Type {
+func (b *typeBuilder) buildClosure(ty *typing.Fun) llvm.Type {
 	funPtr := llvm.PointerType(b.buildFun(ty, false), 0 /*address space*/)
-	return llvm.PointerType(
-		b.context.StructType([]llvm.Type{funPtr}, false /*packed*/),
-		0, /*address space*/
-	)
+	return b.context.StructType([]llvm.Type{funPtr, b.voidPtrT}, false /*packed*/)
 }
 
 func (b *typeBuilder) convertGCIL(from typing.Type) llvm.Type {
@@ -114,8 +105,7 @@ func (b *typeBuilder) convertGCIL(from typing.Type) llvm.Type {
 		// Function type which occurs in normal expression's type is always closure because
 		// function type variable is always closure. Normal function pointer never occurs in value context.
 		// It must be a callee of direct function call (optimized by known function optimization).
-		// So, function types in variable types are closure type and closure type is void* (i8*).
-		return b.voidPtrT
+		return b.buildClosure(ty)
 	case *typing.Tuple:
 		elems := make([]llvm.Type, 0, len(ty.Elems))
 		for _, e := range ty.Elems {

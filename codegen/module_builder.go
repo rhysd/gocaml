@@ -184,16 +184,13 @@ func (b *moduleBuilder) buildFunBody(name string, fun *gcil.Fun) llvm.Value {
 		blockBuilder.registers[p] = llvmFun.Param(i)
 	}
 
+	// Expose captures of closure
 	if isClosure && len(closure) > 0 {
-		closureTy := llvm.PointerType(b.typeBuilder.buildCapturesStruct(name, closure) /*address space*/, 0)
-		closureVal := llvmFun.Param(0)
-		closureVal = b.builder.CreateBitCast(closureVal, closureTy, fmt.Sprintf("%s.closure", name))
+		capturesTy := llvm.PointerType(b.typeBuilder.buildClosureCaptures(name, closure), 0 /*address space*/)
+		closureVal := b.builder.CreateBitCast(llvmFun.Param(0), capturesTy, fmt.Sprintf("%s.capture", name))
 		for i, n := range closure {
-			// Note:
-			// First field of closure is a pointer to the function to call.
-			// It should be ignored at exposing captures.
-			ptr := b.builder.CreateStructGEP(closureVal, i+1, "")
-			exposed := b.builder.CreateLoad(ptr, fmt.Sprintf("%s.closure.%s", name, n))
+			ptr := b.builder.CreateStructGEP(closureVal, i, "")
+			exposed := b.builder.CreateLoad(ptr, fmt.Sprintf("%s.capture.%s", name, n))
 			blockBuilder.registers[n] = exposed
 		}
 	}
