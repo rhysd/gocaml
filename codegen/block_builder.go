@@ -152,16 +152,20 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		b.builder.CreateCondBr(cond, thenBlock, elseBlock)
 
 		b.builder.SetInsertPointAtEnd(thenBlock)
-		thenVal := b.build(val.Then)
+		thenVal := b.buildBlock(val.Then)
 		b.builder.CreateBr(endBlock)
+		thenLastBlock := b.builder.GetInsertBlock()
 
+		elseBlock.MoveAfter(thenLastBlock)
 		b.builder.SetInsertPointAtEnd(elseBlock)
-		elseVal := b.build(val.Else)
+		elseVal := b.buildBlock(val.Else)
 		b.builder.CreateBr(endBlock)
+		elseLastBlock := b.builder.GetInsertBlock()
 
+		endBlock.MoveAfter(elseLastBlock)
 		b.builder.SetInsertPointAtEnd(endBlock)
 		phi := b.builder.CreatePHI(ty, "if.merge")
-		phi.AddIncoming([]llvm.Value{thenVal, elseVal}, []llvm.BasicBlock{thenBlock, elseBlock})
+		phi.AddIncoming([]llvm.Value{thenVal, elseVal}, []llvm.BasicBlock{thenLastBlock, elseLastBlock})
 		return phi
 	case *gcil.Fun:
 		panic("unreachable because IR was closure-transformed")
@@ -260,6 +264,9 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		b.builder.CreateStore(iterVal, iterPtr)
 		compVal := b.builder.CreateICmp(llvm.IntEQ, iterVal, sizeVal, "")
 		b.builder.CreateCondBr(compVal, endBlock, loopBlock)
+
+		// No need to use endBlock.MoveAfter() because no block was inserted
+		// between loopBlock and endBlock
 		b.builder.SetInsertPointAtEnd(endBlock)
 
 		// Set size value
@@ -343,7 +350,7 @@ func (b *blockBuilder) buildInsn(insn *gcil.Insn) llvm.Value {
 	return v
 }
 
-func (b *blockBuilder) build(block *gcil.Block) llvm.Value {
+func (b *blockBuilder) buildBlock(block *gcil.Block) llvm.Value {
 	i := block.Top.Next
 	for {
 		v := b.buildInsn(i)

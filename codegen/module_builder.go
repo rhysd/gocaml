@@ -195,7 +195,7 @@ func (b *moduleBuilder) buildFunBody(name string, fun *gcil.Fun) llvm.Value {
 		}
 	}
 
-	lastVal := blockBuilder.build(fun.Body)
+	lastVal := blockBuilder.buildBlock(fun.Body)
 	return b.builder.CreateRet(lastVal)
 }
 
@@ -211,7 +211,7 @@ func (b *moduleBuilder) buildMain(entry *gcil.Block) {
 	b.builder.SetInsertPointAtEnd(body)
 
 	builder := newBlockBuilder(b)
-	builder.build(entry)
+	builder.buildBlock(entry)
 
 	b.builder.CreateRet(llvm.ConstInt(int32T, 0, true))
 }
