@@ -11,8 +11,8 @@ import (
 type moduleBuilder struct {
 	module      llvm.Module
 	env         *typing.Env
-	dataLayout  string
 	machine     llvm.TargetMachine
+	targetData  llvm.TargetData
 	context     llvm.Context
 	builder     llvm.Builder
 	typeBuilder *typeBuilder
@@ -82,7 +82,6 @@ func newModuleBuilder(env *typing.Env, name string, opts EmitOptions) (*moduleBu
 
 	targetData := machine.CreateTargetData()
 	dataLayout := targetData.String()
-	targetData.Dispose()
 
 	// XXX: Should make a new instance
 	ctx := llvm.GlobalContext()
@@ -98,16 +97,20 @@ func newModuleBuilder(env *typing.Env, name string, opts EmitOptions) (*moduleBu
 	return &moduleBuilder{
 		module,
 		env,
-		dataLayout,
 		machine,
+		targetData,
 		ctx,
 		ctx.NewBuilder(),
-		newTypeBuilder(ctx, env),
+		newTypeBuilder(ctx, targetData.IntPtrType(), env),
 		createAttributeTable(ctx),
 		nil,
 		nil,
 		nil,
 	}, nil
+}
+
+func (b *moduleBuilder) Dispose() {
+	b.targetData.Dispose()
 }
 
 func (b *moduleBuilder) declareExternalDecl(name string, from typing.Type) llvm.Value {
@@ -210,16 +213,49 @@ func (b *moduleBuilder) buildMain(entry *gcil.Block) {
 	body := b.context.AddBasicBlock(funVal, "entry")
 	b.builder.SetInsertPointAtEnd(body)
 
+	initGcFun, ok := b.globalTable["GC_init"]
+	if !ok {
+		panic("'GC_init' not found. Function prototypes for libgc were not emitted")
+	}
+	b.builder.CreateCall(initGcFun, []llvm.Value{}, "")
+
 	builder := newBlockBuilder(b)
 	builder.buildBlock(entry)
 
 	b.builder.CreateRet(llvm.ConstInt(int32T, 0, true))
 }
 
+func (b *moduleBuilder) buildLibgcFuncDecls() {
+	for _, fun := range []struct {
+		name string
+		ret  llvm.Type
+		args []llvm.Type
+	}{
+		{
+			"GC_malloc",
+			b.typeBuilder.voidPtrT,
+			[]llvm.Type{b.typeBuilder.sizeT},
+		},
+		{
+			"GC_init",
+			b.typeBuilder.voidT,
+			[]llvm.Type{},
+		},
+	} {
+		t := llvm.FunctionType(fun.ret, fun.args, false /*vaargs*/)
+		v := llvm.AddFunction(b.module, fun.name, t)
+		v.SetLinkage(llvm.ExternalLinkage)
+		v.AddFunctionAttr(b.attributes["nounwind"])
+		b.globalTable[fun.name] = v
+	}
+}
+
 func (b *moduleBuilder) build(prog *gcil.Program) error {
 	// Note:
 	// Currently global variables are external symbols only.
-	b.globalTable = make(map[string]llvm.Value, len(b.env.Externals))
+	b.globalTable = make(map[string]llvm.Value, len(b.env.Externals)+2 /* 2 = libgc functions */)
+
+	b.buildLibgcFuncDecls()
 	for name, ty := range b.env.Externals {
 		b.globalTable[name] = b.declareExternalDecl(name, ty)
 	}

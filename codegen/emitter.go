@@ -137,6 +137,7 @@ func NewEmitter(prog *gcil.Program, env *typing.Env, src *token.Source, opts Emi
 	if err = builder.build(prog); err != nil {
 		return nil, err
 	}
+	defer builder.Dispose()
 
 	return &Emitter{
 		opts,

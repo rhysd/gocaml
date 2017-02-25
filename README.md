@@ -56,7 +56,7 @@ print_int (gcd 21600 337500)
 
 ## Installation
 
-```
+```sh
 $ go get -d github.com/rhysd/gocaml
 $ cd $GOPATH/src/github.com/rhysd/gocaml
 
@@ -71,7 +71,7 @@ If you want to use `USE_SYSTEM_LLVM`, you need to install LLVM 4.0.0 in advance.
 
 If you use Debian-family Linux, use [LLVM apt repository][]
 
-```
+```sh
 $ sudo apt-get install libllvm4.0 llvm-4.0-dev
 ```
 
@@ -80,8 +80,18 @@ installed with Homebrew.
 
 *Note:* LLVM 4.0 is now on an RC stage. So it doesn't come to Homebrew yet.
 
-```
+```sh
 $ brew install llvm
+```
+
+And you need to install [libgc][] as dependency.
+
+```sh
+# On Debian-family Linux
+$ sudo apt-get install libgc-dev
+
+# On macOS
+$ brew install bdw-gc
 ```
 
 ## Usage
@@ -121,9 +131,11 @@ println_int ((plus100 10) + 0)
 ```
 
 `println_int` is a function defined in runtime. So you don't need to care about it.
+The `+ 0` is necessary to tell a compiler that the type of returned value of `plus100` is `int`. A compiler can know the type
+via type inference.
+
 Finally comile the GoCaml code and the object file together with `gocaml` compiler. You need to link `.o` file after compiling
 GoCaml code by passing the object file to `-ldflags`.
-
 ```
 $ gocaml -ldflags plus100.o test.ml
 ```
@@ -150,3 +162,4 @@ After the command, you can find `test` executable. Executing by `./test` will sh
 [small runtime]: ./runtime/gocamlrt.c
 [LLVM apt repository]: http://apt.llvm.org/
 [Homebrew]: https://brew.sh/index.html
+[libgc]: https://www.hboehm.info/gc/

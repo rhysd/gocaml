@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -34,6 +35,17 @@ func detectRuntimePath() (string, error) {
 	return "", fmt.Errorf("Runtime library (gocamlrt.a) was not found\nCandidates:\n%s", strings.Join(candidates, "\n"))
 }
 
+func detectLibgcPath() string {
+	if runtime.GOOS == "darwin" {
+		brewLib := filepath.Clean("/usr/local/opt/bdw-gc/lib")
+		if _, err := os.Stat(brewLib); err == nil {
+			return brewLib
+		}
+	}
+
+	return ""
+}
+
 type linker struct {
 	linkerCmd string
 	ldflags   string
@@ -55,7 +67,11 @@ func (lnk *linker) link(executable string, objFiles []string) error {
 		return err
 	}
 
-	args := append(objFiles, "-o", executable, runtimePath, lnk.ldflags)
+	args := append(objFiles, "-o", executable, runtimePath, "-L/usr/local/lib", "-L/usr/lib")
+	if path := detectLibgcPath(); path != "" {
+		args = append(args, "-L"+path)
+	}
+	args = append(args, "-lgc", lnk.ldflags)
 
 	if _, err := exec.Command(lnk.linkerCmd, args...).Output(); err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {

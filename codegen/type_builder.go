@@ -15,10 +15,11 @@ type typeBuilder struct {
 	boolT    llvm.Type
 	voidT    llvm.Type
 	voidPtrT llvm.Type
+	sizeT    llvm.Type
 	captures map[string]llvm.Type
 }
 
-func newTypeBuilder(ctx llvm.Context, env *typing.Env) *typeBuilder {
+func newTypeBuilder(ctx llvm.Context, intPtrTy llvm.Type, env *typing.Env) *typeBuilder {
 	unit := ctx.StructCreateNamed("gocaml.unit")
 	unit.StructSetBody([]llvm.Type{}, false /*packed*/)
 	return &typeBuilder{
@@ -30,6 +31,7 @@ func newTypeBuilder(ctx llvm.Context, env *typing.Env) *typeBuilder {
 		ctx.Int1Type(),
 		ctx.VoidType(),
 		llvm.PointerType(ctx.Int8Type(), 0),
+		intPtrTy,
 		map[string]llvm.Type{},
 	}
 }
@@ -81,7 +83,7 @@ func (b *typeBuilder) buildFun(from *typing.Fun, known bool) llvm.Type {
 	for _, p := range from.Params {
 		params = append(params, b.convertGCIL(p))
 	}
-	return llvm.FunctionType(ret, params /*varargs*/, false)
+	return llvm.FunctionType(ret, params, false /*varargs*/)
 }
 
 // Creates closure type for the specified function ignoring capture fields

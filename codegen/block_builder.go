@@ -38,6 +38,29 @@ func (b *blockBuilder) typeOf(ident string) typing.Type {
 	panic("Type was not found for ident: " + ident)
 }
 
+func (b *blockBuilder) buildMallocRaw(ty llvm.Type, sizeVal llvm.Value, name string) llvm.Value {
+	mallocVal, ok := b.globalTable["GC_malloc"]
+	if !ok {
+		panic("'GC_malloc' not found. Function protoypes for libgc were not emitted")
+	}
+	allocated := b.builder.CreateCall(mallocVal, []llvm.Value{sizeVal}, "")
+	ptrTy := llvm.PointerType(ty, 0 /*address space*/)
+	return b.builder.CreateBitCast(allocated, ptrTy, name)
+}
+
+func (b *blockBuilder) buildMalloc(ty llvm.Type, name string) llvm.Value {
+	size := b.targetData.TypeAllocSize(ty)
+	sizeVal := llvm.ConstInt(b.typeBuilder.sizeT, size, false /*sign extend*/)
+	return b.buildMallocRaw(ty, sizeVal, name)
+}
+
+func (b *blockBuilder) buildArrayMalloc(ty llvm.Type, numElems llvm.Value, name string) llvm.Value {
+	size := b.targetData.TypeAllocSize(ty)
+	tySizeVal := llvm.ConstInt(b.typeBuilder.sizeT, size, false /*sign extend*/)
+	sizeVal := b.builder.CreateMul(tySizeVal, b.builder.CreateTrunc(numElems, b.typeBuilder.sizeT, ""), "")
+	return b.buildMallocRaw(ty, sizeVal, name)
+}
+
 func (b *blockBuilder) buildEq(ty typing.Type, lhs, rhs llvm.Value) llvm.Value {
 	switch ty := ty.(type) {
 	case *typing.Unit:
@@ -218,7 +241,7 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		ptrTy := b.typeBuilder.convertGCIL(b.typeOf(ident))
 		allocTy := ptrTy.ElementType()
 
-		ptr := b.builder.CreateAlloca(allocTy, ident)
+		ptr := b.buildMalloc(allocTy, ident)
 		for i, e := range val.Elems {
 			v := b.resolve(e)
 			p := b.builder.CreateStructGEP(ptr, i, fmt.Sprintf("%s.%d", ident, i))
@@ -235,11 +258,7 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		ptr := b.builder.CreateAlloca(b.typeBuilder.convertGCIL(t), ident)
 
 		sizeVal := b.resolve(val.Size)
-
-		// XXX:
-		// Arrays are allocated on stack. So returning array value from function
-		// now breaks the array value.
-		arrVal := b.builder.CreateArrayAlloca(elemTy, sizeVal, "array.ptr")
+		arrVal := b.buildArrayMalloc(elemTy, sizeVal, "array.ptr")
 
 		arrPtr := b.builder.CreateStructGEP(ptr, 0, "")
 		b.builder.CreateStore(arrVal, arrPtr)
@@ -321,7 +340,7 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		}
 		b.builder.CreateStore(funPtr, b.builder.CreateStructGEP(closureVal, 0, ""))
 
-		capturesVal := b.builder.CreateAlloca(capturesTy, fmt.Sprintf("captures.%s", val.Fun))
+		capturesVal := b.buildMalloc(capturesTy, fmt.Sprintf("captures.%s", val.Fun))
 		for i, v := range val.Vars {
 			ptr := b.builder.CreateStructGEP(capturesVal, i, "")
 			freevar := b.resolve(v)
