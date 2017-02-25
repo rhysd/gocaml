@@ -113,12 +113,11 @@ func (b *typeBuilder) convertGCIL(from typing.Type) llvm.Type {
 		}
 		return llvm.PointerType(b.context.StructType(elems, false /*packed*/), 0 /*address space*/)
 	case *typing.Array:
-		arrStruct := b.context.StructType([]llvm.Type{
+		return b.context.StructType([]llvm.Type{
 			llvm.PointerType(b.convertGCIL(ty.Elem), 0 /*address space*/),
 			// size
 			b.intT,
 		}, false /*packed*/)
-		return llvm.PointerType(arrStruct, 0 /*address space*/)
 	case *typing.Var:
 		panic("unreachable")
 	default:

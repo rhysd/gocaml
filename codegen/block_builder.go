@@ -231,9 +231,8 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 			panic("Type of array literal is not array")
 		}
 
-		ty := b.typeBuilder.convertGCIL(t).ElementType()
 		elemTy := b.typeBuilder.convertGCIL(t.Elem)
-		ptr := b.builder.CreateAlloca(ty, ident)
+		ptr := b.builder.CreateAlloca(b.typeBuilder.convertGCIL(t), ident)
 
 		sizeVal := b.resolve(val.Size)
 
@@ -273,7 +272,7 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		sizePtr := b.builder.CreateStructGEP(ptr, 1, "")
 		b.builder.CreateStore(sizeVal, sizePtr)
 
-		return ptr
+		return b.builder.CreateLoad(ptr, "array")
 	case *gcil.TplLoad:
 		from := b.resolve(val.From)
 		p := b.builder.CreateStructGEP(from, val.Index, "")
@@ -281,14 +280,14 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 	case *gcil.ArrLoad:
 		fromVal := b.resolve(val.From)
 		idxVal := b.resolve(val.Index)
-		arrPtr := b.builder.CreateLoad(b.builder.CreateStructGEP(fromVal, 0, ""), "")
+		arrPtr := b.builder.CreateExtractValue(fromVal, 0, "")
 		elemPtr := b.builder.CreateInBoundsGEP(arrPtr, []llvm.Value{idxVal}, "")
 		return b.builder.CreateLoad(elemPtr, "arrload")
 	case *gcil.ArrStore:
 		toVal := b.resolve(val.To)
 		idxVal := b.resolve(val.Index)
 		rhsVal := b.resolve(val.Rhs)
-		arrPtr := b.builder.CreateStructGEP(toVal, 0, "")
+		arrPtr := b.builder.CreateExtractValue(toVal, 0, "")
 		elemPtr := b.builder.CreateInBoundsGEP(arrPtr, []llvm.Value{idxVal}, "")
 		return b.builder.CreateStore(rhsVal, elemPtr)
 	case *gcil.XRef:
