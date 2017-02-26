@@ -105,17 +105,17 @@ func TestInvalidExpressions(t *testing.T) {
 		{
 			what:     "mismatch parameter type",
 			code:     "let rec f a b = a < b in (f 1 1) = (f 1.0 1.0)",
-			expected: "On unifying function parameters of function 'int -> int -> bool' and 'float -> float -> bool'",
+			expected: "On unifying 1th parameter of function '(int, int) -> bool' and '(float, float) -> bool'",
 		},
 		{
 			what:     "does not meet parameter type requirements",
 			code:     "let rec f a b = a + b in f 1 1.0",
-			expected: "On unifying function parameters of function 'int -> int -> int' and 'int -> float -> int'",
+			expected: "On unifying 2th parameter of function '(int, int) -> int' and '(int, float) -> int'",
 		},
 		{
 			what:     "wrong number of arguments",
 			code:     "let rec f a b = a + b in f 1",
-			expected: "Number of parameters of function does not match between 'int -> int -> int' and 'int -> int'",
+			expected: "Number of parameters of function does not match between '(int, int) -> int' and '(int) -> int'",
 		},
 		{
 			what:     "type mismatch in return type",
@@ -150,7 +150,7 @@ func TestInvalidExpressions(t *testing.T) {
 		{
 			what:     "index access to wrong value",
 			code:     "true.(1)",
-			expected: "Type mismatch between '(unknown) array' and 'bool'",
+			expected: "} array' and 'bool'",
 		},
 		{
 			what:     "set wrong type value to array",
@@ -173,9 +173,9 @@ func TestInvalidExpressions(t *testing.T) {
 			expected: "Type mismatch between 'float' and '()'",
 		},
 		{
-			what: "occur check",
-			code: "let rec f x = f in f 4",
-			expected: "Cyclic dependency found in types.",
+			what:     "occur check",
+			code:     "let rec f x = f in f 4",
+			expected: "Cyclic dependency found while unification with",
 		},
 	}
 

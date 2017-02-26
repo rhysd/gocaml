@@ -4,6 +4,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+type UnificationError struct {
+}
+
 // Check cyclic dependency. When unifying t and u where t is type variable and
 // u is a type which contains t, it results in infinite-length type.
 // It should be reported as semantic error.
@@ -47,7 +50,7 @@ func unifyTuple(left, right *Tuple) error {
 		l := left.Elems[i]
 		r := right.Elems[i]
 		if err := Unify(l, r); err != nil {
-			return errors.Wrapf(err, "On unifying tuples '%s' and '%s'\n", left.String(), right.String())
+			return errors.Wrapf(err, "On unifying tuples' %dth elements of '%s' and '%s'\n", i+1, left.String(), right.String())
 		}
 	}
 
@@ -59,16 +62,14 @@ func unifyFun(left, right *Fun) error {
 		return errors.Wrapf(err, "On unifying functions' return types of '%s' and '%s'\n", left.String(), right.String())
 	}
 
-	length := len(left.Params)
-	if length != len(right.Params) {
+	if len(left.Params) != len(right.Params) {
 		return errors.Errorf("Number of parameters of function does not match between '%s' and '%s'", left.String(), right.String())
 	}
 
-	for i := 0; i < length; i++ {
-		l := left.Params[i]
+	for i, l := range left.Params {
 		r := right.Params[i]
 		if err := Unify(l, r); err != nil {
-			return errors.Wrapf(err, "On unifying function parameters of function '%s' and '%s'\n", left.String(), right.String())
+			return errors.Wrapf(err, "On unifying %dth parameter of function '%s' and '%s'\n", i+1, left.String(), right.String())
 		}
 	}
 
@@ -85,7 +86,7 @@ func unifyVar(l *Var, right Type) error {
 	}
 
 	if occur(l, right) {
-		return errors.Errorf("Cyclic dependency found in types. Type variable '%s' is contained in '%s'\n", l.String(), right.String())
+		return errors.Errorf("Cannot resolve uninstantiated type variable. Cyclic dependency found while unification with '%s'", right.String())
 	}
 
 	// Assign rhs type to type variable when lhs type variable is unknown

@@ -50,7 +50,7 @@ func (t *Fun) String() string {
 	for i, p := range t.Params {
 		params[i] = p.String()
 	}
-	return fmt.Sprintf("%s -> %s", strings.Join(params, " -> "), t.Ret.String())
+	return fmt.Sprintf("(%s) -> %s", strings.Join(params, ", "), t.Ret.String())
 }
 
 type Tuple struct {
@@ -79,7 +79,7 @@ type Var struct {
 
 func (t *Var) String() string {
 	if t.Ref == nil {
-		return "(unknown)"
+		return fmt.Sprintf("{unknown:%p}", t)
 	}
 	return t.Ref.String()
 }

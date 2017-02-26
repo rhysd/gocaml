@@ -93,7 +93,7 @@ func (c *Compiler) SemanticAnalysis(a *ast.AST) (*typing.Env, error) {
 	}
 	env := typing.NewEnv()
 	if err := env.ApplyTypeAnalysis(a.Root); err != nil {
-		return nil, errors.Wrapf(err, "While semantic analysis (type inferernce) for %s\n", a.File.Name)
+		return nil, errors.Wrapf(err, "While semantic analysis (type infererence) for %s\n", a.File.Name)
 	}
 	return env, nil
 }
