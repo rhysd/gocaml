@@ -45,7 +45,7 @@ func TestClosureTransform(t *testing.T) {
 			code:     "let rec f x = x in f 42",
 			closures: empty,
 			toplevel: []string{
-				"f$t1 = fun x$t2 ; type=int -> int",
+				"f$t1 = fun x$t2 ; type=(int) -> int",
 			},
 			entry: []string{
 				"app f$t1 $k3 ; type=int",
@@ -56,7 +56,7 @@ func TestClosureTransform(t *testing.T) {
 			code:     "let y = 0 in let rec f x = x in f y",
 			closures: empty,
 			toplevel: []string{
-				"f$t2 = fun x$t3 ; type=int -> int",
+				"f$t2 = fun x$t3 ; type=(int) -> int",
 			},
 			entry: []string{
 				"app f$t2 y$t1 ; type=int",
@@ -69,10 +69,10 @@ func TestClosureTransform(t *testing.T) {
 				"f$t2": []string{"x$t1"},
 			},
 			toplevel: []string{
-				"f$t2 = fun a$t3 ; type=int -> int",
+				"f$t2 = fun a$t3 ; type=(int) -> int",
 			},
 			entry: []string{
-				"f$t2 = makecls (x$t1) f$t2 ; type=int -> int",
+				"f$t2 = makecls (x$t1) f$t2 ; type=(int) -> int",
 				"appcls f$t2 $k6 ; type=int",
 			},
 		},
@@ -81,7 +81,7 @@ func TestClosureTransform(t *testing.T) {
 			code:     "(if true then 0 else let rec f a = a in f 10)",
 			closures: empty,
 			toplevel: []string{
-				"f$t1 = fun a$t2 ; type=int -> int",
+				"f$t1 = fun a$t2 ; type=(int) -> int",
 			},
 			entry: []string{
 				"BEGIN: else",
@@ -95,11 +95,11 @@ func TestClosureTransform(t *testing.T) {
 				"f$t2": []string{"x$t1"},
 			},
 			toplevel: []string{
-				"f$t2 = fun a$t3 ; type=int -> int",
+				"f$t2 = fun a$t3 ; type=(int) -> int",
 			},
 			entry: []string{
 				"BEGIN: else",
-				"f$t2 = makecls (x$t1) f$t2 ; type=int -> int",
+				"f$t2 = makecls (x$t1) f$t2 ; type=(int) -> int",
 				"appcls f$t2 $k8 ; type=int",
 			},
 		},
@@ -110,12 +110,12 @@ func TestClosureTransform(t *testing.T) {
 				"f$t2": []string{"x$t1"},
 			},
 			toplevel: []string{
-				"f$t2 = fun a$t3 ; type=int -> int",
-				"g$t4 = fun a$t5 ; type=int -> int",
+				"f$t2 = fun a$t3 ; type=(int) -> int",
+				"g$t4 = fun a$t5 ; type=(int) -> int",
 				"app g$t4 x$t1 ; type=int",
 			},
 			entry: []string{
-				"makecls (x$t1) f$t2 ; type=int -> int",
+				"makecls (x$t1) f$t2 ; type=(int) -> int",
 				"appcls f$t2 $k7 ; type=int",
 			},
 		},
@@ -124,8 +124,8 @@ func TestClosureTransform(t *testing.T) {
 			code:     "let rec f x = let rec g x = x in g x in f 42",
 			closures: empty,
 			toplevel: []string{
-				"f$t1 = fun x$t2 ; type=int -> int",
-				"g$t3 = fun x$t4 ; type=int -> int",
+				"f$t1 = fun x$t2 ; type=(int) -> int",
+				"g$t3 = fun x$t4 ; type=(int) -> int",
 				"app g$t3 x$t2 ; type=int",
 			},
 			entry: []string{
@@ -140,13 +140,13 @@ func TestClosureTransform(t *testing.T) {
 				"g$t5": []string{"a$t1"},
 			},
 			toplevel: []string{
-				"f$t3 = fun x$t4 ; type=int -> int",
-				"g$t5 = fun x$t6 ; type=int -> int",
-				"makecls (a$t1) g$t5 ; type=int -> int",
+				"f$t3 = fun x$t4 ; type=(int) -> int",
+				"g$t5 = fun x$t6 ; type=(int) -> int",
+				"makecls (a$t1) g$t5 ; type=(int) -> int",
 				"appcls g$t5 x$t4 ; type=int",
 			},
 			entry: []string{
-				"makecls (a$t1,b$t2) f$t3 ; type=int -> int",
+				"makecls (a$t1,b$t2) f$t3 ; type=(int) -> int",
 				"appcls f$t3 $k12 ; type=int",
 			},
 		},
@@ -155,7 +155,7 @@ func TestClosureTransform(t *testing.T) {
 			code:     "let rec f x = if x < 0 then 1 else x + f (x-1) in f 10",
 			closures: empty,
 			toplevel: []string{
-				"f$t1 = fun x$t2 ; type=int -> int",
+				"f$t1 = fun x$t2 ; type=(int) -> int",
 				"app f$t1",
 			},
 			entry: []string{
@@ -166,14 +166,14 @@ func TestClosureTransform(t *testing.T) {
 			what: "recursive closure",
 			code: "let a = 42 in let rec f x = if x < 0 then 1 else a + x + f (x-1) in f 10",
 			closures: map[string][]string{
-				"f$t2": []string{"a$t1", "f$t2"},
+				"f$t2": []string{"a$t1"},
 			},
 			toplevel: []string{
-				"f$t2 = fun x$t3 ; type=int -> int",
+				"f$t2 = recfun x$t3 ; type=(int) -> int",
 				"appcls f$t2",
 			},
 			entry: []string{
-				"makecls (a$t1,f$t2) f$t2",
+				"makecls (a$t1) f$t2",
 				"appcls f$t2",
 			},
 		},
@@ -185,8 +185,8 @@ func TestClosureTransform(t *testing.T) {
 				"g$t5": []string{"b$t2"},
 			},
 			toplevel: []string{
-				"f$t3 = fun x$t4 ; type=int -> int",
-				"g$t5 = fun x$t6 ; type=int -> int",
+				"f$t3 = fun x$t4 ; type=(int) -> int",
+				"g$t5 = fun x$t6 ; type=(int) -> int",
 			},
 			entry: []string{
 				"makecls (a$t1) f$t3",
@@ -203,8 +203,8 @@ func TestClosureTransform(t *testing.T) {
 				"g$t5": []string{"b$t2"},
 			},
 			toplevel: []string{
-				"f$t3 = fun x$t4 ; type=int -> int",
-				"g$t5 = fun x$t6 ; type=int -> int",
+				"f$t3 = fun x$t4 ; type=(int) -> int",
+				"g$t5 = fun x$t6 ; type=(int) -> int",
 			},
 			entry: []string{
 				"makecls (a$t1) f$t3",
@@ -224,7 +224,7 @@ func TestClosureTransform(t *testing.T) {
 			toplevel: []string{
 				"f$t1 = fun x$t2",
 				"g$t3 = fun x$t4",
-				"ref f$t1 ; type=int -> int",
+				"ref f$t1 ; type=(int) -> int",
 			},
 			entry: []string{
 				"makecls () f$t1",
@@ -245,7 +245,7 @@ func TestClosureTransform(t *testing.T) {
 				"f$t1 = fun x$t2",
 				"g$t3 = fun x$t4",
 				"app f$t1", // Note: 'app' is used. Calling closure with direct call. Here we need to pass NULL as environment frame of closure.
-				"ref f$t1 ; type=int -> int",
+				"ref f$t1 ; type=(int) -> int",
 			},
 			entry: []string{
 				"makecls () f$t1",
@@ -265,7 +265,7 @@ func TestClosureTransform(t *testing.T) {
 			toplevel: []string{
 				"f$t2 = fun x$t3",
 				"g$t4 = fun x$t5",
-				"ref f$t2 ; type=int -> int",
+				"ref f$t2 ; type=(int) -> int",
 			},
 			entry: []string{
 				"makecls (a$t1) f$t2",
@@ -334,7 +334,7 @@ func TestClosureTransform(t *testing.T) {
 			prog := Transform(ir)
 
 			if len(tc.closures) != len(prog.Closures) {
-				t.Errorf("Expected %d closures but %d closures found: %v", len(tc.closures), len(prog.Closures), prog.Closures)
+				t.Fatalf("Expected %d closures but %d closures found: %v", len(tc.closures), len(prog.Closures), prog.Closures)
 			}
 			for f, expected := range tc.closures {
 				actual, ok := prog.Closures[f]
@@ -343,7 +343,7 @@ func TestClosureTransform(t *testing.T) {
 					continue
 				}
 				if len(actual) != len(expected) {
-					t.Errorf("Function '%s' should have %d captures but actually have %d captures", f, len(expected), len(actual))
+					t.Fatalf("Function '%s' should have %d captures but actually have %d captures", f, len(expected), len(actual))
 				}
 				for i, e := range expected {
 					a := actual[i]
@@ -359,7 +359,7 @@ func TestClosureTransform(t *testing.T) {
 					continue
 				}
 				if len(expected) != len(fv) {
-					t.Errorf("%d free variables are expected but %d ones found", len(expected), len(fv))
+					t.Fatalf("%d free variables are expected but %d ones found", len(expected), len(fv))
 					continue
 				}
 				for i, v := range fv {

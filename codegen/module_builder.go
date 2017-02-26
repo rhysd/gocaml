@@ -188,13 +188,24 @@ func (b *moduleBuilder) buildFunBody(name string, fun *gcil.Fun) llvm.Value {
 	}
 
 	// Expose captures of closure
-	if isClosure && len(closure) > 0 {
-		capturesTy := llvm.PointerType(b.typeBuilder.buildClosureCaptures(name, closure), 0 /*address space*/)
-		closureVal := b.builder.CreateBitCast(llvmFun.Param(0), capturesTy, fmt.Sprintf("%s.capture", name))
-		for i, n := range closure {
-			ptr := b.builder.CreateStructGEP(closureVal, i, "")
-			exposed := b.builder.CreateLoad(ptr, fmt.Sprintf("%s.capture.%s", name, n))
-			blockBuilder.registers[n] = exposed
+	if isClosure {
+		if len(closure) > 0 {
+			capturesTy := llvm.PointerType(b.typeBuilder.buildClosureCaptures(name, closure), 0 /*address space*/)
+			closureVal := b.builder.CreateBitCast(llvmFun.Param(0), capturesTy, fmt.Sprintf("%s.capture", name))
+			for i, n := range closure {
+				ptr := b.builder.CreateStructGEP(closureVal, i, "")
+				exposed := b.builder.CreateLoad(ptr, fmt.Sprintf("%s.capture.%s", name, n))
+				blockBuilder.registers[n] = exposed
+			}
+		}
+		if fun.IsRecursive {
+			// When the closure itself is used in its body, it needs to prepare the closure object
+			// for the recursive use.
+			itselfTy := b.context.StructType([]llvm.Type{llvmFun.Type(), b.typeBuilder.voidPtrT}, false /*packed*/)
+			itselfVal := llvm.Undef(itselfTy)
+			itselfVal = b.builder.CreateInsertValue(itselfVal, llvmFun, 0, "")
+			itselfVal = b.builder.CreateInsertValue(itselfVal, llvmFun.Param(0), 1, "")
+			blockBuilder.registers[name] = itselfVal
 		}
 	}
 
