@@ -68,8 +68,13 @@ func TestInvalidExpressions(t *testing.T) {
 			expected: "Type mismatch between 'int' and 'bool'",
 		},
 		{
-			what:     "invalid less compare",
+			what:     "invalid < compare",
 			code:     "41 < true",
+			expected: "Type mismatch between 'int' and 'bool'",
+		},
+		{
+			what:     "invalid <= compare",
+			code:     "41 <= true",
 			expected: "Type mismatch between 'int' and 'bool'",
 		},
 		{

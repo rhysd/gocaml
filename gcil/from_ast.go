@@ -126,6 +126,18 @@ func (e *emitter) emitLetTupleInsn(node *ast.LetTuple) *Insn {
 	return body
 }
 
+func (e *emitter) emitLessInsn(kind OperatorKind, lhs ast.Expr, rhs ast.Expr) (typing.Type, Val, *Insn) {
+	operand, val, prev := e.emitBinaryInsn(kind, lhs, rhs)
+	// Note:
+	// This type constraint may be useful for type inference. But current HM type inference algorithm cannot
+	// handle a union type. In this context, the operand should be `int | float`
+	switch operand.(type) {
+	case *typing.Unit, *typing.Bool, *typing.Fun, *typing.Tuple, *typing.Array:
+		e.semanticError(fmt.Sprintf("'%s' can't be compared with operator '<'", operand.String()), lhs.Pos())
+	}
+	return typing.BoolType, val, prev
+}
+
 func (e *emitter) emitInsn(node ast.Expr) *Insn {
 	var prev *Insn = nil
 	var val Val
@@ -169,16 +181,9 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 	case *ast.FDiv:
 		ty, val, prev = e.emitBinaryInsn(FDIV, n.Left, n.Right)
 	case *ast.Less:
-		var operand typing.Type
-		operand, val, prev = e.emitBinaryInsn(LESS, n.Left, n.Right)
-		// Note:
-		// This type constraint may be useful for type inference. But current HM type inference algorithm cannot
-		// handle a union type. In this context, the operand should be `int | float`
-		switch operand.(type) {
-		case *typing.Unit, *typing.Bool, *typing.Fun, *typing.Tuple, *typing.Array:
-			e.semanticError(fmt.Sprintf("'%s' can't be compared with operator '<'", operand.String()), n.Pos())
-		}
-		ty = typing.BoolType
+		ty, val, prev = e.emitLessInsn(LESS, n.Left, n.Right)
+	case *ast.LessEq:
+		ty, val, prev = e.emitLessInsn(LESSEQ, n.Left, n.Right)
 	case *ast.Eq:
 		var operand typing.Type
 		operand, val, prev = e.emitBinaryInsn(EQ, n.Left, n.Right)

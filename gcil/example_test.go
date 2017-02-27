@@ -55,54 +55,42 @@ func Example() {
 
 	// For debug purpose, .Println() method can output instruction sequences
 	block.Println(os.Stdout, env)
-	// BEGIN: program
-	// ack$t1 = fun x$t2,y$t3 ; int -> int -> int
+	// Output:
+	// ack$t1 = recfun x$t2,y$t3 ; type=(int, int) -> int
 	//   BEGIN: body (ack$t1)
-	//   $k1 = int 0 ; int
-	//   $k2 = ref x$t2 ; int
-	//   $k3 = binary < $k1 $k2 ; bool
-	//   $k4 = unary not $k3 ; bool
-	//   $k30 = if $k4 ; int
+	//   $k2 = int 0 ; type=int
+	//   $k3 = binary <= x$t2 $k2 ; type=bool
+	//   $k28 = if $k3 ; type=int
 	//     BEGIN: then
-	//     $k5 = ref y$t3 ; int
-	//     $k6 = int 1 ; int
-	//     $k7 = binary + $k5 $k6 ; int
+	//     $k5 = int 1 ; type=int
+	//     $k6 = binary + y$t3 $k5 ; type=int
 	//     END: then
 	//     BEGIN: else
-	//     $k8 = int 0 ; int
-	//     $k9 = ref y$t3 ; int
-	//     $k10 = binary < $k8 $k9 ; bool
-	//     $k11 = unary not $k10 ; bool
-	//     $k29 = if $k11 ; int
+	//     $k8 = int 0 ; type=int
+	//     $k9 = binary <= y$t3 $k8 ; type=bool
+	//     $k27 = if $k9 ; type=int
 	//       BEGIN: then
-	//       $k12 = ref ack$t1 ; int -> int -> int
-	//       $k13 = ref x$t2 ; int
-	//       $k14 = int 1 ; int
-	//       $k15 = binary - $k13 $k14 ; int
-	//       $k16 = int 1 ; int
-	//       $k17 = app $k12 $k15,$k16 ; int
+	//       $k12 = int 1 ; type=int
+	//       $k13 = binary - x$t2 $k12 ; type=int
+	//       $k14 = int 1 ; type=int
+	//       $k15 = app ack$t1 $k13,$k14 ; type=int
 	//       END: then
 	//       BEGIN: else
-	//       $k18 = ref ack$t1 ; int -> int -> int
-	//       $k19 = ref x$t2 ; int
-	//       $k20 = int 1 ; int
-	//       $k21 = binary - $k19 $k20 ; int
-	//       $k22 = ref ack$t1 ; int -> int -> int
-	//       $k23 = ref x$t2 ; int
-	//       $k24 = ref y$t3 ; int
-	//       $k25 = int 1 ; int
-	//       $k26 = binary - $k24 $k25 ; int
-	//       $k27 = app $k22 $k23,$k26 ; int
-	//       $k28 = app $k18 $k21,$k27 ; int
+	//       $k18 = int 1 ; type=int
+	//       $k19 = binary - x$t2 $k18 ; type=int
+	//       $k23 = int 1 ; type=int
+	//       $k24 = binary - y$t3 $k23 ; type=int
+	//       $k25 = app ack$t1 x$t2,$k24 ; type=int
+	//       $k26 = app ack$t1 $k19,$k25 ; type=int
 	//       END: else
 	//     END: else
 	//   END: body (ack$t1)
-	// $k31 = xref print_int ; int -> ()
-	// $k32 = ref ack$t1 ; int -> int -> int
-	// $k33 = int 3 ; int
-	// $k34 = int 10 ; int
-	// $k35 = app $k32 $k33,$k34 ; int
-	// $k36 = app $k31 $k35 ; ()
+	//
+	// BEGIN: program
+	// $k31 = int 3 ; type=int
+	// $k32 = int 10 ; type=int
+	// $k33 = app ack$t1 $k31,$k32 ; type=int
+	// $k34 = appx print_int $k33 ; type=()
 	// END: program
 
 	// Optimization for eliminate unnecessary 'ref' instructions and classify

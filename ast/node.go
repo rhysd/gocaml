@@ -143,6 +143,11 @@ type (
 		Right Expr
 	}
 
+	LessEq struct {
+		Left  Expr
+		Right Expr
+	}
+
 	If struct {
 		IfToken *token.Token
 		Cond    Expr
@@ -248,63 +253,70 @@ func (e *Add) Pos() token.Position {
 	return e.Left.Pos()
 }
 func (e *Add) End() token.Position {
-	return e.Right.Pos()
+	return e.Right.End()
 }
 
 func (e *Sub) Pos() token.Position {
 	return e.Left.Pos()
 }
 func (e *Sub) End() token.Position {
-	return e.Right.Pos()
+	return e.Right.End()
 }
 
 func (e *FNeg) Pos() token.Position {
 	return e.MinusToken.Start
 }
 func (e *FNeg) End() token.Position {
-	return e.Child.Pos()
+	return e.Child.End()
 }
 
 func (e *FAdd) Pos() token.Position {
 	return e.Left.Pos()
 }
 func (e *FAdd) End() token.Position {
-	return e.Right.Pos()
+	return e.Right.End()
 }
 
 func (e *FSub) Pos() token.Position {
 	return e.Left.Pos()
 }
 func (e *FSub) End() token.Position {
-	return e.Right.Pos()
+	return e.Right.End()
 }
 
 func (e *FMul) Pos() token.Position {
 	return e.Left.Pos()
 }
 func (e *FMul) End() token.Position {
-	return e.Right.Pos()
+	return e.Right.End()
 }
 
 func (e *FDiv) Pos() token.Position {
 	return e.Left.Pos()
 }
 func (e *FDiv) End() token.Position {
-	return e.Right.Pos()
+	return e.Right.End()
 }
 
 func (e *Eq) Pos() token.Position {
 	return e.Left.Pos()
 }
 func (e *Eq) End() token.Position {
-	return e.Right.Pos()
+	return e.Right.End()
 }
 
 func (e *Less) Pos() token.Position {
 	return e.Left.Pos()
 }
 func (e *Less) End() token.Position {
-	return e.Right.Pos()
+	return e.Right.End()
+}
+
+func (e *LessEq) Pos() token.Position {
+	return e.Left.Pos()
+}
+func (e *LessEq) End() token.Position {
+	return e.Right.End()
 }
 
 func (e *If) Pos() token.Position {
@@ -395,6 +407,7 @@ func (e *FMul) Name() string   { return "FMul" }
 func (e *FDiv) Name() string   { return "FDiv" }
 func (e *Eq) Name() string     { return "Eq" }
 func (e *Less) Name() string   { return "Less" }
+func (e *LessEq) Name() string { return "LessEq" }
 func (e *If) Name() string     { return "If" }
 func (e *Let) Name() string    { return fmt.Sprintf("Let (%s)", e.Symbol.DisplayName) }
 func (e *VarRef) Name() string { return fmt.Sprintf("VarRef (%s)", e.Symbol.DisplayName) }

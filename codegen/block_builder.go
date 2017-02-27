@@ -169,6 +169,16 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 			default:
 				panic("Invalid type for '<' operator: " + lty.String())
 			}
+		case gcil.LESSEQ:
+			lty := b.typeOf(val.Lhs)
+			switch lty.(type) {
+			case *typing.Int:
+				return b.builder.CreateICmp(llvm.IntSLE /*Signed Less Equal*/, lhs, rhs, "lesseq")
+			case *typing.Float:
+				return b.builder.CreateFCmp(llvm.FloatOLE /*Ordered and Less Equal*/, lhs, rhs, "lesseq")
+			default:
+				panic("Invalid type for '<=' operator: " + lty.String())
+			}
 		case gcil.EQ:
 			return b.buildEq(b.typeOf(val.Lhs), lhs, rhs)
 		default:

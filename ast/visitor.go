@@ -45,6 +45,9 @@ func Visit(v Visitor, e Expr) {
 	case *Less:
 		Visit(v, n.Left)
 		Visit(v, n.Right)
+	case *LessEq:
+		Visit(v, n.Left)
+		Visit(v, n.Right)
 	case *If:
 		Visit(v, n.Cond)
 		Visit(v, n.Then)

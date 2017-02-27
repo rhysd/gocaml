@@ -101,7 +101,10 @@ func TestPrintAST(t *testing.T) {
 				},
 				&If{
 					tok,
-					&Bool{tok, true},
+					&LessEq{
+						&Int{tok, 1},
+						&Int{tok, 2},
+					},
 					&Apply{
 						&VarRef{tok, NewSymbol("f")},
 						[]Expr{
@@ -176,7 +179,9 @@ func TestPrintAST(t *testing.T) {
 -   -   -   LetRec (fun f a) (0:0-0:0)
 -   -   -   -   VarRef (a) (0:0-0:0)
 -   -   -   -   If (0:0-0:0)
--   -   -   -   -   Bool (0:0-0:0)
+-   -   -   -   -   LessEq (0:0-0:0)
+-   -   -   -   -   -   Int (0:0-0:0)
+-   -   -   -   -   -   Int (0:0-0:0)
 -   -   -   -   -   Apply (0:0-0:0)
 -   -   -   -   -   -   VarRef (f) (0:0-0:0)
 -   -   -   -   -   -   Int (0:0-0:0)

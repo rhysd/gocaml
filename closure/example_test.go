@@ -61,40 +61,38 @@ func Example() {
 	// Output:
 	// ack$t1 = recfun x$t2,y$t3 ; type=(int, int) -> int
 	//   BEGIN: body (ack$t1)
-	//   $k1 = int 0 ; type=int
-	//   $k3 = binary < $k1 x$t2 ; type=bool
-	//   $k4 = unary not $k3 ; type=bool
-	//   $k30 = if $k4 ; type=int
+	//   $k2 = int 0 ; type=int
+	//   $k3 = binary <= x$t2 $k2 ; type=bool
+	//   $k28 = if $k3 ; type=int
 	//     BEGIN: then
-	//     $k6 = int 1 ; type=int
-	//     $k7 = binary + y$t3 $k6 ; type=int
+	//     $k5 = int 1 ; type=int
+	//     $k6 = binary + y$t3 $k5 ; type=int
 	//     END: then
 	//     BEGIN: else
 	//     $k8 = int 0 ; type=int
-	//     $k10 = binary < $k8 y$t3 ; type=bool
-	//     $k11 = unary not $k10 ; type=bool
-	//     $k29 = if $k11 ; type=int
+	//     $k9 = binary <= y$t3 $k8 ; type=bool
+	//     $k27 = if $k9 ; type=int
 	//       BEGIN: then
+	//       $k12 = int 1 ; type=int
+	//       $k13 = binary - x$t2 $k12 ; type=int
 	//       $k14 = int 1 ; type=int
-	//       $k15 = binary - x$t2 $k14 ; type=int
-	//       $k16 = int 1 ; type=int
-	//       $k17 = app ack$t1 $k15,$k16 ; type=int
+	//       $k15 = app ack$t1 $k13,$k14 ; type=int
 	//       END: then
 	//       BEGIN: else
-	//       $k20 = int 1 ; type=int
-	//       $k21 = binary - x$t2 $k20 ; type=int
-	//       $k25 = int 1 ; type=int
-	//       $k26 = binary - y$t3 $k25 ; type=int
-	//       $k27 = app ack$t1 x$t2,$k26 ; type=int
-	//       $k28 = app ack$t1 $k21,$k27 ; type=int
+	//       $k18 = int 1 ; type=int
+	//       $k19 = binary - x$t2 $k18 ; type=int
+	//       $k23 = int 1 ; type=int
+	//       $k24 = binary - y$t3 $k23 ; type=int
+	//       $k25 = app ack$t1 x$t2,$k24 ; type=int
+	//       $k26 = app ack$t1 $k19,$k25 ; type=int
 	//       END: else
 	//     END: else
 	//   END: body (ack$t1)
 	//
 	// BEGIN: program
-	// $k33 = int 3 ; type=int
-	// $k34 = int 10 ; type=int
-	// $k35 = app ack$t1 $k33,$k34 ; type=int
-	// $k36 = appx print_int $k35 ; type=()
+	// $k31 = int 3 ; type=int
+	// $k32 = int 10 ; type=int
+	// $k33 = app ack$t1 $k31,$k32 ; type=int
+	// $k34 = appx print_int $k33 ; type=()
 	// END: program
 }

@@ -24,21 +24,23 @@ const (
 	FMUL
 	FDIV
 	LESS
+	LESSEQ
 	EQ
 )
 
 var opTable = [...]string{
-	NOT:  "not",
-	NEG:  "-",
-	FNEG: "-.",
-	ADD:  "+",
-	SUB:  "-",
-	FADD: "+.",
-	FSUB: "-.",
-	FMUL: "*.",
-	FDIV: "/.",
-	LESS: "<",
-	EQ:   "=",
+	NOT:    "not",
+	NEG:    "-",
+	FNEG:   "-.",
+	ADD:    "+",
+	SUB:    "-",
+	FADD:   "+.",
+	FSUB:   "-.",
+	FMUL:   "*.",
+	FDIV:   "/.",
+	LESS:   "<",
+	LESSEQ: "<=",
+	EQ:     "=",
 }
 
 // Kind of function call.

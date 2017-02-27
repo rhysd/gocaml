@@ -98,6 +98,8 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		return env.inferRelationalBinOp("=", n.Left, n.Right)
 	case *ast.Less:
 		return env.inferRelationalBinOp("<", n.Left, n.Right)
+	case *ast.LessEq:
+		return env.inferRelationalBinOp("<=", n.Left, n.Right)
 	case *ast.If:
 		if err := env.checkNodeType("condition of 'if' expression", n.Cond, BoolType); err != nil {
 			return nil, err

@@ -86,7 +86,7 @@ func TestEmitInsn(t *testing.T) {
 		},
 		{
 			"binary relational op",
-			"1 < 2; 1 = 2",
+			"1 < 2; 1 = 2; 1 <= 2",
 			[]string{
 				"int 1 ; type=int",
 				"int 2 ; type=int",
@@ -94,6 +94,9 @@ func TestEmitInsn(t *testing.T) {
 				"int 1 ; type=int",
 				"int 2 ; type=int",
 				"binary = $k4 $k5 ; type=bool",
+				"int 1 ; type=int",
+				"int 2 ; type=int",
+				"binary <= $k7 $k8 ; type=bool",
 			},
 		},
 		{
