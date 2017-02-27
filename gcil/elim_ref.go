@@ -9,34 +9,34 @@ type refEntry struct {
 	ident string
 }
 
-type elimRefVisitor struct {
+type elimRef struct {
 	refs  map[string]refEntry
 	xrefs map[string]refEntry
 	types *typing.Env
 }
 
-func newElimRefVisitor(types *typing.Env) *elimRefVisitor {
-	return &elimRefVisitor{
+func newElimRef(types *typing.Env) *elimRef {
+	return &elimRef{
 		map[string]refEntry{},
 		map[string]refEntry{},
 		types,
 	}
 }
 
-func (vis *elimRefVisitor) elimRef(ident string) string {
-	entry, ok := vis.refs[ident]
+func (elim *elimRef) elimRef(ident string) string {
+	entry, ok := elim.refs[ident]
 	if !ok {
 		return ident
 	}
 
 	i := entry.insn
 	i.RemoveFromList()
-	delete(vis.types.Table, i.Ident)
+	delete(elim.types.Table, i.Ident)
 	return entry.ident
 }
 
-func (vis *elimRefVisitor) elimXRef(app *App) {
-	entry, ok := vis.xrefs[app.Callee]
+func (elim *elimRef) elimXRef(app *App) {
+	entry, ok := elim.xrefs[app.Callee]
 	if !ok {
 		return
 	}
@@ -45,48 +45,53 @@ func (vis *elimRefVisitor) elimXRef(app *App) {
 	app.Kind = EXTERNAL_CALL
 }
 
-func (vis *elimRefVisitor) Visit(insn *Insn) Visitor {
+func (elim *elimRef) insn(insn *Insn) {
 	switch val := insn.Val.(type) {
 	case *Ref:
-		vis.refs[insn.Ident] = refEntry{insn, val.Ident}
+		elim.refs[insn.Ident] = refEntry{insn, val.Ident}
 	case *XRef:
-		vis.xrefs[insn.Ident] = refEntry{insn, val.Ident}
+		elim.xrefs[insn.Ident] = refEntry{insn, val.Ident}
 	case *Unary:
-		val.Child = vis.elimRef(val.Child)
+		val.Child = elim.elimRef(val.Child)
 	case *Binary:
-		val.Lhs = vis.elimRef(val.Lhs)
-		val.Rhs = vis.elimRef(val.Rhs)
+		val.Lhs = elim.elimRef(val.Lhs)
+		val.Rhs = elim.elimRef(val.Rhs)
 	case *If:
-		val.Cond = vis.elimRef(val.Cond)
-		Visit(vis, val.Then)
-		Visit(vis, val.Else)
+		val.Cond = elim.elimRef(val.Cond)
+		elim.block(val.Then)
+		elim.block(val.Else)
 	case *Fun:
-		Visit(vis, val.Body)
+		elim.block(val.Body)
 	case *App:
-		val.Callee = vis.elimRef(val.Callee)
+		val.Callee = elim.elimRef(val.Callee)
 		for i, a := range val.Args {
-			val.Args[i] = vis.elimRef(a)
+			val.Args[i] = elim.elimRef(a)
 		}
-		vis.elimXRef(val)
+		elim.elimXRef(val)
 	case *Tuple:
 		for i, e := range val.Elems {
-			val.Elems[i] = vis.elimRef(e)
+			val.Elems[i] = elim.elimRef(e)
 		}
 	case *Array:
-		val.Size = vis.elimRef(val.Size)
-		val.Elem = vis.elimRef(val.Elem)
+		val.Size = elim.elimRef(val.Size)
+		val.Elem = elim.elimRef(val.Elem)
 	case *TplLoad:
-		val.From = vis.elimRef(val.From)
+		val.From = elim.elimRef(val.From)
 	case *ArrLoad:
-		val.From = vis.elimRef(val.From)
-		val.Index = vis.elimRef(val.Index)
+		val.From = elim.elimRef(val.From)
+		val.Index = elim.elimRef(val.Index)
 	case *ArrStore:
-		val.To = vis.elimRef(val.To)
-		val.Index = vis.elimRef(val.Index)
-		val.Rhs = vis.elimRef(val.Rhs)
+		val.To = elim.elimRef(val.To)
+		val.Index = elim.elimRef(val.Index)
+		val.Rhs = elim.elimRef(val.Rhs)
 	}
+}
 
-	return vis
+func (elim *elimRef) block(block *Block) {
+	begin, end := block.WholeRange()
+	for i := begin; i != end; i = i.Next {
+		elim.insn(i)
+	}
 }
 
 // Removes unnecessary 'ref' instruction.
@@ -94,6 +99,6 @@ func (vis *elimRefVisitor) Visit(insn *Insn) Visitor {
 // functions referenced by variable must be a closure. So it is important
 // to remove unnecessary references to functions here.
 func ElimRefs(b *Block, env *typing.Env) {
-	e := newElimRefVisitor(env)
-	Visit(e, b)
+	e := newElimRef(env)
+	e.block(b)
 }

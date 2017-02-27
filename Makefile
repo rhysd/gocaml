@@ -19,7 +19,6 @@ SRCS := \
 	gcil/val.go \
 	gcil/block.go \
 	gcil/from_ast.go \
-	gcil/visitor.go \
 	gcil/printer.go \
 	gcil/elim_ref.go \
 	gcil/program.go \
@@ -55,7 +54,6 @@ TESTS := \
 	gcil/example_test.go \
 	gcil/block_test.go \
 	gcil/from_ast_test.go \
-	gcil/visitor_test.go \
 	gcil/elim_ref_test.go \
 	gcil/program_test.go \
 
