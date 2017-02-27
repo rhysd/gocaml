@@ -100,6 +100,13 @@ func (b *Block) Append(i *Insn) {
 	b.Bottom.Prev = i
 }
 
+// Returns range [begin, end)
+func (b *Block) WholeRange() (begin *Insn, end *Insn) {
+	begin = b.Top.Next
+	end = b.Bottom
+	return
+}
+
 // Instruction.
 // Its form is always `ident = val`
 type Insn struct {

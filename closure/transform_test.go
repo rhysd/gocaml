@@ -244,7 +244,7 @@ func TestClosureTransform(t *testing.T) {
 			toplevel: []string{
 				"f$t1 = fun x$t2",
 				"g$t3 = fun x$t4",
-				"app f$t1", // Note: 'app' is used. Calling closure with direct call. Here we need to pass NULL as environment frame of closure.
+				"appcls f$t1",
 				"ref f$t1 ; type=(int) -> int",
 			},
 			entry: []string{

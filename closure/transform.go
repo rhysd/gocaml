@@ -178,5 +178,7 @@ func Transform(ir *gcil.Block) *gcil.Program {
 		}
 	}
 
-	return &gcil.Program{toplevel, t.closures, ir}
+	prog := &gcil.Program{toplevel, t.closures, ir}
+	doPostProcess(prog)
+	return prog
 }

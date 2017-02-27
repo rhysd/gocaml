@@ -209,9 +209,8 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 	case *gcil.Fun:
 		panic("unreachable because IR was closure-transformed")
 	case *gcil.App:
-		callsClosure := b.isClosure(val.Callee)
 		argsLen := len(val.Args)
-		if callsClosure {
+		if val.Kind == gcil.CLOSURE_CALL {
 			argsLen++
 		}
 		argVals := make([]llvm.Value, 0, argsLen)
@@ -222,11 +221,11 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		}
 		// Find function pointer for invoking a function directly
 		funVal, funFound := table[val.Callee]
-		if !funFound && !callsClosure {
+		if !funFound && val.Kind != gcil.CLOSURE_CALL {
 			panic("Value for function is not found in table: " + val.Callee)
 		}
 
-		if callsClosure {
+		if val.Kind == gcil.CLOSURE_CALL {
 			closureVal := b.resolve(val.Callee)
 
 			// Extract function pointer from closure instance if callee does not indicates well-known function

@@ -25,6 +25,7 @@ SRCS := \
 	gcil/program.go \
 	closure/transform.go \
 	closure/freevars.go \
+	closure/post_process.go \
 	codegen/emitter.go \
 	codegen/module_builder.go \
 	codegen/type_builder.go \
