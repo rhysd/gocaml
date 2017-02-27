@@ -66,6 +66,11 @@ func (b *blockBuilder) buildMallocRaw(ty llvm.Type, sizeVal llvm.Value, name str
 
 func (b *blockBuilder) buildMalloc(ty llvm.Type, name string) llvm.Value {
 	size := b.targetData.TypeAllocSize(ty)
+	// If size is 0, malloc returns NULL pointer or a valid pointer for free().
+	// Optimize to return NULL instead of calling malloc() when we know the size is 0.
+	if size == 0 {
+		return llvm.ConstPointerNull(llvm.PointerType(ty, 0 /*address space*/))
+	}
 	sizeVal := llvm.ConstInt(b.typeBuilder.sizeT, size, false /*sign extend*/)
 	return b.buildMallocRaw(ty, sizeVal, name)
 }
@@ -233,9 +238,8 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 				funVal = b.builder.CreateExtractValue(closureVal, 0, "funptr")
 			}
 
-			// Extract pointer to captures object
-			capturesPtr := b.builder.CreateExtractValue(closureVal, 1, "capturesptr")
-			argVals = append(argVals, capturesPtr)
+			// Pass closure object to first parameter
+			argVals = append(argVals, closureVal)
 		}
 
 		for _, a := range val.Args {

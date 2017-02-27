@@ -58,7 +58,6 @@ func TestVisitor(t *testing.T) {
 									&Unary{NEG, "$k1"},
 								),
 							}),
-							false,
 						},
 					),
 					NewInsn(
