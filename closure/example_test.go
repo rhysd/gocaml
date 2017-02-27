@@ -59,7 +59,7 @@ func Example() {
 	// For debug purpose, you can show GCIL representation after conversion
 	program.Println(os.Stdout, env)
 	// Output:
-	// ack$t1 = fun x$t2,y$t3 ; type=(int, int) -> int
+	// ack$t1 = recfun x$t2,y$t3 ; type=(int, int) -> int
 	//   BEGIN: body (ack$t1)
 	//   $k1 = int 0 ; type=int
 	//   $k3 = binary < $k1 x$t2 ; type=bool

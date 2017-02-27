@@ -7,8 +7,10 @@ import (
 // In post process:
 //   - CLOSURE_CALL flag is set to each 'app' instruction
 type postProcess struct {
-	closures gcil.Closures
-	funcs    map[string]*gcil.Fun
+	closures           gcil.Closures
+	funcs              map[string]*gcil.Fun
+	processingFuncName string
+	processingFunc     *gcil.Fun
 }
 
 // TODO:
@@ -49,6 +51,9 @@ type postProcess struct {
 func (pp *postProcess) processInsn(insn *gcil.Insn) {
 	switch val := insn.Val.(type) {
 	case *gcil.App:
+		if val.Callee == pp.processingFuncName && pp.processingFunc != nil {
+			pp.processingFunc.IsRecursive = true
+		}
 		if val.Kind == gcil.EXTERNAL_CALL {
 			break
 		}
@@ -79,13 +84,21 @@ func (pp *postProcess) processBlock(block *gcil.Block) {
 	}
 }
 
+func (pp *postProcess) process(n string, f *gcil.Fun, b *gcil.Block) {
+	pp.processingFuncName = n
+	pp.processingFunc = f
+	pp.processBlock(b)
+}
+
 func doPostProcess(prog *gcil.Program) {
 	pp := &postProcess{
 		prog.Closures,
 		prog.Toplevel,
+		"",
+		nil,
 	}
-	for _, f := range prog.Toplevel {
-		pp.processBlock(f.Body)
+	for n, f := range prog.Toplevel {
+		pp.process(n, f, f.Body)
 	}
-	pp.processBlock(prog.Entry)
+	pp.process("", nil, prog.Entry)
 }

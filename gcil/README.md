@@ -45,6 +45,7 @@ Variable names follow below naming convention.
 - `$k{number}`: Variables inserted automatically by K-normalization.
 - `name$t{number}`: Alpha-transformed variables to identify variables which has the same name, but actually different because of shadowing. Original variable name is `name`.
 - `name`: External symbols which will be linked by linker. It's not modified because external symbol names can't be changed.
+- `$unused{number}`: Unused variable produced by sequence expression (an expression separated with `;`). The value is guaranteed not to be used.
 
 ## Instructions
 
@@ -59,6 +60,7 @@ Variable names follow below naming convention.
 | `ref {id}`                | Reference to `{id}` variable.                                                                   |
 | `if {id} {block} {block}` | When `{id}` is true, then enter to first `{block}` . Otherwise inter to second `{block}`.       |
 | `fun {ids...} {block}`    | Function. {ids...} are comma separated parameter IDs. `{block}` is its body.                    |
+| `recfun {ids...} {block}` | The same as `fun`, but it contains recursive self call.                                         |
 | `app {id} {ids...}`       | Apply function. First `{id}` is called function. Following comma separated IDs are arguments.   |
 | `appcls {id} {ids...}`    | Apply function. First `{id}` is called closure. Following comma separated IDs are arguments.    |
 | `appx {id} {ids...}`      | Apply function. First `{id}` is external symbol. Following comma separated IDs are arguments.   |
@@ -68,4 +70,6 @@ Variable names follow below naming convention.
 | `arrload {id} {id}`       | Load element value of array. First `{id}` is index value.                                       |
 | `arrstore {id} {id} {id}` | Store value to array. First `{id}` is index, second `{id}` is array, third `{id}` is set value. |
 | `xref {id}`               | Reference to external symbol. `{id}` represents the symbol.                                     |
+| `makecls {ids...} {id}`   | Closure object for second `{id}`. First `{ids...}` is a list for captures of the closure.       |
+| `nop`                     | No operation instruction. Currently it's only used as the centinel of instructions list.        |
 

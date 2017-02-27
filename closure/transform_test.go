@@ -155,7 +155,7 @@ func TestClosureTransform(t *testing.T) {
 			code:     "let rec f x = if x < 0 then 1 else x + f (x-1) in f 10",
 			closures: empty,
 			toplevel: []string{
-				"f$t1 = fun x$t2 ; type=(int) -> int",
+				"f$t1 = recfun x$t2 ; type=(int) -> int",
 				"app f$t1",
 			},
 			entry: []string{
