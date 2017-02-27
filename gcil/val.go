@@ -86,8 +86,9 @@ type (
 		Else *Block
 	}
 	Fun struct {
-		Params []string
-		Body   *Block
+		Params      []string
+		Body        *Block
+		IsRecursive bool
 	}
 	App struct {
 		Callee string
@@ -156,7 +157,11 @@ func (v *If) Print(out io.Writer) {
 	fmt.Fprintf(out, "if %s", v.Cond)
 }
 func (v *Fun) Print(out io.Writer) {
-	fmt.Fprintf(out, "fun %s", strings.Join(v.Params, ","))
+	rec := ""
+	if v.IsRecursive {
+		rec = "rec"
+	}
+	fmt.Fprintf(out, "%sfun %s", rec, strings.Join(v.Params, ","))
 }
 func (v *App) Print(out io.Writer) {
 	fmt.Fprintf(out, "app%s %s %s", appTable[v.Kind], v.Callee, strings.Join(v.Args, ","))

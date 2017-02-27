@@ -86,6 +86,7 @@ func (e *emitter) emitFunInsn(node *ast.LetRec) *Insn {
 	val := &Fun{
 		params,
 		blk,
+		false,
 	}
 
 	e.types.Table[name] = ty

@@ -78,19 +78,10 @@ func (b *typeBuilder) buildFun(from *typing.Fun, known bool) llvm.Type {
 	}
 	params := make([]llvm.Type, 0, l)
 	if !known {
-		params = append(params, llvm.Type{}) // Reserve for closure object
+		params = append(params, b.voidPtrT) // Closure
 	}
 	for _, p := range from.Params {
 		params = append(params, b.convertGCIL(p))
-	}
-	if !known {
-		// Set closure object type.
-		// Reuse 'param' slice to avoid allocating parameter types twice.
-		fun := llvm.PointerType(
-			llvm.FunctionType(ret, params[1:], false /*varargs*/),
-			0, /*address space*/
-		)
-		params[0] = b.context.StructType([]llvm.Type{fun, b.voidPtrT}, false /*packed*/)
 	}
 	return llvm.FunctionType(ret, params, false /*varargs*/)
 }

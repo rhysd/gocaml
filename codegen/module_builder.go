@@ -189,22 +189,30 @@ func (b *moduleBuilder) buildFunBody(name string, fun *gcil.Fun) llvm.Value {
 
 	// Expose captures of closure
 	if isClosure {
-		// When the closure itself is used in its body, it needs to prepare the closure object
-		// for the recursive use.
-		// This is because closure receives its closure object as first parameter, not a pointer
-		// to captures.
-		closureVal := llvmFun.Param(0)
 		if len(closure) > 0 {
 			capturesTy := llvm.PointerType(b.typeBuilder.buildClosureCaptures(name, closure), 0 /*address space*/)
-			capturesPtrVoid := b.builder.CreateExtractValue(closureVal, 1, "")
-			capturesPtr := b.builder.CreateBitCast(capturesPtrVoid, capturesTy, fmt.Sprintf("%s.capture", name))
+			closureVal := b.builder.CreateBitCast(llvmFun.Param(0), capturesTy, fmt.Sprintf("%s.capture", name))
 			for i, n := range closure {
-				ptr := b.builder.CreateStructGEP(capturesPtr, i, "")
+				ptr := b.builder.CreateStructGEP(closureVal, i, "")
 				exposed := b.builder.CreateLoad(ptr, fmt.Sprintf("%s.capture.%s", name, n))
 				blockBuilder.registers[n] = exposed
 			}
 		}
-		blockBuilder.registers[name] = closureVal
+		if fun.IsRecursive || len(closure) == 0 {
+			// When the closure itself is used in its body, it needs to prepare the closure object
+			// for the recursive use.
+			//
+			// XXX:
+			// When number of captures is zero, the function is a closure because it's used as a variable, not has
+			// any free variables. In this case, there may be unknown recursive calls. They are transformed as direct
+			// function call, but actually a closure call. So we need to prepare closure object for them in the case.
+			// ref: https://github.com/rhysd/gocaml/issues/11
+			itselfTy := b.context.StructType([]llvm.Type{llvmFun.Type(), b.typeBuilder.voidPtrT}, false /*packed*/)
+			itselfVal := llvm.Undef(itselfTy)
+			itselfVal = b.builder.CreateInsertValue(itselfVal, llvmFun, 0, "")
+			itselfVal = b.builder.CreateInsertValue(itselfVal, llvmFun.Param(0), 1, "")
+			blockBuilder.registers[name] = itselfVal
+		}
 	}
 
 	lastVal := blockBuilder.buildBlock(fun.Body)

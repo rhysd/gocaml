@@ -169,7 +169,7 @@ func TestClosureTransform(t *testing.T) {
 				"f$t2": []string{"a$t1"},
 			},
 			toplevel: []string{
-				"f$t2 = fun x$t3 ; type=(int) -> int",
+				"f$t2 = recfun x$t3 ; type=(int) -> int",
 				"appcls f$t2",
 			},
 			entry: []string{

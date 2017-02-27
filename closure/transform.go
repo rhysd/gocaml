@@ -100,7 +100,12 @@ func (trans *transformWithKFO) insn(insn *gcil.Insn) {
 			for _, p := range val.Params {
 				delete(fv, p)
 			}
-			delete(fv, insn.Ident)
+			if _, ok := fv[insn.Ident]; ok {
+				// When the closure itself is used in its body (recursive function), it must prepare
+				// the closure object in its body to use itself in its body.
+				val.IsRecursive = true
+				delete(fv, insn.Ident)
+			}
 			trans.closures[insn.Ident] = fv.toSortedArray()
 		} else {
 			// When the function is actually not a closure, continue to use 'dup' as current visitor
