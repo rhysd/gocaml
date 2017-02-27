@@ -35,7 +35,8 @@ print_int (gcd 21600 337500)
   - [ ] Reduce `()` type to `void`
   - [x] LLVM IR optimization passes
 - [x] Code generation using [LLVM][]
-- [ ] Garbage collection with [Boehm GC][]
+- [x] Garbage collection with [Boehm GC][]
+- [ ] Debug information (DWARF) using LLVM's Debug Info builder
 
 ## Difference from original MinCaml
 

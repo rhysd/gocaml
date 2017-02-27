@@ -38,6 +38,22 @@ func (b *blockBuilder) typeOf(ident string) typing.Type {
 	panic("Type was not found for ident: " + ident)
 }
 
+func (b *blockBuilder) isClosure(name string) bool {
+	if _, ok := b.env.Externals[name]; ok {
+		return false
+	}
+	if _, ok := b.closures[name]; ok {
+		return true
+	}
+	if _, ok := b.funcTable[name]; ok {
+		// It's function name, but not a closure. So it must be known function.
+		return false
+	}
+	// It's not an external symbol, closure nor known function. So it must be a function variable.
+	// All function variables are closures. So it should return true here.
+	return true
+}
+
 func (b *blockBuilder) buildMallocRaw(ty llvm.Type, sizeVal llvm.Value, name string) llvm.Value {
 	mallocVal, ok := b.globalTable["GC_malloc"]
 	if !ok {
@@ -193,8 +209,9 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 	case *gcil.Fun:
 		panic("unreachable because IR was closure-transformed")
 	case *gcil.App:
+		callsClosure := b.isClosure(val.Callee)
 		argsLen := len(val.Args)
-		if val.Kind == gcil.CLOSURE_CALL {
+		if callsClosure {
 			argsLen++
 		}
 		argVals := make([]llvm.Value, 0, argsLen)
@@ -205,11 +222,11 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		}
 		// Find function pointer for invoking a function directly
 		funVal, funFound := table[val.Callee]
-		if !funFound && val.Kind != gcil.CLOSURE_CALL {
+		if !funFound && !callsClosure {
 			panic("Value for function is not found in table: " + val.Callee)
 		}
 
-		if val.Kind == gcil.CLOSURE_CALL {
+		if callsClosure {
 			closureVal := b.resolve(val.Callee)
 
 			// Extract function pointer from closure instance if callee does not indicates well-known function

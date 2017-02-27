@@ -40,9 +40,8 @@ func (set nameSet) toSortedArray() []string {
 type transformWithKFO struct {
 	knownFuns            nameSet
 	replacedFuns         map[*gcil.Insn]*gcil.MakeCls // nil means simply removing the function
-	closureCalls         []*gcil.App
-	closures             gcil.Closures      // Mapping function name to free variables
-	closureBlockFreeVars map[string]nameSet // Known free variables of closures' blocks
+	closures             gcil.Closures                // Mapping function name to free variables
+	closureBlockFreeVars map[string]nameSet           // Known free variables of closures' blocks
 }
 
 func (trans *transformWithKFO) duplicate() *transformWithKFO {
@@ -65,9 +64,6 @@ func (trans *transformWithKFO) duplicate() *transformWithKFO {
 	return &transformWithKFO{
 		known,
 		funs,
-		// Need not to copy deeply because append() will make another array.
-		// So append() does not break the original array.
-		trans.closureCalls,
 		clss,
 		blks,
 	}
@@ -142,11 +138,6 @@ func (trans *transformWithKFO) insn(insn *gcil.Insn) {
 			replaced = &gcil.MakeCls{vars, insn.Ident}
 		}
 		trans.replacedFuns[insn] = replaced
-	case *gcil.App:
-		if _, ok := trans.knownFuns[val.Callee]; !ok && val.Kind != gcil.EXTERNAL_CALL {
-			trans.closureCalls = append(trans.closureCalls, val)
-		}
-		trans.insn(insn.Next)
 	case *gcil.If:
 		trans.block(val.Then)
 		trans.block(val.Else)
@@ -164,18 +155,10 @@ func Transform(ir *gcil.Block) *gcil.Program {
 	t := &transformWithKFO{
 		map[string]struct{}{},
 		map[*gcil.Insn]*gcil.MakeCls{},
-		[]*gcil.App{},
 		map[string][]string{},
 		map[string]nameSet{},
 	}
 	t.block(ir)
-
-	// Modify instructions in IR
-
-	// Set flags for closure calls
-	for _, app := range t.closureCalls {
-		app.Kind = gcil.CLOSURE_CALL
-	}
 
 	// Move all functions to toplevel and put closure instance if needed
 	toplevel := map[string]*gcil.Fun{}

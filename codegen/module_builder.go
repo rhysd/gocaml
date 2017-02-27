@@ -198,9 +198,15 @@ func (b *moduleBuilder) buildFunBody(name string, fun *gcil.Fun) llvm.Value {
 				blockBuilder.registers[n] = exposed
 			}
 		}
-		if fun.IsRecursive {
+		if fun.IsRecursive || len(closure) == 0 {
 			// When the closure itself is used in its body, it needs to prepare the closure object
 			// for the recursive use.
+			//
+			// XXX:
+			// When number of captures is zero, the function is a closure because it's used as a variable, not has
+			// any free variables. In this case, there may be unknown recursive calls. They are transformed as direct
+			// function call, but actually a closure call. So we need to prepare closure object for them in the case.
+			// ref: https://github.com/rhysd/gocaml/issues/11
 			itselfTy := b.context.StructType([]llvm.Type{llvmFun.Type(), b.typeBuilder.voidPtrT}, false /*packed*/)
 			itselfVal := llvm.Undef(itselfTy)
 			itselfVal = b.builder.CreateInsertValue(itselfVal, llvmFun, 0, "")
