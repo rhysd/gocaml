@@ -8,7 +8,7 @@ import (
 //   - CLOSURE_CALL flag is set to each 'app' instruction
 type postProcess struct {
 	closures           gcil.Closures
-	funcs              map[string]*gcil.Fun
+	funcs              gcil.Toplevel
 	processingFuncName string
 	processingFunc     *gcil.Fun
 }
@@ -98,7 +98,7 @@ func doPostProcess(prog *gcil.Program) {
 		nil,
 	}
 	for n, f := range prog.Toplevel {
-		pp.process(n, f, f.Body)
+		pp.process(n, f.Val, f.Val.Body)
 	}
 	pp.process("", nil, prog.Entry)
 }

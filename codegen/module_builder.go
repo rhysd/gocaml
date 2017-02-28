@@ -131,7 +131,8 @@ func (b *moduleBuilder) declareExternalDecl(name string, from typing.Type) llvm.
 	}
 }
 
-func (b *moduleBuilder) declareFun(name string, params []string) llvm.Value {
+func (b *moduleBuilder) declareFun(insn gcil.FunInsn) llvm.Value {
+	name := insn.Name
 	_, isClosure := b.closures[name]
 	found, ok := b.env.Table[name]
 	if !ok {
@@ -152,7 +153,7 @@ func (b *moduleBuilder) declareFun(name string, params []string) llvm.Value {
 		index++
 	}
 
-	for _, p := range params {
+	for _, p := range insn.Val.Params {
 		v.Param(index).SetName(p)
 		index++
 	}
@@ -166,7 +167,9 @@ func (b *moduleBuilder) declareFun(name string, params []string) llvm.Value {
 	return v
 }
 
-func (b *moduleBuilder) buildFunBody(name string, fun *gcil.Fun) llvm.Value {
+func (b *moduleBuilder) buildFunBody(insn gcil.FunInsn) llvm.Value {
+	name := insn.Name
+	fun := insn.Val
 	llvmFun, ok := b.funcTable[name]
 	if !ok {
 		panic("Unknown function on building IR: " + name)
@@ -279,11 +282,11 @@ func (b *moduleBuilder) build(prog *gcil.Program) error {
 	b.closures = prog.Closures
 	b.funcTable = make(map[string]llvm.Value, len(prog.Toplevel))
 	for name, fun := range prog.Toplevel {
-		b.funcTable[name] = b.declareFun(name, fun.Params)
+		b.funcTable[name] = b.declareFun(fun)
 	}
 
-	for name, fun := range prog.Toplevel {
-		b.buildFunBody(name, fun)
+	for _, fun := range prog.Toplevel {
+		b.buildFunBody(fun)
 	}
 
 	b.buildMain(prog.Entry)

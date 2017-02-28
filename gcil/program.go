@@ -2,25 +2,41 @@ package gcil
 
 import (
 	"fmt"
+	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/gocaml/typing"
 	"io"
 	"strings"
 )
 
 type Closures map[string][]string
+type FunInsn struct {
+	Name string
+	Val  *Fun
+	Pos  token.Position
+}
+
+type Toplevel map[string]FunInsn
+
+func NewToplevel() Toplevel {
+	return map[string]FunInsn{}
+}
+
+func (top Toplevel) Add(n string, f *Fun, p token.Position) {
+	top[n] = FunInsn{n, f, p}
+}
 
 // Program representation. Program can be obtained after closure transform because
 // all functions must be at the top.
 type Program struct {
-	Toplevel map[string]*Fun // Mapping from function name to its instruction
-	Closures Closures        // Mapping from closure name to it free variables
+	Toplevel Toplevel // Mapping from function name to its instruction
+	Closures Closures // Mapping from closure name to it free variables
 	Entry    *Block
 }
 
 func (prog *Program) PrintToplevels(out io.Writer, env *typing.Env) {
 	p := printer{env, out, ""}
 	for n, f := range prog.Toplevel {
-		p.printlnInsn(NewInsn(n, f))
+		p.printlnInsn(NewInsn(n, f.Val, f.Pos))
 		fmt.Fprintln(out)
 	}
 }

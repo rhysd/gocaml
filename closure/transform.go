@@ -161,13 +161,13 @@ func Transform(ir *gcil.Block) *gcil.Program {
 	t.block(ir)
 
 	// Move all functions to toplevel and put closure instance if needed
-	toplevel := map[string]*gcil.Fun{}
+	toplevel := gcil.NewToplevel()
 	for insn, make := range t.replacedFuns {
 		f, ok := insn.Val.(*gcil.Fun)
 		if !ok {
 			panic(fmt.Sprintf("Replaced function '%s' is actually not a function: %v", insn.Ident, insn.Val))
 		}
-		toplevel[insn.Ident] = f
+		toplevel.Add(insn.Ident, f, insn.Pos)
 
 		if make == nil {
 			// It's not a closure. Simply remove 'fun' instruction from list
