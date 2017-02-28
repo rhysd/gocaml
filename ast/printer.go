@@ -54,10 +54,19 @@ func printExpr(e Expr, indent int) {
 	case *Eq:
 		printExpr(n.Left, i)
 		printExpr(n.Right, i)
+	case *NotEq:
+		printExpr(n.Left, i)
+		printExpr(n.Right, i)
 	case *Less:
 		printExpr(n.Left, i)
 		printExpr(n.Right, i)
 	case *LessEq:
+		printExpr(n.Left, i)
+		printExpr(n.Right, i)
+	case *Greater:
+		printExpr(n.Left, i)
+		printExpr(n.Right, i)
+	case *GreaterEq:
 		printExpr(n.Left, i)
 		printExpr(n.Right, i)
 	case *If:

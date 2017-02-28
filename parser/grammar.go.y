@@ -100,17 +100,17 @@ exp:
 	| exp MINUS exp
 		{ $$ = &ast.Sub{$1, $3} }
 	| exp EQUAL exp
-		{ $$ =&ast.Eq{$1, $3} }
+		{ $$ = &ast.Eq{$1, $3} }
 	| exp LESS_GREATER exp
-		{ $$ = &ast.Not{$2, &ast.Eq{$1, $3}} } /* XXX: Position is not accurate */
+		{ $$ = &ast.NotEq{$1, $3} }
 	| exp LESS exp
 		{ $$ = &ast.Less{$1, $3} }
 	| exp GREATER exp
-		{ $$ = &ast.Less{$3, $1} } /* XXX: Position is not accurate */
+		{ $$ = &ast.Greater{$1, $3} }
 	| exp LESS_EQUAL exp
 		{ $$ = &ast.LessEq{$1, $3} }
 	| exp GREATER_EQUAL exp
-		{ $$ = &ast.LessEq{$3, $1} } /* XXX: Position is not accurate */
+		{ $$ = &ast.GreaterEq{$1, $3} }
 	| IF exp THEN exp ELSE exp
 		%prec prec_if
 		{ $$ = &ast.If{$1, $2, $4, $6} }

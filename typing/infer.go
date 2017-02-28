@@ -96,10 +96,16 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		return env.inferArithmeticBinOp("/.", n.Left, n.Right, FloatType)
 	case *ast.Eq:
 		return env.inferRelationalBinOp("=", n.Left, n.Right)
+	case *ast.NotEq:
+		return env.inferRelationalBinOp("<>", n.Left, n.Right)
 	case *ast.Less:
 		return env.inferRelationalBinOp("<", n.Left, n.Right)
 	case *ast.LessEq:
 		return env.inferRelationalBinOp("<=", n.Left, n.Right)
+	case *ast.Greater:
+		return env.inferRelationalBinOp("<", n.Left, n.Right)
+	case *ast.GreaterEq:
+		return env.inferRelationalBinOp(">=", n.Left, n.Right)
 	case *ast.If:
 		if err := env.checkNodeType("condition of 'if' expression", n.Cond, BoolType); err != nil {
 			return nil, err

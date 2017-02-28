@@ -77,43 +77,52 @@ func (b *blockBuilder) buildArrayMalloc(ty llvm.Type, numElems llvm.Value, name 
 	return b.buildMallocRaw(ty, sizeVal, name)
 }
 
-func (b *blockBuilder) buildEq(ty typing.Type, lhs, rhs llvm.Value) llvm.Value {
+func (b *blockBuilder) buildEq(ty typing.Type, icmp llvm.IntPredicate, fcmp llvm.FloatPredicate, lhs, rhs llvm.Value, name string) llvm.Value {
 	switch ty := ty.(type) {
 	case *typing.Unit:
 		// `() = ()` is always true.
 		return llvm.ConstInt(b.typeBuilder.boolT, 1, false /*sign extend*/)
 	case *typing.Bool, *typing.Int:
-		return b.builder.CreateICmp(llvm.IntEQ, lhs, rhs, "eql")
+		return b.builder.CreateICmp(icmp, lhs, rhs, name)
 	case *typing.Float:
-		return b.builder.CreateFCmp(llvm.FloatOEQ, lhs, rhs, "eql")
+		return b.builder.CreateFCmp(fcmp, lhs, rhs, name)
 	case *typing.Tuple:
 		cmp := llvm.Value{}
 		for i, elemTy := range ty.Elems {
 			l := b.builder.CreateLoad(b.builder.CreateStructGEP(lhs, i, "tpl.left"), "")
 			r := b.builder.CreateLoad(b.builder.CreateStructGEP(rhs, i, "tpl.right"), "")
-			elemCmp := b.buildEq(elemTy, l, r)
+			elemCmp := b.buildEq(elemTy, icmp, fcmp, l, r, name)
 			if cmp.C == nil {
 				cmp = elemCmp
 			} else {
 				cmp = b.builder.CreateAnd(cmp, elemCmp, "")
 			}
 		}
-		cmp.SetName("eql.tpl")
+		cmp.SetName(name + ".tpl")
 		return cmp
 	case *typing.Fun:
 		// Note:
 		// The function instance must be a closure because all functions which is used
 		// as variable are treated as closure in closure-transform.
-		faked := b.typeBuilder.buildClosure(ty)
-		lhs = b.builder.CreateBitCast(lhs, faked, "")
-		rhs = b.builder.CreateBitCast(rhs, faked, "")
-		lhs = b.builder.CreateLoad(b.builder.CreateStructGEP(lhs, 0, ""), "")
-		rhs = b.builder.CreateLoad(b.builder.CreateStructGEP(rhs, 0, ""), "")
-		return b.builder.CreateICmp(llvm.IntEQ, lhs, rhs, "eql.fun")
+		lfun := b.builder.CreateExtractValue(lhs, 0, "")
+		rfun := b.builder.CreateExtractValue(rhs, 0, "")
+		return b.builder.CreateICmp(icmp, lfun, rfun, name+".fun")
 	case *typing.Array:
 		panic("unreachable")
 	default:
 		panic("unreachable")
+	}
+}
+
+func (b *blockBuilder) buildLess(ipred llvm.IntPredicate, fpred llvm.FloatPredicate, leftIdent string, lhs, rhs llvm.Value, name string) llvm.Value {
+	lty := b.typeOf(leftIdent)
+	switch lty.(type) {
+	case *typing.Int:
+		return b.builder.CreateICmp(ipred, lhs, rhs, name)
+	case *typing.Float:
+		return b.builder.CreateFCmp(fpred, lhs, rhs, name)
+	default:
+		panic(fmt.Sprintf("Invalid type for '%s' operator: %s", name, lty.String()))
 	}
 }
 
@@ -159,28 +168,32 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 			return b.builder.CreateFMul(lhs, rhs, "fmul")
 		case gcil.FDIV:
 			return b.builder.CreateFDiv(lhs, rhs, "fdiv")
-		case gcil.LESS:
-			lty := b.typeOf(val.Lhs)
-			switch lty.(type) {
-			case *typing.Int:
-				return b.builder.CreateICmp(llvm.IntSLT /*Signed Less Than*/, lhs, rhs, "less")
-			case *typing.Float:
-				return b.builder.CreateFCmp(llvm.FloatOLT /*Ordered and Less Than*/, lhs, rhs, "less")
-			default:
-				panic("Invalid type for '<' operator: " + lty.String())
-			}
-		case gcil.LESSEQ:
-			lty := b.typeOf(val.Lhs)
-			switch lty.(type) {
-			case *typing.Int:
-				return b.builder.CreateICmp(llvm.IntSLE /*Signed Less Equal*/, lhs, rhs, "lesseq")
-			case *typing.Float:
-				return b.builder.CreateFCmp(llvm.FloatOLE /*Ordered and Less Equal*/, lhs, rhs, "lesseq")
-			default:
-				panic("Invalid type for '<=' operator: " + lty.String())
-			}
+		case gcil.LT:
+			return b.buildLess(
+				llvm.IntSLT,   /*Signed Less Than*/
+				llvm.FloatOLT, /*Ordered and Less Than*/
+				val.Lhs,
+				lhs,
+				rhs,
+				"less",
+			)
+		case gcil.LTE:
+			return b.buildLess(
+				llvm.IntSLE,   /*Signed Less Equal*/
+				llvm.FloatOLE, /*Ordered and Less Equal*/
+				val.Lhs,
+				lhs,
+				rhs,
+				"lesseq",
+			)
+		case gcil.GT:
+			return b.buildLess(llvm.IntSGT, llvm.FloatOGT, val.Lhs, lhs, rhs, "gt")
+		case gcil.GTE:
+			return b.buildLess(llvm.IntSGE, llvm.FloatOGE, val.Lhs, lhs, rhs, "gte")
 		case gcil.EQ:
-			return b.buildEq(b.typeOf(val.Lhs), lhs, rhs)
+			return b.buildEq(b.typeOf(val.Lhs), llvm.IntEQ, llvm.FloatOEQ, lhs, rhs, "eql")
+		case gcil.NEQ:
+			return b.buildEq(b.typeOf(val.Lhs), llvm.IntNE, llvm.FloatONE, lhs, rhs, "neq")
 		default:
 			panic("unreachable")
 		}

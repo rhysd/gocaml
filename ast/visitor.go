@@ -42,10 +42,19 @@ func Visit(v Visitor, e Expr) {
 	case *Eq:
 		Visit(v, n.Left)
 		Visit(v, n.Right)
+	case *NotEq:
+		Visit(v, n.Left)
+		Visit(v, n.Right)
 	case *Less:
 		Visit(v, n.Left)
 		Visit(v, n.Right)
 	case *LessEq:
+		Visit(v, n.Left)
+		Visit(v, n.Right)
+	case *Greater:
+		Visit(v, n.Left)
+		Visit(v, n.Right)
+	case *GreaterEq:
 		Visit(v, n.Left)
 		Visit(v, n.Right)
 	case *If:

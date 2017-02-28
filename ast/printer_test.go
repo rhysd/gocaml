@@ -40,7 +40,10 @@ func TestPrintAST(t *testing.T) {
 						tok,
 						&Float{tok, 3.14},
 					},
-					&VarRef{tok, NewSymbol("variable")},
+					&NotEq{
+						&VarRef{tok, NewSymbol("variable")},
+						&Int{tok, 42},
+					},
 				},
 			},
 			&FAdd{
@@ -86,8 +89,14 @@ func TestPrintAST(t *testing.T) {
 			},
 			&Tuple{
 				[]Expr{
-					&Int{tok, 42},
-					&Float{tok, 3.14},
+					&Greater{
+						&Int{tok, 1},
+						&Int{tok, 2},
+					},
+					&GreaterEq{
+						&Int{tok, 1},
+						&Int{tok, 2},
+					},
 				},
 			},
 			&LetRec{
@@ -151,7 +160,9 @@ func TestPrintAST(t *testing.T) {
 -   -   -   -   Eq (0:0-0:0)
 -   -   -   -   -   FNeg (0:0-0:0)
 -   -   -   -   -   -   Float (0:0-0:0)
--   -   -   -   -   VarRef (variable) (0:0-0:0)
+-   -   -   -   -   NotEq (0:0-0:0)
+-   -   -   -   -   -   VarRef (variable) (0:0-0:0)
+-   -   -   -   -   -   Int (0:0-0:0)
 -   -   -   FAdd (0:0-0:0)
 -   -   -   -   FDiv (0:0-0:0)
 -   -   -   -   -   Tuple (0:0-0:0)
@@ -174,8 +185,12 @@ func TestPrintAST(t *testing.T) {
 -   -   -   -   -   -   Bool (0:0-0:0)
 -   -   LetTuple (a, b) (0:0-0:0)
 -   -   -   Tuple (0:0-0:0)
--   -   -   -   Int (0:0-0:0)
--   -   -   -   Float (0:0-0:0)
+-   -   -   -   Greater (0:0-0:0)
+-   -   -   -   -   Int (0:0-0:0)
+-   -   -   -   -   Int (0:0-0:0)
+-   -   -   -   GreaterEq (0:0-0:0)
+-   -   -   -   -   Int (0:0-0:0)
+-   -   -   -   -   Int (0:0-0:0)
 -   -   -   LetRec (fun f a) (0:0-0:0)
 -   -   -   -   VarRef (a) (0:0-0:0)
 -   -   -   -   If (0:0-0:0)

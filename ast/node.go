@@ -138,12 +138,27 @@ type (
 		Right Expr
 	}
 
+	NotEq struct {
+		Left  Expr
+		Right Expr
+	}
+
 	Less struct {
 		Left  Expr
 		Right Expr
 	}
 
 	LessEq struct {
+		Left  Expr
+		Right Expr
+	}
+
+	Greater struct {
+		Left  Expr
+		Right Expr
+	}
+
+	GreaterEq struct {
 		Left  Expr
 		Right Expr
 	}
@@ -305,6 +320,13 @@ func (e *Eq) End() token.Position {
 	return e.Right.End()
 }
 
+func (e *NotEq) Pos() token.Position {
+	return e.Left.Pos()
+}
+func (e *NotEq) End() token.Position {
+	return e.Right.End()
+}
+
 func (e *Less) Pos() token.Position {
 	return e.Left.Pos()
 }
@@ -316,6 +338,20 @@ func (e *LessEq) Pos() token.Position {
 	return e.Left.Pos()
 }
 func (e *LessEq) End() token.Position {
+	return e.Right.End()
+}
+
+func (e *Greater) Pos() token.Position {
+	return e.Left.Pos()
+}
+func (e *Greater) End() token.Position {
+	return e.Right.End()
+}
+
+func (e *GreaterEq) Pos() token.Position {
+	return e.Left.Pos()
+}
+func (e *GreaterEq) End() token.Position {
 	return e.Right.End()
 }
 
@@ -392,25 +428,28 @@ func (e *Put) End() token.Position {
 	return e.Assignee.End()
 }
 
-func (e *Unit) Name() string   { return "Unit" }
-func (e *Bool) Name() string   { return "Bool" }
-func (e *Int) Name() string    { return "Int" }
-func (e *Float) Name() string  { return "Float" }
-func (e *Not) Name() string    { return "Not" }
-func (e *Neg) Name() string    { return "Neg" }
-func (e *Add) Name() string    { return "Add" }
-func (e *Sub) Name() string    { return "Sub" }
-func (e *FNeg) Name() string   { return "FNeg" }
-func (e *FAdd) Name() string   { return "FAdd" }
-func (e *FSub) Name() string   { return "FSub" }
-func (e *FMul) Name() string   { return "FMul" }
-func (e *FDiv) Name() string   { return "FDiv" }
-func (e *Eq) Name() string     { return "Eq" }
-func (e *Less) Name() string   { return "Less" }
-func (e *LessEq) Name() string { return "LessEq" }
-func (e *If) Name() string     { return "If" }
-func (e *Let) Name() string    { return fmt.Sprintf("Let (%s)", e.Symbol.DisplayName) }
-func (e *VarRef) Name() string { return fmt.Sprintf("VarRef (%s)", e.Symbol.DisplayName) }
+func (e *Unit) Name() string      { return "Unit" }
+func (e *Bool) Name() string      { return "Bool" }
+func (e *Int) Name() string       { return "Int" }
+func (e *Float) Name() string     { return "Float" }
+func (e *Not) Name() string       { return "Not" }
+func (e *Neg) Name() string       { return "Neg" }
+func (e *Add) Name() string       { return "Add" }
+func (e *Sub) Name() string       { return "Sub" }
+func (e *FNeg) Name() string      { return "FNeg" }
+func (e *FAdd) Name() string      { return "FAdd" }
+func (e *FSub) Name() string      { return "FSub" }
+func (e *FMul) Name() string      { return "FMul" }
+func (e *FDiv) Name() string      { return "FDiv" }
+func (e *Eq) Name() string        { return "Eq" }
+func (e *NotEq) Name() string     { return "NotEq" }
+func (e *Less) Name() string      { return "Less" }
+func (e *LessEq) Name() string    { return "LessEq" }
+func (e *Greater) Name() string   { return "Greater" }
+func (e *GreaterEq) Name() string { return "GreaterEq" }
+func (e *If) Name() string        { return "If" }
+func (e *Let) Name() string       { return fmt.Sprintf("Let (%s)", e.Symbol.DisplayName) }
+func (e *VarRef) Name() string    { return fmt.Sprintf("VarRef (%s)", e.Symbol.DisplayName) }
 func (e *LetRec) Name() string {
 	if len(e.Func.Params) == 0 {
 		panic("LetTuple's symbols field must not be empty")
