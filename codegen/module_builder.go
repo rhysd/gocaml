@@ -96,7 +96,7 @@ func newModuleBuilder(env *typing.Env, file *token.Source, opts EmitOptions) (*m
 
 	var debug *debugInfoBuilder = nil
 	if opts.DebugInfo {
-		debug, err = newDebugInfoBuilder(module, file, typeBuilder, targetData)
+		debug, err = newDebugInfoBuilder(module, file, typeBuilder, targetData, opts.Optimization != OptimizeNone)
 		if err != nil {
 			return nil, err
 		}

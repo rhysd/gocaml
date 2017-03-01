@@ -66,7 +66,7 @@ type debugInfoBuilder struct {
 	voidPtrInfo llvm.Metadata
 }
 
-func newDebugInfoBuilder(module llvm.Module, file *token.Source, tb *typeBuilder, target llvm.TargetData) (*debugInfoBuilder, error) {
+func newDebugInfoBuilder(module llvm.Module, file *token.Source, tb *typeBuilder, target llvm.TargetData, willOptimize bool) (*debugInfoBuilder, error) {
 	d := &debugInfoBuilder{}
 	d.typeBuilder = tb
 	d.sizes = newSizeTable(tb, target)
@@ -85,10 +85,11 @@ func newDebugInfoBuilder(module llvm.Module, file *token.Source, tb *typeBuilder
 	d.file = d.builder.CreateFile(filename, directory)
 
 	d.compileUnit = d.builder.CreateCompileUnit(llvm.DICompileUnit{
-		Language: llvm.DwarfLang(0xdead), // DW_LANG_USER (0x8000~0xFFFF)
-		File:     filename,
-		Dir:      directory,
-		Producer: "gocaml",
+		Language:  llvm.DwarfLang(0xdead), // DW_LANG_USER (0x8000~0xFFFF)
+		File:      filename,
+		Dir:       directory,
+		Producer:  "gocaml",
+		Optimized: willOptimize,
 	})
 
 	d.voidPtrInfo = d.builder.CreatePointerType(llvm.DIPointerType{
