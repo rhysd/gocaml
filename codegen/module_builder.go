@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/rhysd/gocaml/gcil"
+	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/gocaml/typing"
 	"llvm.org/llvm/bindings/go/llvm"
 )
@@ -16,6 +17,7 @@ type moduleBuilder struct {
 	context     llvm.Context
 	builder     llvm.Builder
 	typeBuilder *typeBuilder
+	debug       *debugInfoBuilder
 	attributes  map[string]llvm.Attribute
 	globalTable map[string]llvm.Value
 	funcTable   map[string]llvm.Value
@@ -50,7 +52,7 @@ func createAttributeTable(ctx llvm.Context) map[string]llvm.Attribute {
 	return attrs
 }
 
-func newModuleBuilder(env *typing.Env, name string, opts EmitOptions) (*moduleBuilder, error) {
+func newModuleBuilder(env *typing.Env, file *token.Source, opts EmitOptions) (*moduleBuilder, error) {
 	triple := opts.Triple
 	if triple == "" {
 		triple = llvm.DefaultTargetTriple()
@@ -86,9 +88,19 @@ func newModuleBuilder(env *typing.Env, name string, opts EmitOptions) (*moduleBu
 	// XXX: Should make a new instance
 	ctx := llvm.GlobalContext()
 
-	module := ctx.NewModule(name)
-	module.SetTarget(string(triple))
+	module := ctx.NewModule(file.Name)
+	module.SetTarget(triple)
 	module.SetDataLayout(dataLayout)
+
+	typeBuilder := newTypeBuilder(ctx, targetData.IntPtrType(), env)
+
+	var debug *debugInfoBuilder = nil
+	if opts.DebugInfo {
+		debug, err = newDebugInfoBuilder(module, file, typeBuilder, targetData)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	// Note:
 	// We create registers table for each blocks because closure transform
@@ -101,7 +113,8 @@ func newModuleBuilder(env *typing.Env, name string, opts EmitOptions) (*moduleBu
 		targetData,
 		ctx,
 		ctx.NewBuilder(),
-		newTypeBuilder(ctx, targetData.IntPtrType(), env),
+		typeBuilder,
+		debug,
 		createAttributeTable(ctx),
 		nil,
 		nil,
@@ -109,8 +122,11 @@ func newModuleBuilder(env *typing.Env, name string, opts EmitOptions) (*moduleBu
 	}, nil
 }
 
-func (b *moduleBuilder) Dispose() {
+func (b *moduleBuilder) dispose() {
 	b.targetData.Dispose()
+	if b.debug != nil {
+		b.debug.dispose()
+	}
 }
 
 func (b *moduleBuilder) declareExternalDecl(name string, from typing.Type) llvm.Value {
@@ -122,6 +138,9 @@ func (b *moduleBuilder) declareExternalDecl(name string, from typing.Type) llvm.
 		v := llvm.AddFunction(b.module, name, t)
 		v.SetLinkage(llvm.ExternalLinkage)
 		v.AddFunctionAttr(b.attributes["disable-tail-calls"])
+		if b.debug != nil {
+			b.debug.setFuncInfo(v, ty, 0, false, true)
+		}
 		return v
 	default:
 		t := b.typeBuilder.convertGCIL(from)
@@ -170,11 +189,11 @@ func (b *moduleBuilder) declareFun(insn gcil.FunInsn) llvm.Value {
 func (b *moduleBuilder) buildFunBody(insn gcil.FunInsn) llvm.Value {
 	name := insn.Name
 	fun := insn.Val
-	llvmFun, ok := b.funcTable[name]
+	funVal, ok := b.funcTable[name]
 	if !ok {
 		panic("Unknown function on building IR: " + name)
 	}
-	body := b.context.AddBasicBlock(llvmFun, "entry")
+	body := b.context.AddBasicBlock(funVal, "entry")
 	b.builder.SetInsertPointAtEnd(body)
 
 	blockBuilder := newBlockBuilder(b)
@@ -187,14 +206,28 @@ func (b *moduleBuilder) buildFunBody(insn gcil.FunInsn) llvm.Value {
 			// First parameter is a pointer to captures
 			i++
 		}
-		blockBuilder.registers[p] = llvmFun.Param(i)
+		blockBuilder.registers[p] = funVal.Param(i)
+	}
+
+	if b.debug != nil {
+		ty, ok := b.env.Table[name].(*typing.Fun)
+		if !ok {
+			panic("Type for function definition not found: " + name)
+		}
+		b.debug.setFuncInfo(funVal, ty, insn.Pos.Line, isClosure, false)
+		if isClosure {
+			// Note:
+			// Need to set location at first because instructions for exposing captures will get
+			// wrong source location without this.
+			b.debug.setLocation(b.builder, insn.Pos)
+		}
 	}
 
 	// Expose captures of closure
 	if isClosure {
 		if len(closure) > 0 {
 			capturesTy := llvm.PointerType(b.typeBuilder.buildClosureCaptures(name, closure), 0 /*address space*/)
-			closureVal := b.builder.CreateBitCast(llvmFun.Param(0), capturesTy, fmt.Sprintf("%s.capture", name))
+			closureVal := b.builder.CreateBitCast(funVal.Param(0), capturesTy, fmt.Sprintf("%s.capture", name))
 			for i, n := range closure {
 				ptr := b.builder.CreateStructGEP(closureVal, i, "")
 				exposed := b.builder.CreateLoad(ptr, fmt.Sprintf("%s.capture.%s", name, n))
@@ -209,10 +242,10 @@ func (b *moduleBuilder) buildFunBody(insn gcil.FunInsn) llvm.Value {
 			// We cannot use a closure object {funptr, capturesptr} instead of capturesptr for the first parameter of
 			// closure function because it will produce infinite recursive type in parameter of function type.
 			// (please see the comment in 69970b6b16d2e6765d63a16647ccea2b379433c8)
-			itselfTy := b.context.StructType([]llvm.Type{llvmFun.Type(), b.typeBuilder.voidPtrT}, false /*packed*/)
+			itselfTy := b.context.StructType([]llvm.Type{funVal.Type(), b.typeBuilder.voidPtrT}, false /*packed*/)
 			itselfVal := llvm.Undef(itselfTy)
-			itselfVal = b.builder.CreateInsertValue(itselfVal, llvmFun, 0, "")
-			itselfVal = b.builder.CreateInsertValue(itselfVal, llvmFun.Param(0), 1, "")
+			itselfVal = b.builder.CreateInsertValue(itselfVal, funVal, 0, "")
+			itselfVal = b.builder.CreateInsertValue(itselfVal, funVal.Param(0), 1, "")
 			blockBuilder.registers[name] = itselfVal
 		}
 	}
@@ -228,6 +261,12 @@ func (b *moduleBuilder) buildMain(entry *gcil.Block) {
 	funVal.AddFunctionAttr(b.attributes["ssp"])
 	funVal.AddFunctionAttr(b.attributes["uwtable"])
 	funVal.AddFunctionAttr(b.attributes["disable-tail-calls"])
+
+	if b.debug != nil {
+		pos := entry.Top.Next.Pos
+		b.debug.setMainFuncInfo(funVal, pos.Line)
+		b.debug.setLocation(b.builder, pos)
+	}
 
 	body := b.context.AddBasicBlock(funVal, "entry")
 	b.builder.SetInsertPointAtEnd(body)
@@ -290,6 +329,9 @@ func (b *moduleBuilder) build(prog *gcil.Program) error {
 	}
 
 	b.buildMain(prog.Entry)
+	if b.debug != nil {
+		b.debug.finalize()
+	}
 
 	if err := llvm.VerifyModule(b.module, llvm.ReturnStatusAction); err != nil {
 		return errors.Wrapf(err, "Error while emitting IR:\n\n%s\n", b.module.String())

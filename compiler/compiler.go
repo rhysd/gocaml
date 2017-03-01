@@ -31,6 +31,7 @@ type Compiler struct {
 	Optimization OptLevel
 	LinkFlags    string
 	TargetTriple string
+	DebugInfo    bool
 }
 
 // PrintTokens returns the lexed tokens for a source code.
@@ -132,7 +133,7 @@ func (c *Compiler) emitterFromSource(src *token.Source) (*codegen.Emitter, error
 	case O3:
 		level = codegen.OptimizeAggressive
 	}
-	opts := codegen.EmitOptions{level, c.TargetTriple, c.LinkFlags}
+	opts := codegen.EmitOptions{level, c.TargetTriple, c.LinkFlags, c.DebugInfo}
 
 	return codegen.NewEmitter(prog, env, src, opts)
 }

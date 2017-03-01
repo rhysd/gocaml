@@ -29,6 +29,7 @@ SRCS := \
 	codegen/module_builder.go \
 	codegen/type_builder.go \
 	codegen/block_builder.go \
+	codegen/debug_info_builder.go \
 	codegen/linker.go \
 
 TESTS := \
