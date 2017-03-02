@@ -198,28 +198,20 @@ func (b *moduleBuilder) buildFunBody(insn gcil.FunInsn) {
 	// Extract captured variables
 	closure, isClosure := b.closures[name]
 
+	for i, p := range fun.Params {
+		if isClosure {
+			// First parameter is a pointer to captures
+			i++
+		}
+		blockBuilder.registers[p] = funVal.Param(i)
+	}
+
 	if b.debug != nil {
 		ty, ok := b.env.Table[name].(*typing.Fun)
 		if !ok {
 			panic("Type for function definition not found: " + name)
 		}
 		b.debug.setFuncInfo(funVal, ty, insn.Pos.Line, isClosure)
-	}
-
-	for i, p := range fun.Params {
-		if isClosure {
-			// First parameter is a pointer to captures
-			i++
-		}
-		pVal := funVal.Param(i)
-		blockBuilder.registers[p] = pVal
-		if b.debug != nil {
-			ty, ok := b.env.Table[p]
-			if !ok {
-				panic("Type for parameter not found: " + p)
-			}
-			// b.debug.insertParamInfo(pVal, insn.Pos.Line, ty, i, body)
-		}
 	}
 
 	// Expose captures of closure

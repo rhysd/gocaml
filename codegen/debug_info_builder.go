@@ -192,18 +192,6 @@ func (d *debugInfoBuilder) typeInfo(ty typing.Type) llvm.Metadata {
 	}
 }
 
-func (d *debugInfoBuilder) insertParamInfo(val llvm.Value, line int, ty typing.Type, index int, block llvm.BasicBlock) {
-	info := d.builder.CreateParameterVariable(d.scope, llvm.DIParameterVariable{
-		Name:  val.Name(),
-		File:  d.file,
-		Line:  line,
-		Type:  d.typeInfo(ty),
-		ArgNo: index + 1, // 1-based in LLVM API
-	})
-	expr := d.builder.CreateExpression([]int64{})
-	d.builder.InsertDeclareAtEnd(val, info, expr, block)
-}
-
 func (d *debugInfoBuilder) setMainFuncInfo(mainfun llvm.Value, line int) {
 	voidInfo := llvm.Metadata{}
 	info := d.builder.CreateSubroutineType(llvm.DISubroutineType{d.file, []llvm.Metadata{voidInfo}})
