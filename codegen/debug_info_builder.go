@@ -64,6 +64,7 @@ type debugInfoBuilder struct {
 	typeBuilder *typeBuilder
 	sizes       *sizeTable
 	voidPtrInfo llvm.Metadata
+	module      llvm.Module
 }
 
 func newDebugInfoBuilder(module llvm.Module, file *token.Source, tb *typeBuilder, target llvm.TargetData, willOptimize bool) (*debugInfoBuilder, error) {
@@ -71,6 +72,7 @@ func newDebugInfoBuilder(module llvm.Module, file *token.Source, tb *typeBuilder
 	d.typeBuilder = tb
 	d.sizes = newSizeTable(tb, target)
 	d.builder = llvm.NewDIBuilder(module)
+	d.module = module
 
 	filename := file.Name
 	directory := ""
@@ -190,10 +192,22 @@ func (d *debugInfoBuilder) typeInfo(ty typing.Type) llvm.Metadata {
 	}
 }
 
+func (d *debugInfoBuilder) insertParamInfo(val llvm.Value, line int, ty typing.Type, index int, block llvm.BasicBlock) {
+	info := d.builder.CreateParameterVariable(d.scope, llvm.DIParameterVariable{
+		Name:  val.Name(),
+		File:  d.file,
+		Line:  line,
+		Type:  d.typeInfo(ty),
+		ArgNo: index + 1, // 1-based in LLVM API
+	})
+	expr := d.builder.CreateExpression([]int64{})
+	d.builder.InsertDeclareAtEnd(val, info, expr, block)
+}
+
 func (d *debugInfoBuilder) setMainFuncInfo(mainfun llvm.Value, line int) {
 	voidInfo := llvm.Metadata{}
 	info := d.builder.CreateSubroutineType(llvm.DISubroutineType{d.file, []llvm.Metadata{voidInfo}})
-	meta := d.builder.CreateFunction(d.compileUnit, llvm.DIFunction{
+	meta := d.builder.CreateFunction(d.file, llvm.DIFunction{
 		Name:         "main",
 		LinkageName:  "main",
 		Line:         line,
@@ -208,8 +222,8 @@ func (d *debugInfoBuilder) setFuncInfo(funptr llvm.Value, ty *typing.Fun, line i
 	// Note:
 	// All functions are at toplevel, so any function will be never nested in others.
 	name := funptr.Name()
-	meta := d.builder.CreateFunction(d.compileUnit, llvm.DIFunction{
-		Name:         name, // XXX: Should show unmangled name (e.g. f$t1 -> f)?
+	meta := d.builder.CreateFunction(d.file, llvm.DIFunction{
+		Name:         name,
 		LinkageName:  name,
 		Line:         line,
 		Type:         d.funcTypeInfo(ty, isClosure),
@@ -227,7 +241,34 @@ func (d *debugInfoBuilder) setLocation(b llvm.Builder, pos token.Position) {
 	b.SetCurrentDebugLocation(uint(pos.Line), uint(pos.Column), scope, llvm.Metadata{})
 }
 
+func (d *debugInfoBuilder) clearLocation(b llvm.Builder) {
+	b.SetCurrentDebugLocation(0, 0, llvm.Metadata{}, llvm.Metadata{})
+}
+
 func (d *debugInfoBuilder) finalize() {
+	context := d.module.Context()
+	d.module.AddNamedMetadataOperand(
+		"llvm.module.flags",
+		context.MDNode([]llvm.Metadata{
+			llvm.ConstInt(llvm.Int32Type(), 2, false).ConstantAsMetadata(), // Warn on mismatch
+			context.MDString("Dwarf Version"),
+			llvm.ConstInt(llvm.Int32Type(), 4, false).ConstantAsMetadata(),
+		}),
+	)
+	d.module.AddNamedMetadataOperand(
+		"llvm.module.flags",
+		context.MDNode([]llvm.Metadata{
+			llvm.ConstInt(llvm.Int32Type(), 1, false).ConstantAsMetadata(), // Error on mismatch
+			context.MDString("Debug Info Version"),
+			llvm.ConstInt(llvm.Int32Type(), 3, false).ConstantAsMetadata(),
+		}),
+	)
+	d.module.AddNamedMetadataOperand(
+		"llvm.ident",
+		context.MDNode([]llvm.Metadata{
+			context.MDString("GoCaml compiler version 0.0.0"),
+		}),
+	)
 	d.builder.Finalize()
 }
 

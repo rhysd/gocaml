@@ -183,7 +183,7 @@ func (b *moduleBuilder) declareFun(insn gcil.FunInsn) llvm.Value {
 	return v
 }
 
-func (b *moduleBuilder) buildFunBody(insn gcil.FunInsn) llvm.Value {
+func (b *moduleBuilder) buildFunBody(insn gcil.FunInsn) {
 	name := insn.Name
 	fun := insn.Val
 	funVal, ok := b.funcTable[name]
@@ -198,25 +198,27 @@ func (b *moduleBuilder) buildFunBody(insn gcil.FunInsn) llvm.Value {
 	// Extract captured variables
 	closure, isClosure := b.closures[name]
 
-	for i, p := range fun.Params {
-		if isClosure {
-			// First parameter is a pointer to captures
-			i++
-		}
-		blockBuilder.registers[p] = funVal.Param(i)
-	}
-
 	if b.debug != nil {
 		ty, ok := b.env.Table[name].(*typing.Fun)
 		if !ok {
 			panic("Type for function definition not found: " + name)
 		}
 		b.debug.setFuncInfo(funVal, ty, insn.Pos.Line, isClosure)
+	}
+
+	for i, p := range fun.Params {
 		if isClosure {
-			// Note:
-			// Need to set location at first because instructions for exposing captures will get
-			// wrong source location without this.
-			b.debug.setLocation(b.builder, insn.Pos)
+			// First parameter is a pointer to captures
+			i++
+		}
+		pVal := funVal.Param(i)
+		blockBuilder.registers[p] = pVal
+		if b.debug != nil {
+			ty, ok := b.env.Table[p]
+			if !ok {
+				panic("Type for parameter not found: " + p)
+			}
+			// b.debug.insertParamInfo(pVal, insn.Pos.Line, ty, i, body)
 		}
 	}
 
@@ -248,7 +250,10 @@ func (b *moduleBuilder) buildFunBody(insn gcil.FunInsn) llvm.Value {
 	}
 
 	lastVal := blockBuilder.buildBlock(fun.Body)
-	return b.builder.CreateRet(lastVal)
+	b.builder.CreateRet(lastVal)
+	if b.debug != nil {
+		b.debug.clearLocation(b.builder)
+	}
 }
 
 func (b *moduleBuilder) buildMain(entry *gcil.Block) {
@@ -262,7 +267,6 @@ func (b *moduleBuilder) buildMain(entry *gcil.Block) {
 	if b.debug != nil {
 		pos := entry.Top.Next.Pos
 		b.debug.setMainFuncInfo(funVal, pos.Line)
-		b.debug.setLocation(b.builder, pos)
 	}
 
 	body := b.context.AddBasicBlock(funVal, "entry")
@@ -278,6 +282,9 @@ func (b *moduleBuilder) buildMain(entry *gcil.Block) {
 	builder.buildBlock(entry)
 
 	b.builder.CreateRet(llvm.ConstInt(int32T, 0, true))
+	if b.debug != nil {
+		b.debug.clearLocation(b.builder)
+	}
 }
 
 func (b *moduleBuilder) buildLibgcFuncDecls() {
