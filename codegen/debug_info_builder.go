@@ -95,7 +95,7 @@ func newDebugInfoBuilder(module llvm.Module, file *token.Source, tb *typeBuilder
 	})
 
 	d.voidPtrInfo = d.builder.CreatePointerType(llvm.DIPointerType{
-		Pointee:     d.builder.CreateBasicType(llvm.DIBasicType{}),
+		Pointee:     d.builder.CreateBasicType(llvm.DIBasicType{Name: "void"}),
 		SizeInBits:  d.sizes.ptrSize.allocInBits,
 		AlignInBits: d.sizes.ptrSize.alignInBits,
 		Name:        "captures",
@@ -193,13 +193,15 @@ func (d *debugInfoBuilder) typeInfo(ty typing.Type) llvm.Metadata {
 }
 
 func (d *debugInfoBuilder) setMainFuncInfo(mainfun llvm.Value, line int) {
-	voidInfo := llvm.Metadata{}
+	voidInfo := d.builder.CreateBasicType(llvm.DIBasicType{Name: "void"})
 	info := d.builder.CreateSubroutineType(llvm.DISubroutineType{d.file, []llvm.Metadata{voidInfo}})
 	meta := d.builder.CreateFunction(d.file, llvm.DIFunction{
 		Name:         "main",
 		LinkageName:  "main",
 		Line:         line,
+		ScopeLine:    line,
 		Type:         info,
+		File:         d.file,
 		IsDefinition: true,
 	})
 	mainfun.SetSubprogram(meta)
@@ -214,7 +216,9 @@ func (d *debugInfoBuilder) setFuncInfo(funptr llvm.Value, ty *typing.Fun, line i
 		Name:         name,
 		LinkageName:  name,
 		Line:         line,
+		ScopeLine:    line,
 		Type:         d.funcTypeInfo(ty, isClosure),
+		File:         d.file,
 		IsDefinition: true,
 	})
 	funptr.SetSubprogram(meta)
