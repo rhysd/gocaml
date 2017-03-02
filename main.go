@@ -19,6 +19,7 @@ var (
 	opt        = flag.Int("opt", -1, "Optimization level (0~3). 0: none, 1: less, 2: default, 3: aggressive")
 	obj        = flag.Bool("obj", false, "Compile to object file")
 	ldflags    = flag.String("ldflags", "", "Flags passed to underlying linker")
+	debug      = flag.Bool("g", false, "Compile with debug information")
 )
 
 const usageHeader = `Usage: gocaml [flags] [file]
@@ -86,6 +87,7 @@ func main() {
 		Optimization: getOptLevel(),
 		TargetTriple: "",
 		LinkFlags:    *ldflags,
+		DebugInfo:    *debug,
 	}
 
 	switch {

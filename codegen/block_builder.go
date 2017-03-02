@@ -402,6 +402,9 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 }
 
 func (b *blockBuilder) buildInsn(insn *gcil.Insn) llvm.Value {
+	if b.debug != nil {
+		b.debug.setLocation(b.builder, insn.Pos)
+	}
 	v := b.buildVal(insn.Ident, insn.Val)
 	b.registers[insn.Ident] = v
 	return v

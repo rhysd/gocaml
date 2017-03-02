@@ -90,7 +90,7 @@ func (e *emitter) emitFunInsn(node *ast.LetRec) *Insn {
 	}
 
 	e.types.Table[name] = ty
-	insn := NewInsn(name, val)
+	insn := NewInsn(name, val, node.Pos())
 
 	body := e.emitInsn(node.Body)
 	body.Append(insn)
@@ -118,6 +118,7 @@ func (e *emitter) emitLetTupleInsn(node *ast.LetTuple) *Insn {
 				From:  bound.Ident,
 				Index: i,
 			},
+			node.Pos(),
 		), insn)
 	}
 
@@ -302,7 +303,7 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 	}
 	id := e.genID()
 	e.types.Table[id] = ty
-	return Concat(NewInsn(id, val), prev)
+	return Concat(NewInsn(id, val, node.Pos()), prev)
 }
 
 // Return Block instance and its type

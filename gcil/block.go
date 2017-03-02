@@ -52,6 +52,10 @@
 //
 package gcil
 
+import (
+	"github.com/rhysd/gocaml/token"
+)
+
 // Block struct represents basic block.
 // It has a name and instruction sequence to execute.
 // Note that top and bottom of the sequence are always NOP instruction in order to
@@ -63,9 +67,9 @@ type Block struct {
 }
 
 func NewBlock(name string, top, bottom *Insn) *Block {
-	start := &Insn{"", NOPVal, top, nil}
+	start := &Insn{"", NOPVal, top, nil, token.Position{}}
 	top.Prev = start
-	end := &Insn{"", NOPVal, nil, bottom}
+	end := &Insn{"", NOPVal, nil, bottom, token.Position{}}
 	bottom.Next = end
 	return &Block{start, end, name}
 }
@@ -114,6 +118,7 @@ type Insn struct {
 	Val   Val
 	Next  *Insn
 	Prev  *Insn
+	Pos   token.Position
 }
 
 func (insn *Insn) Last() *Insn {
@@ -137,8 +142,8 @@ func (insn *Insn) RemoveFromList() {
 	insn.Prev.Next = insn.Next
 }
 
-func NewInsn(n string, v Val) *Insn {
-	return &Insn{n, v, nil, nil}
+func NewInsn(n string, v Val, pos token.Position) *Insn {
+	return &Insn{n, v, nil, nil, pos}
 }
 
 func Concat(a, b *Insn) *Insn {

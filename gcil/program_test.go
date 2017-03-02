@@ -2,6 +2,7 @@ package gcil
 
 import (
 	"bytes"
+	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/gocaml/typing"
 	"strings"
 	"testing"
@@ -9,10 +10,10 @@ import (
 
 func TestDump(t *testing.T) {
 	prog := &Program{
-		map[string]*Fun{},
+		NewToplevel(),
 		map[string][]string{},
 		NewBlockFromArray("program", []*Insn{
-			NewInsn("$k1", UnitVal),
+			NewInsn("$k1", UnitVal, token.Position{}),
 		}),
 	}
 

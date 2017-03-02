@@ -31,6 +31,7 @@ type EmitOptions struct {
 	Optimization OptLevel
 	Triple       string
 	LinkerFlags  string
+	DebugInfo    bool
 }
 
 type Emitter struct {
@@ -129,7 +130,7 @@ func (emitter *Emitter) EmitExecutable(executable string) (err error) {
 }
 
 func NewEmitter(prog *gcil.Program, env *typing.Env, src *token.Source, opts EmitOptions) (*Emitter, error) {
-	builder, err := newModuleBuilder(env, src.Name, opts)
+	builder, err := newModuleBuilder(env, src, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +138,7 @@ func NewEmitter(prog *gcil.Program, env *typing.Env, src *token.Source, opts Emi
 	if err = builder.build(prog); err != nil {
 		return nil, err
 	}
-	defer builder.Dispose()
+	defer builder.dispose()
 
 	return &Emitter{
 		opts,

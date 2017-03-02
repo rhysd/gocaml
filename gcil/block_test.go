@@ -1,12 +1,13 @@
 package gcil
 
 import (
+	"github.com/rhysd/gocaml/token"
 	"testing"
 )
 
 func TestLast(t *testing.T) {
-	i1 := &Insn{"test1", nil, nil, nil}
-	i2 := &Insn{"test1", nil, i1, nil}
+	i1 := &Insn{"test1", nil, nil, nil, token.Position{}}
+	i2 := &Insn{"test1", nil, i1, nil, token.Position{}}
 	i1.Prev = i2
 
 	if i1 != i2.Last() {
@@ -19,12 +20,12 @@ func TestLast(t *testing.T) {
 }
 
 func TestInsnAppend(t *testing.T) {
-	i1 := &Insn{"test1", nil, nil, nil}
-	i2 := &Insn{"test2", nil, i1, nil}
+	i1 := &Insn{"test1", nil, nil, nil, token.Position{}}
+	i2 := &Insn{"test2", nil, i1, nil, token.Position{}}
 	i1.Prev = i2
 
-	i3 := &Insn{"test3", nil, nil, nil}
-	i4 := &Insn{"test4", nil, i3, nil}
+	i3 := &Insn{"test3", nil, nil, nil, token.Position{}}
+	i4 := &Insn{"test4", nil, i3, nil, token.Position{}}
 	i3.Prev = i4
 
 	i2.Append(i4)
@@ -44,12 +45,12 @@ func TestInsnAppend(t *testing.T) {
 }
 
 func TestConcat(t *testing.T) {
-	i1 := &Insn{"test1", nil, nil, nil}
-	i2 := &Insn{"test2", nil, i1, nil}
+	i1 := &Insn{"test1", nil, nil, nil, token.Position{}}
+	i2 := &Insn{"test2", nil, i1, nil, token.Position{}}
 	i1.Prev = i2
 
-	i3 := &Insn{"test3", nil, nil, nil}
-	i4 := &Insn{"test4", nil, i3, nil}
+	i3 := &Insn{"test3", nil, nil, nil, token.Position{}}
+	i4 := &Insn{"test4", nil, i3, nil, token.Position{}}
 	i3.Prev = i4
 
 	i5 := Concat(i2, i4)
@@ -69,8 +70,8 @@ func TestConcat(t *testing.T) {
 }
 
 func TestReverse(t *testing.T) {
-	i1 := &Insn{"test1", nil, nil, nil}
-	i2 := &Insn{"test1", nil, i1, nil}
+	i1 := &Insn{"test1", nil, nil, nil, token.Position{}}
+	i2 := &Insn{"test1", nil, i1, nil, token.Position{}}
 	i1.Prev = i2
 
 	i3 := Reverse(i2)
@@ -103,8 +104,8 @@ func TestEmptyArrayFail(t *testing.T) {
 }
 
 func TestBlockPrepend(t *testing.T) {
-	i := NewInsn("$k1", UnitVal)
-	j := NewInsn("$k2", UnitVal)
+	i := NewInsn("$k1", UnitVal, token.Position{})
+	j := NewInsn("$k2", UnitVal, token.Position{})
 	b := NewBlockFromArray("test", []*Insn{i})
 	b.Prepend(j)
 	if j.Next != i || i.Prev != j || j.Prev != b.Top || b.Top.Next != j {
@@ -113,8 +114,8 @@ func TestBlockPrepend(t *testing.T) {
 }
 
 func TestBlockAppend(t *testing.T) {
-	i := NewInsn("$k1", UnitVal)
-	j := NewInsn("$k2", UnitVal)
+	i := NewInsn("$k1", UnitVal, token.Position{})
+	j := NewInsn("$k2", UnitVal, token.Position{})
 	b := NewBlockFromArray("test", []*Insn{i})
 	b.Append(j)
 	if i.Next != j || j.Prev != i || b.Bottom.Prev != j || j.Next != b.Bottom {
