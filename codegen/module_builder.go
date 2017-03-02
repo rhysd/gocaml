@@ -138,9 +138,6 @@ func (b *moduleBuilder) declareExternalDecl(name string, from typing.Type) llvm.
 		v := llvm.AddFunction(b.module, name, t)
 		v.SetLinkage(llvm.ExternalLinkage)
 		v.AddFunctionAttr(b.attributes["disable-tail-calls"])
-		if b.debug != nil {
-			b.debug.setFuncInfo(v, ty, 0, false, true)
-		}
 		return v
 	default:
 		t := b.typeBuilder.convertGCIL(from)
@@ -214,7 +211,7 @@ func (b *moduleBuilder) buildFunBody(insn gcil.FunInsn) llvm.Value {
 		if !ok {
 			panic("Type for function definition not found: " + name)
 		}
-		b.debug.setFuncInfo(funVal, ty, insn.Pos.Line, isClosure, false)
+		b.debug.setFuncInfo(funVal, ty, insn.Pos.Line, isClosure)
 		if isClosure {
 			// Note:
 			// Need to set location at first because instructions for exposing captures will get

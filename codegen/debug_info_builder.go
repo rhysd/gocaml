@@ -204,7 +204,7 @@ func (d *debugInfoBuilder) setMainFuncInfo(mainfun llvm.Value, line int) {
 	d.scope = meta
 }
 
-func (d *debugInfoBuilder) setFuncInfo(funptr llvm.Value, ty *typing.Fun, line int, isClosure bool, isDecl bool) {
+func (d *debugInfoBuilder) setFuncInfo(funptr llvm.Value, ty *typing.Fun, line int, isClosure bool) {
 	// Note:
 	// All functions are at toplevel, so any function will be never nested in others.
 	name := funptr.Name()
@@ -213,12 +213,10 @@ func (d *debugInfoBuilder) setFuncInfo(funptr llvm.Value, ty *typing.Fun, line i
 		LinkageName:  name,
 		Line:         line,
 		Type:         d.funcTypeInfo(ty, isClosure),
-		IsDefinition: !isDecl,
+		IsDefinition: true,
 	})
-	if !isDecl {
-		funptr.SetSubprogram(meta)
-		d.scope = meta
-	}
+	funptr.SetSubprogram(meta)
+	d.scope = meta
 }
 
 func (d *debugInfoBuilder) setLocation(b llvm.Builder, pos token.Position) {
