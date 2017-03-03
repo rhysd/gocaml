@@ -11,7 +11,7 @@ import (
 
 func TestLexingOK(t *testing.T) {
 	for _, testdir := range []string{
-		"../testdata/basic",
+		"../testdata/syntax",
 		"../testdata/from-mincaml/",
 	} {
 		files, err := ioutil.ReadDir(filepath.FromSlash(testdir))

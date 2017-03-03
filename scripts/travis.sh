@@ -28,6 +28,6 @@ else
     go test -v ./...
     make cover.out
     go tool cover -func cover.out
-    goveralls -coverprofile cover.out -service=travis-ci -repotoken $COVERALLS_TOKEN
+    goveralls -coverprofile cover.out -service=travis-ci
 fi
 
