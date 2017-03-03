@@ -80,8 +80,12 @@ func (b *blockBuilder) buildArrayMalloc(ty llvm.Type, numElems llvm.Value, name 
 func (b *blockBuilder) buildEq(ty typing.Type, icmp llvm.IntPredicate, fcmp llvm.FloatPredicate, lhs, rhs llvm.Value, name string) llvm.Value {
 	switch ty := ty.(type) {
 	case *typing.Unit:
-		// `() = ()` is always true.
-		return llvm.ConstInt(b.typeBuilder.boolT, 1, false /*sign extend*/)
+		// `() = ()` is always true and `() <> ()` will never be true.
+		i := uint64(1)
+		if icmp == llvm.IntNE {
+			i = 0
+		}
+		return llvm.ConstInt(b.typeBuilder.boolT, i, false /*sign extend*/)
 	case *typing.Bool, *typing.Int:
 		return b.builder.CreateICmp(icmp, lhs, rhs, name)
 	case *typing.Float:

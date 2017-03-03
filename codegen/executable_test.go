@@ -40,7 +40,7 @@ func TestExecutable(t *testing.T) {
 			}
 		}
 		if expect == "" {
-			panic(fmt.Sprintf("Expected output file '%s.expected' was not found for code '%s'", base, input))
+			panic(fmt.Sprintf("Expected output file '%s' was not found for code '%s'", outputFile, input))
 		}
 		t.Run(base, func(t *testing.T) {
 			s, err := token.NewSourceFromFile(input)
