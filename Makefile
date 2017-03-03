@@ -57,6 +57,7 @@ TESTS := \
 	gcil/from_ast_test.go \
 	gcil/elim_ref_test.go \
 	gcil/program_test.go \
+	codegen/example_test.go \
 
 all: build test
 

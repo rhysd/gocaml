@@ -27,16 +27,10 @@ print_int (gcd 21600 337500)
 - [x] GoCaml intermediate language (GCIL) ([doc][gcil doc])
 - [x] K normalization from AST into GCIL ([doc][gcil doc])
 - [x] Closure transform ([doc][closure doc])
-- Optimizations
-  - [ ] Beta reduction
-  - [ ] Inlining
-  - [ ] Folding constants
-  - [ ] Striping unused variables
-  - [ ] Reduce `()` type to `void`
-  - [x] LLVM IR optimization passes
-- [x] Code generation using [LLVM][]
+- [x] Code generation (LLVM IR, assembly, object, executable) using [LLVM][] ([doc][codegen doc])
+- [x] LLVM IR level optimization passes
 - [x] Garbage collection with [Boehm GC][]
-- [ ] Debug information (DWARF) using LLVM's Debug Info builder
+- [x] Debug information (DWARF) using LLVM's Debug Info builder
 
 ## Difference from original MinCaml
 
@@ -99,6 +93,37 @@ $ brew install bdw-gc
 
 `gocaml` command is available to compile sources. Please refer `gocaml -help`.
 
+```
+Usage: gocaml [flags] [file]
+
+  Compiler for GoCaml.
+  When file is given as argument, compiler will targets it. Otherwise, compiler
+  attempt to read from STDIN as source code to target.
+
+Flags:
+  -asm
+    	Emit assembler code to stdout
+  -ast
+    	Show AST for input
+  -externals
+    	Display external symbols
+  -g	Compile with debug information
+  -gcil
+    	Emit GoCaml Intermediate Language representation to stdout
+  -help
+    	Show this help
+  -ldflags string
+    	Flags passed to underlying linker
+  -llvm
+    	Emit LLVM IR to stdout
+  -obj
+    	Compile to object file
+  -opt int
+    	Optimization level (0~3). 0: none, 1: less, 2: default, 3: aggressive (default -1)
+  -tokens
+    	Show tokens for input
+```
+
 Compiled code will be linked to [small runtime][]. In runtime, some functions are defined to print values and it includes
 `<stdlib.h>` and `<stdio.h>`. So you can use them from GoCaml codes.
 
@@ -154,6 +179,7 @@ After the command, you can find `test` executable. Executing by `./test` will sh
 [alpha transform doc]: https://godoc.org/github.com/rhysd/gocaml/alpha
 [gcil doc]: https://godoc.org/github.com/rhysd/gocaml/gcil
 [closure doc]: https://godoc.org/github.com/rhysd/gocaml/closure
+[codegen doc]: https://godoc.org/github.com/rhysd/gocaml/codegen
 [MinCaml spec]: http://esumii.github.io/min-caml/paper.pdf
 [Boehm GC]: https://github.com/ivmai/bdwgc
 [Coverage Status]: https://coveralls.io/repos/github/rhysd/gocaml/badge.svg

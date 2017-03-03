@@ -1,3 +1,7 @@
+// Package codegen provides code generation of GoCaml language.
+//
+// GCIL compilation unit is compiled to an LLVM IR, an assembly, an object then finally linked to an executable.
+// You can add many optimizations and debug information (DWARF).
 package codegen
 
 import (
@@ -21,19 +25,30 @@ func init() {
 type OptLevel int
 
 const (
+	// Equivalent to -O0
 	OptimizeNone OptLevel = iota
+	// Equivalent to -O1
 	OptimizeLess
+	// Equivalent to -O2
 	OptimizeDefault
+	// Equivalent to -O3
 	OptimizeAggressive
 )
 
+// Options to customize emitter behavior
 type EmitOptions struct {
+	// Determines how many optimizations are added
 	Optimization OptLevel
-	Triple       string
-	LinkerFlags  string
-	DebugInfo    bool
+	// Target triple "{arch}-{vendor}-{sys}"
+	// https://clang.llvm.org/docs/CrossCompilation.html#target-triple
+	Triple string
+	// Additional linker flags used at linking generated object files
+	LinkerFlags string
+	// Generate debug information or not. If true, debug information will be added and you can debug the generated executable with debugger like an LLDB.
+	DebugInfo bool
 }
 
+// Emitter object to emit LLVM IR, object file, assembly or executable.
 type Emitter struct {
 	EmitOptions
 	GCIL     *gcil.Program
@@ -44,6 +59,8 @@ type Emitter struct {
 	Disposed bool
 }
 
+// Finalization for internal module and target machine.
+// You need to call this with defer statement.
 func (emitter *Emitter) Dispose() {
 	if emitter.Disposed {
 		return
@@ -53,6 +70,7 @@ func (emitter *Emitter) Dispose() {
 	emitter.Disposed = true
 }
 
+// Passes optimizations on generated LLVM IR module following specified optimization level.
 func (emitter *Emitter) RunOptimizationPasses() {
 	if emitter.Optimization == OptimizeNone {
 		return
@@ -89,10 +107,12 @@ func (emitter *Emitter) RunOptimizationPasses() {
 	modPasses.Run(emitter.Module)
 }
 
+// Returns LLVM IR as string.
 func (emitter *Emitter) EmitLLVMIR() string {
 	return emitter.Module.String()
 }
 
+// Returns assembly code as string.
 func (emitter *Emitter) EmitAsm() (string, error) {
 	buf, err := emitter.Machine.EmitToMemoryBuffer(emitter.Module, llvm.AssemblyFile)
 	if err != nil {
@@ -103,6 +123,7 @@ func (emitter *Emitter) EmitAsm() (string, error) {
 	return asm, nil
 }
 
+// Returns object file contents as byte sequence.
 func (emitter *Emitter) EmitObject() ([]byte, error) {
 	buf, err := emitter.Machine.EmitToMemoryBuffer(emitter.Module, llvm.ObjectFile)
 	if err != nil {
@@ -113,6 +134,7 @@ func (emitter *Emitter) EmitObject() ([]byte, error) {
 	return obj, nil
 }
 
+// Create executable file with specified name. This is the final result of compilation!
 func (emitter *Emitter) EmitExecutable(executable string) (err error) {
 	objfile := fmt.Sprintf("_%s.o", executable)
 	obj, err := emitter.EmitObject()
@@ -129,6 +151,7 @@ func (emitter *Emitter) EmitExecutable(executable string) (err error) {
 	return
 }
 
+// Creates new emitter object.
 func NewEmitter(prog *gcil.Program, env *typing.Env, src *token.Source, opts EmitOptions) (*Emitter, error) {
 	builder, err := newModuleBuilder(env, src, opts)
 	if err != nil {
