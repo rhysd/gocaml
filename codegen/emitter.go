@@ -39,7 +39,7 @@ const (
 type EmitOptions struct {
 	// Determines how many optimizations are added
 	Optimization OptLevel
-	// Target triple "{arch}-{vendor}-{sys}"
+	// Target triple "{arch}-{vendor}-{sys}". Empty string means a default target on your machine.
 	// https://clang.llvm.org/docs/CrossCompilation.html#target-triple
 	Triple string
 	// Additional linker flags used at linking generated object files
@@ -136,7 +136,7 @@ func (emitter *Emitter) EmitObject() ([]byte, error) {
 
 // Create executable file with specified name. This is the final result of compilation!
 func (emitter *Emitter) EmitExecutable(executable string) (err error) {
-	objfile := fmt.Sprintf("_%s.o", executable)
+	objfile := fmt.Sprintf("%s.tmp.o", executable)
 	obj, err := emitter.EmitObject()
 	if err != nil {
 		return

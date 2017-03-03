@@ -55,7 +55,7 @@ func Example() {
 	// Make options to emit the result
 	options := EmitOptions{
 		Optimization: OptimizeDefault,             // Optimization level
-		Triple:       "x86_64-apple-darwin16.4.0", // Compilation target
+		Triple:       "x86_64-apple-darwin16.4.0", // Compilation target (Empty string means default target on your machine)
 		DebugInfo:    true,                        // Add debug information to the result or not
 	}
 
