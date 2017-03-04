@@ -11,7 +11,7 @@ func TestLinkFailed(t *testing.T) {
 	if err == nil {
 		t.Fatalf("Expected error not occurred")
 	}
-	if !strings.HasPrefix("Linker command failed: ", err.Error()) {
+	if !strings.HasPrefix(err.Error(), "Linker command failed: ") {
 		t.Fatalf("Unexpected error message '%s'", err.Error())
 	}
 }

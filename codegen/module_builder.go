@@ -34,6 +34,7 @@ func createAttributeTable(ctx llvm.Context) map[string]llvm.Attribute {
 		"inlinehint",
 		"ssp",
 		"uwtable",
+		"alwaysinline",
 	} {
 		kind := llvm.AttributeKindID(attr)
 		attrs[attr] = ctx.CreateEnumAttribute(kind, 0)
@@ -129,25 +130,60 @@ func (b *moduleBuilder) dispose() {
 	}
 }
 
-func (b *moduleBuilder) declareExternalDecl(name string, from typing.Type) llvm.Value {
+func (b *moduleBuilder) buildExternalClosureBody(closureVal, funVal llvm.Value, funTy *typing.Fun) {
+	if b.debug != nil {
+		b.debug.clearLocation(b.builder)
+	}
+	body := b.context.AddBasicBlock(closureVal, "entry")
+	b.builder.SetInsertPointAtEnd(body)
+	lenArgs := len(funTy.Params)
+	args := make([]llvm.Value, 0, lenArgs)
+	for i := 0; i < lenArgs; i++ {
+		args = append(args, closureVal.Param(i+1))
+	}
+	ret := b.builder.CreateCall(funVal, args, "")
+	if funTy.Ret == typing.UnitType {
+		// When the external function returns void
+		ret = llvm.ConstNamedStruct(b.typeBuilder.unitT, []llvm.Value{})
+	}
+	b.builder.CreateRet(ret)
+}
+
+func (b *moduleBuilder) buildExternalDecl(name string, from typing.Type) {
 	switch ty := from.(type) {
 	case *typing.Var:
 		panic("unreachable") // because type variables are dereferenced at type analysis
 	case *typing.Fun:
-		t := b.typeBuilder.buildExternalFun(ty)
-		v := llvm.AddFunction(b.module, name, t)
-		v.SetLinkage(llvm.ExternalLinkage)
-		v.AddFunctionAttr(b.attributes["disable-tail-calls"])
-		return v
+		// Make a declaration for the external symbol function
+		funTy, clsTy := b.typeBuilder.buildExternalFun(ty)
+		funVal := llvm.AddFunction(b.module, name, funTy)
+		funVal.SetLinkage(llvm.ExternalLinkage)
+		funVal.AddFunctionAttr(b.attributes["disable-tail-calls"])
+		b.globalTable[name] = funVal
+
+		// Wrap as a closure for ethe external symbol function.
+		// This is necessary when the external symbol function is used as a variable.
+		// In GoCaml, all function variable falls back into closure value.
+		// External symbol function should also be closure in the case.
+		clsName := name + "$closure"
+		clsVal := llvm.AddFunction(b.module, clsName, clsTy)
+		clsVal.SetLinkage(llvm.PrivateLinkage)
+		clsVal.AddFunctionAttr(b.attributes["alwaysinline"])
+		clsVal.AddFunctionAttr(b.attributes["nounwind"])
+		clsVal.AddFunctionAttr(b.attributes["ssp"])
+		clsVal.AddFunctionAttr(b.attributes["uwtable"])
+		clsVal.AddFunctionAttr(b.attributes["disable-tail-calls"])
+		b.funcTable[clsName] = clsVal
+		b.buildExternalClosureBody(clsVal, funVal, ty)
 	default:
 		t := b.typeBuilder.convertGCIL(from)
 		v := llvm.AddGlobal(b.module, t, name)
 		v.SetLinkage(llvm.ExternalLinkage)
-		return v
+		b.globalTable[name] = v
 	}
 }
 
-func (b *moduleBuilder) declareFun(insn gcil.FunInsn) llvm.Value {
+func (b *moduleBuilder) buildFuncDecl(insn gcil.FunInsn) {
 	name := insn.Name
 	_, isClosure := b.closures[name]
 	found, ok := b.env.Table[name]
@@ -174,13 +210,16 @@ func (b *moduleBuilder) declareFun(insn gcil.FunInsn) llvm.Value {
 		index++
 	}
 
+	// Currently GoCaml does not have modules. So all functions are private.
+	v.SetLinkage(llvm.PrivateLinkage)
+
 	v.AddFunctionAttr(b.attributes["inlinehint"])
 	v.AddFunctionAttr(b.attributes["nounwind"])
 	v.AddFunctionAttr(b.attributes["ssp"])
 	v.AddFunctionAttr(b.attributes["uwtable"])
 	v.AddFunctionAttr(b.attributes["disable-tail-calls"])
 
-	return v
+	b.funcTable[name] = v
 }
 
 func (b *moduleBuilder) buildFunBody(insn gcil.FunInsn) {
@@ -308,16 +347,18 @@ func (b *moduleBuilder) build(prog *gcil.Program) error {
 	// Note:
 	// Currently global variables are external symbols only.
 	b.globalTable = make(map[string]llvm.Value, len(b.env.Externals)+2 /* 2 = libgc functions */)
+	// Note:
+	// Closures for external functions are also defined.
+	b.funcTable = make(map[string]llvm.Value, len(prog.Toplevel)+len(b.env.Externals))
 
 	b.buildLibgcFuncDecls()
 	for name, ty := range b.env.Externals {
-		b.globalTable[name] = b.declareExternalDecl(name, ty)
+		b.buildExternalDecl(name, ty)
 	}
 
 	b.closures = prog.Closures
-	b.funcTable = make(map[string]llvm.Value, len(prog.Toplevel))
-	for name, fun := range prog.Toplevel {
-		b.funcTable[name] = b.declareFun(fun)
+	for _, fun := range prog.Toplevel {
+		b.buildFuncDecl(fun)
 	}
 
 	for _, fun := range prog.Toplevel {

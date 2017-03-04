@@ -117,7 +117,7 @@ func TestEmitUnoptimizedLLVMIR(t *testing.T) {
 		t.Fatal(err)
 	}
 	ir := e.EmitLLVMIR()
-	if !strings.Contains(ir, `define i64 @"f$t1"(i64 %"x$t2")`) {
+	if !strings.Contains(ir, `define private i64 @"f$t1"(i64 %"x$t2")`) {
 		t.Fatalf("Function 'f' was inlined with OptimizeNone config: %s", ir)
 	}
 }
