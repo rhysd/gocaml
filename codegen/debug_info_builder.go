@@ -112,6 +112,18 @@ func (d *debugInfoBuilder) basicTypeInfo(ty typing.Type, enc llvm.DwarfTypeEncod
 	})
 }
 
+func (d *debugInfoBuilder) closureTypeInfo(ty *typing.Fun) llvm.Metadata {
+	funPtr := d.pointerOf(d.funcTypeInfo(ty, true), "")
+	size := d.sizes.sizeOf(ty)
+	return d.builder.CreateStructType(d.compileUnit, llvm.DIStructType{
+		Name:        ty.String(),
+		File:        d.file,
+		SizeInBits:  size.allocInBits,
+		AlignInBits: size.alignInBits,
+		Elements:    []llvm.Metadata{funPtr, d.voidPtrInfo},
+	})
+}
+
 func (d *debugInfoBuilder) funcTypeInfo(ty *typing.Fun, isClosure bool) llvm.Metadata {
 	length := len(ty.Params) + 1
 	if isClosure {
@@ -161,11 +173,11 @@ func (d *debugInfoBuilder) typeInfo(ty typing.Type) llvm.Metadata {
 			Elements:    []llvm.Metadata{},
 		})
 	case *typing.Fun:
-		return d.funcTypeInfo(ty, false /*XXX: Is this correct?*/)
+		return d.closureTypeInfo(ty)
 	case *typing.Array:
 		size := d.sizes.sizeOf(ty)
 		elems := []llvm.Metadata{d.pointerOf(d.typeInfo(ty.Elem), ""), d.basicTypeInfo(typing.IntType, llvm.DW_ATE_signed)}
-		return d.builder.CreateStructType(d.scope, llvm.DIStructType{
+		return d.builder.CreateStructType(d.compileUnit, llvm.DIStructType{
 			Name:        ty.String(),
 			File:        d.file,
 			SizeInBits:  size.allocInBits,
@@ -179,7 +191,7 @@ func (d *debugInfoBuilder) typeInfo(ty typing.Type) llvm.Metadata {
 			elems = append(elems, d.typeInfo(e))
 		}
 		name := ty.String()
-		allocated := d.builder.CreateStructType(d.scope, llvm.DIStructType{
+		allocated := d.builder.CreateStructType(d.compileUnit, llvm.DIStructType{
 			Name:        name,
 			File:        d.file,
 			SizeInBits:  size.allocInBits,
