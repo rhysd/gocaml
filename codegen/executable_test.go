@@ -96,7 +96,10 @@ func TestExecutable(t *testing.T) {
 			if err != nil {
 				panic(err)
 			}
-			want := string(bytes[:len(bytes)-1]) // Trim EOL (newline at the end of file)
+			want := ""
+			if len(bytes) > 0 {
+				want = string(bytes[:len(bytes)-1]) // Trim EOL (newline at the end of file)
+			}
 
 			if got != want {
 				t.Fatalf("Unexpected output from executable:\n\nGot: '%s'\nWant: '%s'", got, want)

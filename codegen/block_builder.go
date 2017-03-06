@@ -298,34 +298,40 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 			panic("Type of array literal is not array")
 		}
 
+		// Copy second argument to all elements of allocated array
+		// Initialize array object {ptr, size}
 		elemTy := b.typeBuilder.convertGCIL(t.Elem)
 		ptr := b.builder.CreateAlloca(b.typeBuilder.convertGCIL(t), ident)
 
 		sizeVal := b.resolve(val.Size)
 		arrVal := b.buildArrayMalloc(elemTy, sizeVal, "array.ptr")
-
 		arrPtr := b.builder.CreateStructGEP(ptr, 0, "")
 		b.builder.CreateStore(arrVal, arrPtr)
 
-		// Copy second argument to all elements of allocated array
+		// Prepare 2nd argument value and iteration variable for the loop
 		elemVal := b.resolve(val.Elem)
 		iterPtr := b.builder.CreateAlloca(b.typeBuilder.intT, "arr.init.iter")
 		b.builder.CreateStore(llvm.ConstInt(b.typeBuilder.intT, 0, false), iterPtr)
 
+		// Start of the initialization loop
 		parent := b.builder.GetInsertBlock().Parent()
+		condBlock := llvm.AddBasicBlock(parent, "arr.init.cond")
 		loopBlock := llvm.AddBasicBlock(parent, "arr.init.setelem")
 		endBlock := llvm.AddBasicBlock(parent, "arr.init.end")
-
-		b.builder.CreateBr(loopBlock)
-		b.builder.SetInsertPointAtEnd(loopBlock)
+		b.builder.CreateBr(condBlock)
+		b.builder.SetInsertPointAtEnd(condBlock)
 
 		iterVal := b.builder.CreateLoad(iterPtr, "")
+		compVal := b.builder.CreateICmp(llvm.IntEQ, iterVal, sizeVal, "")
+		b.builder.CreateCondBr(compVal, endBlock, loopBlock)
+
+		// Copy 2nd argument to each element
+		b.builder.SetInsertPointAtEnd(loopBlock)
 		elemPtr := b.builder.CreateInBoundsGEP(arrVal, []llvm.Value{iterVal}, "")
 		b.builder.CreateStore(elemVal, elemPtr)
 		iterVal = b.builder.CreateAdd(iterVal, llvm.ConstInt(b.typeBuilder.intT, 1, false), "arr.init.inc")
 		b.builder.CreateStore(iterVal, iterPtr)
-		compVal := b.builder.CreateICmp(llvm.IntEQ, iterVal, sizeVal, "")
-		b.builder.CreateCondBr(compVal, endBlock, loopBlock)
+		b.builder.CreateBr(condBlock)
 
 		// No need to use endBlock.MoveAfter() because no block was inserted
 		// between loopBlock and endBlock
