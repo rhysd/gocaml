@@ -14,8 +14,8 @@ import (
 	"testing"
 )
 
-func testCreateEmitter(optimize OptLevel, debug bool) (e *Emitter, err error) {
-	s := token.NewDummySource("let rec f x = x + x in println_int (f 42)")
+func testCreateEmitter(code string, optimize OptLevel, debug bool) (e *Emitter, err error) {
+	s := token.NewDummySource(code)
 	l := lexer.NewLexer(s)
 	go l.Lex()
 	root, err := parser.Parse(l.Tokens)
@@ -45,10 +45,11 @@ func testCreateEmitter(optimize OptLevel, debug bool) (e *Emitter, err error) {
 }
 
 func TestEmitLLVMIR(t *testing.T) {
-	e, err := testCreateEmitter(OptimizeDefault, false)
+	e, err := testCreateEmitter("let rec f x = x + x in println_int (f 42)", OptimizeDefault, false)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer e.Dispose()
 	ir := e.EmitLLVMIR()
 	if !strings.Contains(ir, "ModuleID = 'dummy'") {
 		t.Fatalf("Module ID is not contained: %s", ir)
@@ -59,10 +60,11 @@ func TestEmitLLVMIR(t *testing.T) {
 }
 
 func TestEmitAssembly(t *testing.T) {
-	e, err := testCreateEmitter(OptimizeDefault, false)
+	e, err := testCreateEmitter("let rec f x = x + x in println_int (f 42)", OptimizeDefault, false)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer e.Dispose()
 	asm, err := e.EmitAsm()
 	if err != nil {
 		t.Fatal(err)
@@ -73,10 +75,11 @@ func TestEmitAssembly(t *testing.T) {
 }
 
 func TestEmitObject(t *testing.T) {
-	e, err := testCreateEmitter(OptimizeDefault, false)
+	e, err := testCreateEmitter("let rec f x = x + x in println_int (f 42)", OptimizeDefault, false)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer e.Dispose()
 	obj, err := e.EmitObject()
 	if err != nil {
 		t.Fatal(err)
@@ -87,10 +90,11 @@ func TestEmitObject(t *testing.T) {
 }
 
 func TestEmitExecutable(t *testing.T) {
-	e, err := testCreateEmitter(OptimizeDefault, false)
+	e, err := testCreateEmitter("let rec f x = x + x in println_int (f 42)", OptimizeDefault, false)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer e.Dispose()
 	outfile, err := filepath.Abs("__test_a.out")
 	if err != nil {
 		panic(err)
@@ -112,10 +116,11 @@ func TestEmitExecutable(t *testing.T) {
 }
 
 func TestEmitUnoptimizedLLVMIR(t *testing.T) {
-	e, err := testCreateEmitter(OptimizeNone, false)
+	e, err := testCreateEmitter("let rec f x = x + x in println_int (f 42)", OptimizeNone, false)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer e.Dispose()
 	ir := e.EmitLLVMIR()
 	if !strings.Contains(ir, `define private i64 @"f$t1"(i64 %"x$t2")`) {
 		t.Fatalf("Function 'f' was inlined with OptimizeNone config: %s", ir)
@@ -123,12 +128,60 @@ func TestEmitUnoptimizedLLVMIR(t *testing.T) {
 }
 
 func TestEmitLLVMIRWithDebugInfo(t *testing.T) {
-	e, err := testCreateEmitter(OptimizeNone, true)
+	e, err := testCreateEmitter("let rec f x = x + x in println_int (f 42)", OptimizeNone, true)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer e.Dispose()
 	ir := e.EmitLLVMIR()
 	if !strings.Contains(ir, "!llvm.dbg.cu = ") {
 		t.Fatalf("Debug information is not contained: %s", ir)
 	}
+}
+
+func TestEmitOptimizedAggressive(t *testing.T) {
+	e, err := testCreateEmitter("let rec f x = x + x in println_int (f 42)", OptimizeAggressive, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer e.Dispose()
+	ir := e.EmitLLVMIR()
+	if strings.Contains(ir, `define private i64 @"f$t1"(i64 %"x$t2")`) {
+		t.Fatalf("Function 'f' was not inlined with OptimizeAggressive config: %s", ir)
+	}
+}
+
+func TestEmitIRContainingExternalSymbols(t *testing.T) {
+	e, err := testCreateEmitter("x; y; f (x + y)", OptimizeDefault, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer e.Dispose()
+	ir := e.EmitLLVMIR()
+	expects := []string{
+		"@x = external local_unnamed_addr global i64",
+		"@y = external local_unnamed_addr global i64",
+		"declare void @f(i64)",
+	}
+	for _, expect := range expects {
+		if !strings.Contains(ir, expect) {
+			t.Errorf("IR does not contain external symbol declaration '%s': %s", expect, ir)
+		}
+	}
+}
+
+func TestDisposeEmitter(t *testing.T) {
+	e, err := testCreateEmitter("x; y; f (x + y); g (x < y)", OptimizeDefault, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if e.Disposed {
+		t.Fatal("Unexpectedly emitter was disposed")
+	}
+	e.Dispose()
+	if !e.Disposed {
+		t.Fatal("Emitter was not disposed by calling emitter.Dispose()")
+	}
+	// Do not crash when it's called twice
+	e.Dispose()
 }

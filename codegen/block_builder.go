@@ -39,9 +39,10 @@ func newBlockBuilder(b *moduleBuilder) *blockBuilder {
 }
 
 func (b *blockBuilder) resolve(ident string) llvm.Value {
-	if glob, ok := b.globalTable[ident]; ok {
-		return b.builder.CreateLoad(glob, ident)
-	}
+	// Note:
+	// No need to check b.globalTable because there is no global variable in GoCaml.
+	// Functions and external symbols are treated as global variable. But they are directly referred
+	// in builder. So we don't need to check global variables generally here.
 	if reg, ok := b.registers[ident]; ok {
 		return reg
 	}
@@ -52,26 +53,10 @@ func (b *blockBuilder) typeOf(ident string) typing.Type {
 	if t, ok := b.env.Table[ident]; ok {
 		return t
 	}
-	if t, ok := b.env.Externals[ident]; ok {
-		return t
-	}
+	// Note:
+	// b.env.Table() now contains types for all identifiers of external symbols.
+	// So we don't need to check b.env.Externals to know type of identifier.
 	panic("Type was not found for ident: " + ident)
-}
-
-func (b *blockBuilder) isClosure(name string) bool {
-	if _, ok := b.env.Externals[name]; ok {
-		return false
-	}
-	if _, ok := b.closures[name]; ok {
-		return true
-	}
-	if _, ok := b.funcTable[name]; ok {
-		// It's function name, but not a closure. So it must be known function.
-		return false
-	}
-	// It's not an external symbol, closure nor known function. So it must be a function variable.
-	// All function variables are closures. So it should return true here.
-	return true
 }
 
 func (b *blockBuilder) buildMallocRaw(ty llvm.Type, sizeVal llvm.Value, name string) llvm.Value {
