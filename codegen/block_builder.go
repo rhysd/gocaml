@@ -7,6 +7,26 @@ import (
 	"llvm.org/llvm/bindings/go/llvm"
 )
 
+func getOpCmpPredicate(op gcil.OperatorKind) (llvm.IntPredicate, llvm.FloatPredicate, string) {
+	switch op {
+	case gcil.LT:
+		// SLT = Signed Less Than, OLT = Ordered and Less Than
+		return llvm.IntSLT, llvm.FloatOLT, "less"
+	case gcil.LTE:
+		return llvm.IntSLE, llvm.FloatOLE, "lesseq"
+	case gcil.GT:
+		return llvm.IntSGT, llvm.FloatOGT, "greater"
+	case gcil.GTE:
+		return llvm.IntSGE, llvm.FloatOGE, "greatereq"
+	case gcil.EQ:
+		return llvm.IntEQ, llvm.FloatOEQ, "eql"
+	case gcil.NEQ:
+		return llvm.IntNE, llvm.FloatONE, "neq"
+	default:
+		panic("unreachable")
+	}
+}
+
 type blockBuilder struct {
 	*moduleBuilder
 	registers map[string]llvm.Value
@@ -19,9 +39,10 @@ func newBlockBuilder(b *moduleBuilder) *blockBuilder {
 }
 
 func (b *blockBuilder) resolve(ident string) llvm.Value {
-	if glob, ok := b.globalTable[ident]; ok {
-		return b.builder.CreateLoad(glob, ident)
-	}
+	// Note:
+	// No need to check b.globalTable because there is no global variable in GoCaml.
+	// Functions and external symbols are treated as global variable. But they are directly referred
+	// in builder. So we don't need to check global variables generally here.
 	if reg, ok := b.registers[ident]; ok {
 		return reg
 	}
@@ -32,26 +53,10 @@ func (b *blockBuilder) typeOf(ident string) typing.Type {
 	if t, ok := b.env.Table[ident]; ok {
 		return t
 	}
-	if t, ok := b.env.Externals[ident]; ok {
-		return t
-	}
+	// Note:
+	// b.env.Table() now contains types for all identifiers of external symbols.
+	// So we don't need to check b.env.Externals to know type of identifier.
 	panic("Type was not found for ident: " + ident)
-}
-
-func (b *blockBuilder) isClosure(name string) bool {
-	if _, ok := b.env.Externals[name]; ok {
-		return false
-	}
-	if _, ok := b.closures[name]; ok {
-		return true
-	}
-	if _, ok := b.funcTable[name]; ok {
-		// It's function name, but not a closure. So it must be known function.
-		return false
-	}
-	// It's not an external symbol, closure nor known function. So it must be a function variable.
-	// All function variables are closures. So it should return true here.
-	return true
 }
 
 func (b *blockBuilder) buildMallocRaw(ty llvm.Type, sizeVal llvm.Value, name string) llvm.Value {
@@ -77,11 +82,17 @@ func (b *blockBuilder) buildArrayMalloc(ty llvm.Type, numElems llvm.Value, name 
 	return b.buildMallocRaw(ty, sizeVal, name)
 }
 
-func (b *blockBuilder) buildEq(ty typing.Type, icmp llvm.IntPredicate, fcmp llvm.FloatPredicate, lhs, rhs llvm.Value, name string) llvm.Value {
+func (b *blockBuilder) buildEq(ty typing.Type, op *gcil.Binary, lhs, rhs llvm.Value) llvm.Value {
+	icmp, fcmp, name := getOpCmpPredicate(op.Op)
+
 	switch ty := ty.(type) {
 	case *typing.Unit:
-		// `() = ()` is always true.
-		return llvm.ConstInt(b.typeBuilder.boolT, 1, false /*sign extend*/)
+		// `() = ()` is always true and `() <> ()` will never be true.
+		i := uint64(1)
+		if op.Op == gcil.NEQ {
+			i = 0
+		}
+		return llvm.ConstInt(b.typeBuilder.boolT, i, false /*sign extend*/)
 	case *typing.Bool, *typing.Int:
 		return b.builder.CreateICmp(icmp, lhs, rhs, name)
 	case *typing.Float:
@@ -91,7 +102,7 @@ func (b *blockBuilder) buildEq(ty typing.Type, icmp llvm.IntPredicate, fcmp llvm
 		for i, elemTy := range ty.Elems {
 			l := b.builder.CreateLoad(b.builder.CreateStructGEP(lhs, i, "tpl.left"), "")
 			r := b.builder.CreateLoad(b.builder.CreateStructGEP(rhs, i, "tpl.right"), "")
-			elemCmp := b.buildEq(elemTy, icmp, fcmp, l, r, name)
+			elemCmp := b.buildEq(elemTy, op, l, r)
 			if cmp.C == nil {
 				cmp = elemCmp
 			} else {
@@ -114,8 +125,9 @@ func (b *blockBuilder) buildEq(ty typing.Type, icmp llvm.IntPredicate, fcmp llvm
 	}
 }
 
-func (b *blockBuilder) buildLess(ipred llvm.IntPredicate, fpred llvm.FloatPredicate, leftIdent string, lhs, rhs llvm.Value, name string) llvm.Value {
-	lty := b.typeOf(leftIdent)
+func (b *blockBuilder) buildLess(val *gcil.Binary, lhs, rhs llvm.Value) llvm.Value {
+	lty := b.typeOf(val.Lhs)
+	ipred, fpred, name := getOpCmpPredicate(val.Op)
 	switch lty.(type) {
 	case *typing.Int:
 		return b.builder.CreateICmp(ipred, lhs, rhs, name)
@@ -168,32 +180,10 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 			return b.builder.CreateFMul(lhs, rhs, "fmul")
 		case gcil.FDIV:
 			return b.builder.CreateFDiv(lhs, rhs, "fdiv")
-		case gcil.LT:
-			return b.buildLess(
-				llvm.IntSLT,   /*Signed Less Than*/
-				llvm.FloatOLT, /*Ordered and Less Than*/
-				val.Lhs,
-				lhs,
-				rhs,
-				"less",
-			)
-		case gcil.LTE:
-			return b.buildLess(
-				llvm.IntSLE,   /*Signed Less Equal*/
-				llvm.FloatOLE, /*Ordered and Less Equal*/
-				val.Lhs,
-				lhs,
-				rhs,
-				"lesseq",
-			)
-		case gcil.GT:
-			return b.buildLess(llvm.IntSGT, llvm.FloatOGT, val.Lhs, lhs, rhs, "gt")
-		case gcil.GTE:
-			return b.buildLess(llvm.IntSGE, llvm.FloatOGE, val.Lhs, lhs, rhs, "gte")
-		case gcil.EQ:
-			return b.buildEq(b.typeOf(val.Lhs), llvm.IntEQ, llvm.FloatOEQ, lhs, rhs, "eql")
-		case gcil.NEQ:
-			return b.buildEq(b.typeOf(val.Lhs), llvm.IntNE, llvm.FloatONE, lhs, rhs, "neq")
+		case gcil.LT, gcil.LTE, gcil.GT, gcil.GTE:
+			return b.buildLess(val, lhs, rhs)
+		case gcil.EQ, gcil.NEQ:
+			return b.buildEq(b.typeOf(val.Lhs), val, lhs, rhs)
 		default:
 			panic("unreachable")
 		}
@@ -293,34 +283,40 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 			panic("Type of array literal is not array")
 		}
 
+		// Copy second argument to all elements of allocated array
+		// Initialize array object {ptr, size}
 		elemTy := b.typeBuilder.convertGCIL(t.Elem)
 		ptr := b.builder.CreateAlloca(b.typeBuilder.convertGCIL(t), ident)
 
 		sizeVal := b.resolve(val.Size)
 		arrVal := b.buildArrayMalloc(elemTy, sizeVal, "array.ptr")
-
 		arrPtr := b.builder.CreateStructGEP(ptr, 0, "")
 		b.builder.CreateStore(arrVal, arrPtr)
 
-		// Copy second argument to all elements of allocated array
+		// Prepare 2nd argument value and iteration variable for the loop
 		elemVal := b.resolve(val.Elem)
 		iterPtr := b.builder.CreateAlloca(b.typeBuilder.intT, "arr.init.iter")
 		b.builder.CreateStore(llvm.ConstInt(b.typeBuilder.intT, 0, false), iterPtr)
 
+		// Start of the initialization loop
 		parent := b.builder.GetInsertBlock().Parent()
+		condBlock := llvm.AddBasicBlock(parent, "arr.init.cond")
 		loopBlock := llvm.AddBasicBlock(parent, "arr.init.setelem")
 		endBlock := llvm.AddBasicBlock(parent, "arr.init.end")
-
-		b.builder.CreateBr(loopBlock)
-		b.builder.SetInsertPointAtEnd(loopBlock)
+		b.builder.CreateBr(condBlock)
+		b.builder.SetInsertPointAtEnd(condBlock)
 
 		iterVal := b.builder.CreateLoad(iterPtr, "")
+		compVal := b.builder.CreateICmp(llvm.IntEQ, iterVal, sizeVal, "")
+		b.builder.CreateCondBr(compVal, endBlock, loopBlock)
+
+		// Copy 2nd argument to each element
+		b.builder.SetInsertPointAtEnd(loopBlock)
 		elemPtr := b.builder.CreateInBoundsGEP(arrVal, []llvm.Value{iterVal}, "")
 		b.builder.CreateStore(elemVal, elemPtr)
 		iterVal = b.builder.CreateAdd(iterVal, llvm.ConstInt(b.typeBuilder.intT, 1, false), "arr.init.inc")
 		b.builder.CreateStore(iterVal, iterPtr)
-		compVal := b.builder.CreateICmp(llvm.IntEQ, iterVal, sizeVal, "")
-		b.builder.CreateCondBr(compVal, endBlock, loopBlock)
+		b.builder.CreateBr(condBlock)
 
 		// No need to use endBlock.MoveAfter() because no block was inserted
 		// between loopBlock and endBlock
@@ -349,11 +345,31 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		elemPtr := b.builder.CreateInBoundsGEP(arrPtr, []llvm.Value{idxVal}, "")
 		return b.builder.CreateStore(rhsVal, elemPtr)
 	case *gcil.XRef:
-		x, ok := b.globalTable[val.Ident]
+		ty, ok := b.env.Externals[val.Ident]
 		if !ok {
-			panic("Value for external value not found: " + val.Ident)
+			panic("Type for external value not found: " + val.Ident)
 		}
-		return b.builder.CreateLoad(x, val.Ident)
+
+		if _, ok := ty.(*typing.Fun); !ok {
+			x, ok := b.globalTable[val.Ident]
+			if !ok {
+				panic("Value for external value not found: " + val.Ident)
+			}
+			return b.builder.CreateLoad(x, val.Ident)
+		}
+
+		// When external function is used as variable, it must be wrapped as closure
+		// instead of global value itself.
+		clsName := val.Ident + "$closure"
+		funVal, ok := b.funcTable[clsName]
+		if !ok {
+			panic("Closure for external function not found: " + clsName)
+		}
+		clsTy := b.context.StructType([]llvm.Type{funVal.Type(), b.typeBuilder.voidPtrT}, false /*packed*/)
+		alloc := b.builder.CreateAlloca(clsTy, "")
+		funPtr := b.builder.CreateStructGEP(alloc, 0, "")
+		b.builder.CreateStore(funVal, funPtr)
+		return b.builder.CreateLoad(alloc, val.Ident+".cls")
 	case *gcil.MakeCls:
 		closure, ok := b.closures[val.Fun]
 		if !ok {

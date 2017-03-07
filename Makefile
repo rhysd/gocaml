@@ -57,6 +57,7 @@ TESTS := \
 	gcil/from_ast_test.go \
 	gcil/elim_ref_test.go \
 	gcil/program_test.go \
+	codegen/example_test.go \
 
 all: build test
 
@@ -81,13 +82,13 @@ test: $(TESTS)
 
 cover.out: $(TESTS)
 	go get github.com/haya14busa/goverage
-	goverage -coverprofile cover.out ./alpha ./ast ./gcil ./closure ./lexer ./parser ./token ./typing
+	goverage -coverprofile cover.out ./alpha ./ast ./gcil ./closure ./lexer ./parser ./token ./typing ./codegen
 
 cov: cover.out
 	go get golang.org/x/tools/cmd/cover
 	go tool cover -html=cover.out
 
 clean:
-	rm -f gocaml y.output parser/grammar.go runtime/gocamlrt.o runtime/gocamlrt.a
+	rm -f gocaml y.output parser/grammar.go runtime/gocamlrt.o runtime/gocamlrt.a cover.out cpu.out
 
 .PHONY: all build clean test cov

@@ -15,6 +15,7 @@ import (
 	"github.com/rhysd/gocaml/typing"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 )
 
 type OptLevel int
@@ -186,7 +187,10 @@ func (c *Compiler) Compile(source *token.Source) error {
 	if source.Exists {
 		executable = source.BaseName()
 	} else {
-		executable = "a.out"
+		executable, err = filepath.Abs("a.out")
+		if err != nil {
+			return err
+		}
 	}
 	return emitter.EmitExecutable(executable)
 }
