@@ -23,4 +23,4 @@ cache:
   directories:
     - $GOPATH/src/llvm.org/llvm
     - $GOPATH/pkg/linux_amd64/llvm.org/llvm
-    - llvm-4.0.0-rc2-workaround
+    - llvm-4.0.0-rc3-workaround
