@@ -97,6 +97,10 @@ func TestPrintAST(t *testing.T) {
 						&Int{tok, 1},
 						&Int{tok, 2},
 					},
+					&Mul{
+						&Int{tok, 1},
+						&Int{tok, 2},
+					},
 				},
 			},
 			&LetRec{
@@ -189,6 +193,9 @@ func TestPrintAST(t *testing.T) {
 -   -   -   -   -   Int (0:0-0:0)
 -   -   -   -   -   Int (0:0-0:0)
 -   -   -   -   GreaterEq (0:0-0:0)
+-   -   -   -   -   Int (0:0-0:0)
+-   -   -   -   -   Int (0:0-0:0)
+-   -   -   -   Mul (0:0-0:0)
 -   -   -   -   -   Int (0:0-0:0)
 -   -   -   -   -   Int (0:0-0:0)
 -   -   -   LetRec (fun f a) (0:0-0:0)

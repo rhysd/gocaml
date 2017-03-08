@@ -48,6 +48,7 @@ const (
 	DOT
 	LESS_MINUS
 	SEMICOLON
+	STAR
 	EOF
 )
 
@@ -85,6 +86,7 @@ var tokenTable = [...]string{
 	DOT:           ".",
 	LESS_MINUS:    "<-",
 	SEMICOLON:     ";",
+	STAR:          "*",
 }
 
 // Token instance for GoCaml.

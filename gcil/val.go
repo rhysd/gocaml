@@ -19,6 +19,7 @@ const (
 	FNEG
 	ADD
 	SUB
+	MUL
 	FADD
 	FSUB
 	FMUL
@@ -37,6 +38,7 @@ var OpTable = [...]string{
 	FNEG: "-.",
 	ADD:  "+",
 	SUB:  "-",
+	MUL:  "*",
 	FADD: "+.",
 	FSUB: "-.",
 	FMUL: "*.",

@@ -59,11 +59,14 @@ func TestEmitInsn(t *testing.T) {
 		},
 		{
 			"binary int op",
-			"1 + 2",
+			"1 + 2; 1 * 2",
 			[]string{
 				"int 1 ; type=int",
 				"int 2 ; type=int",
 				"binary + $k1 $k2 ; type=int",
+				"int 1 ; type=int",
+				"int 2 ; type=int",
+				"binary * $k4 $k5 ; type=int",
 			},
 		},
 		{

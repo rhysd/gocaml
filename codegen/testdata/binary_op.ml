@@ -24,4 +24,5 @@ println_int ((1 + 2) - (3 + 4));
 println_bool ((1 - 2) = (3 - 4));
 println_bool ((1 - 2) > (3 - 6));
 println_bool (() <> ());
+println_int (3 * 9);
 print_bool (() = ())

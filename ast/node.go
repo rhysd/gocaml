@@ -108,6 +108,11 @@ type (
 		Right Expr
 	}
 
+	Mul struct {
+		Left  Expr
+		Right Expr
+	}
+
 	FNeg struct {
 		MinusToken *token.Token
 		Child      Expr
@@ -278,6 +283,13 @@ func (e *Sub) End() token.Position {
 	return e.Right.End()
 }
 
+func (e *Mul) Pos() token.Position {
+	return e.Left.Pos()
+}
+func (e *Mul) End() token.Position {
+	return e.Right.End()
+}
+
 func (e *FNeg) Pos() token.Position {
 	return e.MinusToken.Start
 }
@@ -436,6 +448,7 @@ func (e *Not) Name() string       { return "Not" }
 func (e *Neg) Name() string       { return "Neg" }
 func (e *Add) Name() string       { return "Add" }
 func (e *Sub) Name() string       { return "Sub" }
+func (e *Mul) Name() string       { return "Mul" }
 func (e *FNeg) Name() string      { return "FNeg" }
 func (e *FAdd) Name() string      { return "FAdd" }
 func (e *FSub) Name() string      { return "FSub" }
