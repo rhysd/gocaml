@@ -230,9 +230,7 @@ func lexAdditiveOp(l *Lexer) stateFn {
 func lexMultOp(l *Lexer) stateFn {
 	op, dot := token.STAR, token.STAR_DOT
 	if l.top == '/' {
-		// TODO: Add
-		// op = token.SLASH
-		dot = token.SLASH_DOT
+		op, dot = token.SLASH, token.SLASH_DOT
 	}
 	l.eat()
 

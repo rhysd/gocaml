@@ -20,6 +20,7 @@ const (
 	ADD
 	SUB
 	MUL
+	DIV
 	FADD
 	FSUB
 	FMUL
@@ -39,6 +40,7 @@ var OpTable = [...]string{
 	ADD:  "+",
 	SUB:  "-",
 	MUL:  "*",
+	DIV:  "/",
 	FADD: "+.",
 	FSUB: "-.",
 	FMUL: "*.",

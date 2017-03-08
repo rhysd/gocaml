@@ -40,6 +40,9 @@ func printExpr(e Expr, indent int) {
 	case *Mul:
 		printExpr(n.Left, i)
 		printExpr(n.Right, i)
+	case *Div:
+		printExpr(n.Left, i)
+		printExpr(n.Right, i)
 	case *FNeg:
 		printExpr(n.Child, i)
 	case *FAdd:

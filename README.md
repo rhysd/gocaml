@@ -39,7 +39,8 @@ print_int (gcd 21600 337500)
   When you use nested external functions call, you need to clarify the return type of inner function call. For example, when `f` in
   `g (f ())` returns `int`, you need to show it like `g ((f ()) + 0)`.
 - MinCaml allows `-` unary operator for float literal. So for example `-3.14` is valid but `-f` (where `f` is `float`) is not valid.
-  GoCaml does not allow `-` unary operator for float values totally.
+  GoCaml does not allow `-` unary operator for float values totally. You need to use `-.` unary operator instead (e.g. `-.3.14`).
+- GoCaml adds more operators. `*` and `/` for integers.
 
 ## Requirements
 

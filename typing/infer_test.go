@@ -58,6 +58,11 @@ func TestInvalidExpressions(t *testing.T) {
 			expected: "Type mismatch between 'int' and 'float'",
 		},
 		{
+			what:     "/ with float",
+			code:     "1.0 / 2.0",
+			expected: "Type mismatch between 'int' and 'float'",
+		},
+		{
 			what:     "'not' with non-bool value",
 			code:     "not 42",
 			expected: "Type mismatch between 'bool' and 'int'",

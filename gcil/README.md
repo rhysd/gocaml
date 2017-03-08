@@ -56,7 +56,7 @@ Variable names follow below naming convention.
 | `int {constant}`          | Create an integer value                                                                         |
 | `float {constant}`        | Create an floating point number value                                                           |
 | `unary {op} {id}`         | Apply unary operator to `{id}`. `{op}` is `-` or `not` or `-.`.                                 |
-| `binary {op} {id} {id}`   | Apply binary operator                                                                           |
+| `binary {op} {id} {id}`   | Apply binary operator. Two `{id}`s are lhs and rhs for the operation.                           |
 | `ref {id}`                | Reference to `{id}` variable.                                                                   |
 | `if {id} {block} {block}` | When `{id}` is true, then enter to first `{block}` . Otherwise inter to second `{block}`.       |
 | `fun {ids...} {block}`    | Function. {ids...} are comma separated parameter IDs. `{block}` is its body.                    |

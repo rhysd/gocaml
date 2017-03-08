@@ -28,6 +28,9 @@ func Visit(v Visitor, e Expr) {
 	case *Mul:
 		Visit(v, n.Left)
 		Visit(v, n.Right)
+	case *Div:
+		Visit(v, n.Left)
+		Visit(v, n.Right)
 	case *FNeg:
 		Visit(v, n.Child)
 	case *FAdd:
