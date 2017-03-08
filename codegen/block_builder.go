@@ -188,6 +188,10 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 			return b.buildLess(val, lhs, rhs)
 		case gcil.EQ, gcil.NEQ:
 			return b.buildEq(b.typeOf(val.Lhs), val, lhs, rhs)
+		case gcil.AND:
+			return b.builder.CreateAnd(lhs, rhs, "andl")
+		case gcil.OR:
+			return b.builder.CreateOr(lhs, rhs, "orl")
 		default:
 			panic("unreachable")
 		}

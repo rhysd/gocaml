@@ -105,6 +105,14 @@ func TestPrintAST(t *testing.T) {
 						&Int{tok, 1},
 						&Int{tok, 2},
 					},
+					&And{
+						&Bool{tok, true},
+						&Bool{tok, false},
+					},
+					&Or{
+						&Bool{tok, true},
+						&Bool{tok, false},
+					},
 				},
 			},
 			&LetRec{
@@ -205,6 +213,12 @@ func TestPrintAST(t *testing.T) {
 -   -   -   -   Div (0:0-0:0)
 -   -   -   -   -   Int (0:0-0:0)
 -   -   -   -   -   Int (0:0-0:0)
+-   -   -   -   And (0:0-0:0)
+-   -   -   -   -   Bool (0:0-0:0)
+-   -   -   -   -   Bool (0:0-0:0)
+-   -   -   -   Or (0:0-0:0)
+-   -   -   -   -   Bool (0:0-0:0)
+-   -   -   -   -   Bool (0:0-0:0)
 -   -   -   LetRec (fun f a) (0:0-0:0)
 -   -   -   -   VarRef (a) (0:0-0:0)
 -   -   -   -   If (0:0-0:0)

@@ -244,6 +244,24 @@ func lexMultOp(l *Lexer) stateFn {
 	return lex
 }
 
+func lexLogicalOp(l *Lexer) stateFn {
+	op := token.BAR_BAR
+	prev := l.top
+	if prev == '&' {
+		op = token.AND_AND
+	}
+	l.eat()
+
+	if prev != l.top {
+		l.expected(fmt.Sprintf("logical operator %s%s", prev, prev), l.top)
+		return nil
+	}
+	l.eat()
+	l.emit(op)
+
+	return lex
+}
+
 func lexLess(l *Lexer) stateFn {
 	l.eat()
 	switch l.top {
@@ -393,6 +411,10 @@ func lex(l *Lexer) stateFn {
 		case ';':
 			l.eat()
 			l.emit(token.SEMICOLON)
+		case '|':
+			return lexLogicalOp
+		case '&':
+			return lexLogicalOp
 		default:
 			switch {
 			case unicode.IsSpace(l.top):

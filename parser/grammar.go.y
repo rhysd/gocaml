@@ -56,12 +56,16 @@ import (
 %token<token> SEMICOLON
 %token<token> STAR
 %token<token> SLASH
+%token<token> BAR_BAR
+%token<token> AND_AND
 
 %right prec_let
 %right SEMICOLON
 %right prec_if
 %right LESS_MINUS
 %left COMMA
+%left BAR_BAR
+%left AND_AND
 %left EQUAL LESS_GREATER LESS GREATER LESS_EQUAL GREATER_EQUAL
 %left PLUS MINUS PLUS_DOT MINUS_DOT
 %left STAR SLASH STAR_DOT SLASH_DOT
@@ -117,6 +121,10 @@ exp:
 		{ $$ = &ast.LessEq{$1, $3} }
 	| exp GREATER_EQUAL exp
 		{ $$ = &ast.GreaterEq{$1, $3} }
+	| exp AND_AND exp
+		{ $$ = &ast.And{$1, $3} }
+	| exp BAR_BAR exp
+		{ $$ = &ast.Or{$1, $3} }
 	| IF exp THEN exp ELSE exp
 		%prec prec_if
 		{ $$ = &ast.If{$1, $2, $4, $6} }

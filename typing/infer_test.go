@@ -103,6 +103,21 @@ func TestInvalidExpressions(t *testing.T) {
 			expected: "Type mismatch between 'int' and 'bool'",
 		},
 		{
+			what:     "&& must have boolean operands",
+			code:     "42 && true",
+			expected: "Type mismatch between 'bool' and 'int'",
+		},
+		{
+			what:     "|| must have boolean operands",
+			code:     "false || 42",
+			expected: "Type mismatch between 'bool' and 'int'",
+		},
+		{
+			what:     "&& is evaluated as bool",
+			code:     "(true && false) + 3",
+			expected: "Type mismatch between 'int' and 'bool'",
+		},
+		{
 			what:     "/. with int",
 			code:     "1 /. 2",
 			expected: "Type mismatch between 'float' and 'int'",

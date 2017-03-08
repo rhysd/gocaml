@@ -57,6 +57,19 @@ func (env *Env) inferRelationalBinOp(op string, left, right ast.Expr) (Type, err
 	return BoolType, nil
 }
 
+func (env *Env) inferLogicalOp(op string, left, right ast.Expr) (Type, error) {
+	for i, e := range []ast.Expr{left, right} {
+		t, err := env.infer(e)
+		if err != nil {
+			return nil, err
+		}
+		if err = Unify(BoolType, t); err != nil {
+			return nil, typeError(err, fmt.Sprintf("type mismatch of %dth operand at logical operator '%s'", i+1, op), e.Pos())
+		}
+	}
+	return BoolType, nil
+}
+
 func (env *Env) infer(e ast.Expr) (Type, error) {
 	switch n := e.(type) {
 	case *ast.Unit:
@@ -110,6 +123,10 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		return env.inferRelationalBinOp("<", n.Left, n.Right)
 	case *ast.GreaterEq:
 		return env.inferRelationalBinOp(">=", n.Left, n.Right)
+	case *ast.And:
+		return env.inferLogicalOp("&&", n.Left, n.Right)
+	case *ast.Or:
+		return env.inferLogicalOp("||", n.Left, n.Right)
 	case *ast.If:
 		if err := env.checkNodeType("condition of 'if' expression", n.Cond, BoolType); err != nil {
 			return nil, err

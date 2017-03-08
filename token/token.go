@@ -50,6 +50,8 @@ const (
 	SEMICOLON
 	STAR
 	SLASH
+	BAR_BAR
+	AND_AND
 	EOF
 )
 
@@ -89,6 +91,8 @@ var tokenTable = [...]string{
 	SEMICOLON:     ";",
 	STAR:          "*",
 	SLASH:         "/",
+	BAR_BAR:       "||",
+	AND_AND:       "&&",
 }
 
 // Token instance for GoCaml.

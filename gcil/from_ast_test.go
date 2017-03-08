@@ -115,6 +115,18 @@ func TestEmitInsn(t *testing.T) {
 			},
 		},
 		{
+			"binary logical op",
+			"true && false; true || false",
+			[]string{
+				"bool true ; type=bool",
+				"bool false ; type=bool",
+				"binary && $k1 $k2 ; type=bool",
+				"bool true ; type=bool",
+				"bool false ; type=bool",
+				"binary || $k4 $k5 ; type=bool",
+			},
+		},
+		{
 			"if expression",
 			"if 1 < 2 then 3 else 4",
 			[]string{

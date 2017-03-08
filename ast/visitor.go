@@ -63,6 +63,12 @@ func Visit(v Visitor, e Expr) {
 	case *GreaterEq:
 		Visit(v, n.Left)
 		Visit(v, n.Right)
+	case *And:
+		Visit(v, n.Left)
+		Visit(v, n.Right)
+	case *Or:
+		Visit(v, n.Left)
+		Visit(v, n.Right)
 	case *If:
 		Visit(v, n.Cond)
 		Visit(v, n.Then)

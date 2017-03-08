@@ -173,6 +173,16 @@ type (
 		Right Expr
 	}
 
+	And struct {
+		Left  Expr
+		Right Expr
+	}
+
+	Or struct {
+		Left  Expr
+		Right Expr
+	}
+
 	If struct {
 		IfToken *token.Token
 		Cond    Expr
@@ -379,6 +389,20 @@ func (e *GreaterEq) End() token.Position {
 	return e.Right.End()
 }
 
+func (e *And) Pos() token.Position {
+	return e.Left.Pos()
+}
+func (e *And) End() token.Position {
+	return e.Right.End()
+}
+
+func (e *Or) Pos() token.Position {
+	return e.Left.Pos()
+}
+func (e *Or) End() token.Position {
+	return e.Right.End()
+}
+
 func (e *If) Pos() token.Position {
 	return e.IfToken.Start
 }
@@ -473,6 +497,8 @@ func (e *Less) Name() string      { return "Less" }
 func (e *LessEq) Name() string    { return "LessEq" }
 func (e *Greater) Name() string   { return "Greater" }
 func (e *GreaterEq) Name() string { return "GreaterEq" }
+func (e *And) Name() string       { return "And" }
+func (e *Or) Name() string        { return "Or" }
 func (e *If) Name() string        { return "If" }
 func (e *Let) Name() string       { return fmt.Sprintf("Let (%s)", e.Symbol.DisplayName) }
 func (e *VarRef) Name() string    { return fmt.Sprintf("VarRef (%s)", e.Symbol.DisplayName) }

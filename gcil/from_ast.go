@@ -204,6 +204,10 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		ty, val, prev = e.emitLessInsn(GT, n.Left, n.Right)
 	case *ast.GreaterEq:
 		ty, val, prev = e.emitLessInsn(GTE, n.Left, n.Right)
+	case *ast.And:
+		ty, val, prev = e.emitBinaryInsn(AND, n.Left, n.Right)
+	case *ast.Or:
+		ty, val, prev = e.emitBinaryInsn(OR, n.Left, n.Right)
 	case *ast.Eq:
 		ty, val, prev = e.emitEqInsn(EQ, n.Left, n.Right)
 	case *ast.NotEq:

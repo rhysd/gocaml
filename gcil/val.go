@@ -31,6 +31,8 @@ const (
 	NEQ
 	GT
 	GTE
+	AND
+	OR
 )
 
 var OpTable = [...]string{
@@ -51,6 +53,8 @@ var OpTable = [...]string{
 	NEQ:  "<>",
 	GT:   ">",
 	GTE:  ">=",
+	AND:  "&&",
+	OR:   "||",
 }
 
 // Kind of function call.
