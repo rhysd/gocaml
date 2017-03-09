@@ -94,6 +94,8 @@ func Visit(v Visitor, e Expr) {
 	case *ArrayCreate:
 		Visit(v, n.Size)
 		Visit(v, n.Elem)
+	case *ArraySize:
+		Visit(v, n.Target)
 	case *Get:
 		Visit(v, n.Array)
 		Visit(v, n.Index)

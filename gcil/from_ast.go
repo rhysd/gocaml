@@ -301,6 +301,11 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		prev = rhs
 		ty = arrayTy.Elem
 		val = &ArrStore{array.Ident, index.Ident, rhs.Ident}
+	case *ast.ArraySize:
+		array := e.emitInsn(n.Target)
+		prev = array
+		ty = typing.IntType
+		val = &ArrSize{array.Ident}
 	}
 
 	// Note:

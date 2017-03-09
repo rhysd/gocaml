@@ -230,6 +230,11 @@ type (
 		Elem       Expr
 	}
 
+	ArraySize struct {
+		ArrayToken *token.Token
+		Target     Expr
+	}
+
 	Get struct {
 		Array Expr
 		Index Expr
@@ -462,6 +467,13 @@ func (e *ArrayCreate) End() token.Position {
 	return e.Elem.End()
 }
 
+func (e *ArraySize) Pos() token.Position {
+	return e.ArrayToken.Start
+}
+func (e *ArraySize) End() token.Position {
+	return e.Target.End()
+}
+
 func (e *Get) Pos() token.Position {
 	return e.Array.Pos()
 }
@@ -525,5 +537,6 @@ func (e *LetTuple) Name() string {
 	return fmt.Sprintf("LetTuple (%s)", vars)
 }
 func (e *ArrayCreate) Name() string { return "ArrayCreate" }
+func (e *ArraySize) Name() string   { return "ArraySize" }
 func (e *Get) Name() string         { return "Get" }
 func (e *Put) Name() string         { return "Put" }

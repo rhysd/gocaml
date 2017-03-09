@@ -1,1 +1,4 @@
-(Array.create 3.14 4, Array.make true 3)
+let a = Array.create 4 3.14 in
+let b = Array.make 3 true in
+let c = Array.size a in
+()

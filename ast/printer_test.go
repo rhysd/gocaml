@@ -52,6 +52,10 @@ func TestPrintAST(t *testing.T) {
 						[]Expr{
 							&Int{tok, 42},
 							&Float{tok, 3.14},
+							&ArraySize{
+								tok,
+								&VarRef{tok, NewSymbol("arr")},
+							},
 						},
 					},
 					&ArrayCreate{
@@ -184,6 +188,8 @@ func TestPrintAST(t *testing.T) {
 -   -   -   -   -   Tuple (0:0-0:0)
 -   -   -   -   -   -   Int (0:0-0:0)
 -   -   -   -   -   -   Float (0:0-0:0)
+-   -   -   -   -   -   ArraySize (0:0-0:0)
+-   -   -   -   -   -   -   VarRef (arr) (0:0-0:0)
 -   -   -   -   -   ArrayCreate (0:0-0:0)
 -   -   -   -   -   -   Int (0:0-0:0)
 -   -   -   -   -   -   Bool (0:0-0:0)

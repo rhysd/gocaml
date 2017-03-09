@@ -58,6 +58,7 @@ import (
 %token<token> SLASH
 %token<token> BAR_BAR
 %token<token> AND_AND
+%token<token> ARRAY_SIZE
 
 %right prec_let
 %right SEMICOLON
@@ -159,6 +160,9 @@ exp:
 	| ARRAY_CREATE parenless_exp parenless_exp
 		%prec prec_app
 		{ $$ = &ast.ArrayCreate{$1, $2, $3} }
+	| ARRAY_SIZE parenless_exp
+		%prec prec_app
+		{ $$ = &ast.ArraySize{$1, $2} }
 	| ILLEGAL error
 		{
 			yylex.Error(fmt.Sprintf("Parsing illegal token: %s", $1.String()))

@@ -52,6 +52,7 @@ const (
 	SLASH
 	BAR_BAR
 	AND_AND
+	ARRAY_SIZE
 	EOF
 )
 
@@ -93,6 +94,7 @@ var tokenTable = [...]string{
 	SLASH:         "/",
 	BAR_BAR:       "||",
 	AND_AND:       "&&",
+	ARRAY_SIZE:    "Array.size",
 }
 
 // Token instance for GoCaml.

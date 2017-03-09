@@ -84,6 +84,8 @@ func (elim *elimRef) insn(insn *Insn) {
 		val.To = elim.elimRef(val.To)
 		val.Index = elim.elimRef(val.Index)
 		val.Rhs = elim.elimRef(val.Rhs)
+	case *ArrSize:
+		val.Array = elim.elimRef(val.Array)
 	}
 }
 

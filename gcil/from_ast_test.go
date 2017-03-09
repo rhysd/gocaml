@@ -200,6 +200,16 @@ func TestEmitInsn(t *testing.T) {
 			},
 		},
 		{
+			"array size",
+			"Array.size (Array.create 3 true)",
+			[]string{
+				"int 3 ; type=int",
+				"bool true ; type=bool",
+				"array $k1 $k2 ; type=bool array",
+				"arrsize $k3 ; type=int",
+			},
+		},
+		{
 			"access to array",
 			"let a = Array.create 3 true in a.(1)",
 			[]string{

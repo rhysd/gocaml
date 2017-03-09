@@ -106,6 +106,8 @@ func printExpr(e Expr, indent int) {
 	case *ArrayCreate:
 		printExpr(n.Size, i)
 		printExpr(n.Elem, i)
+	case *ArraySize:
+		printExpr(n.Target, i)
 	case *Get:
 		printExpr(n.Array, i)
 		printExpr(n.Index, i)

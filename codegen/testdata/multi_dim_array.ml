@@ -35,5 +35,14 @@ println_int b.(0).(1);
 b.(1).(1) <- b.(0).(1) + b.(1).(1);
 println_int b.(1).(1);
 println_int b.(2).(0);
-print_int b.(0).(1)
+println_int b.(0).(1);
+
+(* Assign dynbamic length array to 2-dim array *)
+b.(2) <- Array.create 11 99;
+println_int b.(2).(0);
+println_int b.(2).(8);
+
+println_int (Array.size b);
+println_int (Array.size (b.(0)));
+print_int (Array.size (b.(2)))
 

@@ -214,8 +214,18 @@ func TestInvalidExpressions(t *testing.T) {
 		},
 		{
 			what:     "index assign is evaluated as unit",
-			code:     "let a = Array.create 3 1.0 in 1.0 = a.(0) <- 2.0",
+			code:     "let a = Array.make 3 1.0 in 1.0 = a.(0) <- 2.0",
 			expected: "Type mismatch between 'float' and '()'",
+		},
+		{
+			what:     "Array.size with invalid argument",
+			code:     "Array.size true",
+			expected: "} array' and 'bool'",
+		},
+		{
+			what:     "Array.size returns int type value",
+			code:     "(Array.size (Array.create 3 true)) = 3.0",
+			expected: "'int' and 'float'",
 		},
 		{
 			what:     "occur check",

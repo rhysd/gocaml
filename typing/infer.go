@@ -273,6 +273,11 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 			return nil, err
 		}
 		return &Array{Elem: elem}, nil
+	case *ast.ArraySize:
+		if err := env.checkNodeType("argument of 'Array.size'", n.Target, &Array{Elem: &Var{}}); err != nil {
+			return nil, err
+		}
+		return IntType, nil
 	case *ast.Get:
 		// Lhs of Get must be array but its element type is unknown.
 		// So introduce new type variable for it.

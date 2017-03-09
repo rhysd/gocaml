@@ -357,8 +357,12 @@ func lexArrayCreate(l *Lexer) stateFn {
 	case "Array.create", "Array.make":
 		l.emit(token.ARRAY_CREATE)
 		return lex
+	case "Array.size":
+		l.emit(token.ARRAY_SIZE)
+		return lex
 	default:
-		l.errmsg(fmt.Sprintf("Expected 'create' or 'make' for Array.create but got '%s'", ident))
+		l.errmsg(fmt.Sprintf("Expected 'create', 'make' or 'size' for Array.create but got '%s'", ident))
+		l.emitIllegal()
 		return nil
 	}
 }

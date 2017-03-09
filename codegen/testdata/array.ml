@@ -18,7 +18,7 @@ println_float (g a);
 let d = Array.create 3 first in
 println_bool ((d.(0)) b);
 
-let rec getarr _ = Array.create 3 (-1) in
+let rec getarr _ = Array.create 7 (-1) in
 println_int (getarr ()).(1);
 
 a.(1) <- 1.1;
@@ -28,4 +28,7 @@ b.(1) <- false;
 println_bool (b.(1));
 
 a.(0) <- (a.(1)) +. a.(0) +. c.(0);
-print_float (a.(0))
+println_float (a.(0));
+
+println_int (Array.size b);
+print_int (Array.size (getarr()))
