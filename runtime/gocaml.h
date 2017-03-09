@@ -17,4 +17,6 @@ typedef struct {
     gocaml_int size;
 } gocaml_string;
 
+typedef struct {} gocaml_unit;
+
 #endif    // GOCAML_H_INCLUDED

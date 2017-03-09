@@ -138,19 +138,23 @@ Built-in functions are defined as external symbols.
 - `print_float :: (float) -> ()`
 - `print_str :: (string) -> ()`
 
-Output the value to stdout with newline.
+Output the value to stdout.
 
 - `println_int :: (int) -> ()`
 - `println_bool :: (bool) -> ()`
 - `println_float :: (float) -> ()`
 - `println_str :: (string) -> ()`
 
-Output the value to stdout.
+Output the value to stdout with newline.
 
 - `float_to_int :: (float) -> int`
-- `float_of_int :: (int) -> float`
+- `int_to_float :: (int) -> float`
+- `int_to_str :: (int) -> string`
+- `str_to_int :: (string) -> int`
+- `float_to_str :: (float) -> string`
+- `str_to_float :: (string) -> float`
 
-Convert between float and int.
+Convert between float and int, string and int, float and int.
 
 - `str_size :: (string) -> int`
 
@@ -163,6 +167,10 @@ Concat two strings as a new allocated string because strings are immutable in Go
 - `substr :: (string, int, int) -> string`
 
 Returns substring of first argument. Second argument is an index to start and Third argument is an index to end. Returns string slice `[start, end)` so it does not cause any allocation.
+
+- `get_line :: (()) -> string`
+
+Get user input by line and return it as string.
 
 ## How to Work with C
 

@@ -5,6 +5,9 @@
 #include <gc.h>
 #include "gocaml.h"
 
+#define SNPRINTF_MAX 128
+#define LINE_MAX 1024
+
 void print_int(gocaml_int const i)
 {
     printf("%" PRId64, i);
@@ -51,7 +54,7 @@ gocaml_int float_to_int(gocaml_float const f)
     return (gocaml_int) f;
 }
 
-gocaml_float float_of_int(gocaml_int const i)
+gocaml_float int_to_float(gocaml_int const i)
 {
     return (gocaml_float) i;
 }
@@ -84,7 +87,6 @@ gocaml_string str_concat(gocaml_string const l, gocaml_string const r)
     return ret;
 }
 
-
 // Slice [start,last) like Go's str[start:last]
 gocaml_string substr(gocaml_string const s, gocaml_int const start, gocaml_int const last)
 {
@@ -115,5 +117,85 @@ gocaml_string substr(gocaml_string const s, gocaml_int const start, gocaml_int c
     gocaml_string ret;
     ret.chars = new_ptr;
     ret.size = new_size;
+    return ret;
+}
+
+gocaml_string int_to_str(gocaml_int const i)
+{
+    char *const s = GC_malloc(SNPRINTF_MAX);
+    int const n = snprintf(s, SNPRINTF_MAX, "%" PRId64, i);
+    gocaml_string ret;
+    ret.chars = (int8_t *) s;
+    ret.size = (int64_t) n;
+    return ret;
+}
+
+gocaml_string float_to_str(gocaml_float const f)
+{
+    char *s = GC_malloc(SNPRINTF_MAX);
+    int const n = snprintf(s, SNPRINTF_MAX, "%lg", f);
+    gocaml_string ret;
+    ret.chars = (int8_t *) s;
+    ret.size = (int64_t) n;
+    return ret;
+}
+
+gocaml_int str_to_int(gocaml_string const s)
+{
+    char const backup = s.chars[s.size];
+
+    // Note:
+    // Need to guard with this 'if' statement because when the string is allocasted as
+    // global variable, we can't modify it. And we does not need to modify global constant
+    // string because it is always NUL-terminated.
+    if (s.chars[s.size] != '\0') {
+        s.chars[s.size] = '\0'; // Ensure to terminate with NUL.
+    }
+
+    int const i = atoi((char *) s.chars);
+
+    if (s.chars[s.size] != '\0') {
+        s.chars[s.size] = backup;
+    }
+
+    return (gocaml_int) i;
+}
+
+gocaml_float str_to_float(gocaml_string const s)
+{
+    char const backup = s.chars[s.size];
+
+    // Note:
+    // Need to guard with this 'if' statement because when the string is allocasted as
+    // global variable, we can't modify it. And we does not need to modify global constant
+    // string because it is always NUL-terminated.
+    if (s.chars[s.size] != '\0') {
+        s.chars[s.size] = '\0'; // Ensure to terminate with NUL.
+    }
+
+    double const f = atof((char *) s.chars);
+
+    if (s.chars[s.size] != '\0') {
+        s.chars[s.size] = backup;
+    }
+
+    return (gocaml_float) f;
+}
+
+gocaml_string get_line(gocaml_unit _)
+{
+    char *const s = fgets((char *) GC_malloc(LINE_MAX), LINE_MAX, stdin);
+    gocaml_string ret;
+
+    if (s == NULL) {
+        char *const emp = GC_malloc(1);
+        emp[0] = '\0';
+        ret.chars = (int8_t *) emp;
+        ret.size = 0;
+        return ret;
+    }
+
+    ret.chars = (int8_t *) s;
+    ret.size = (gocaml_int) strlen(s);
     return ret;
 }
