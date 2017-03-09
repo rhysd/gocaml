@@ -132,15 +132,17 @@ Compiled code will be linked to [small runtime][]. In runtime, some functions ar
 
 Built-in functions are defined as external symbols.
 
-- `println_int :: (int) -> ()`
-- `println_bool :: (bool) -> ()`
-- `println_float :: (float) -> ()`
-
-Output the value to stdout with newline.
-
 - `print_int :: (int) -> ()`
 - `print_bool :: (bool) -> ()`
 - `print_float :: (float) -> ()`
+- `print_str :: (string) -> ()`
+
+Output the value to stdout with newline.
+
+- `println_int :: (int) -> ()`
+- `println_bool :: (bool) -> ()`
+- `println_float :: (float) -> ()`
+- `println_str :: (string) -> ()`
 
 Output the value to stdout.
 
@@ -148,6 +150,18 @@ Output the value to stdout.
 - `float_of_int :: (int) -> float`
 
 Convert between float and int.
+
+- `str_size :: (string) -> int`
+
+Return the size of string.
+
+- `str_concat :: (string, string) -> string`
+
+Concat two strings as a new allocated string because strings are immutable in GoCaml.
+
+- `substr :: (string, int, int) -> string`
+
+Returns substring of first argument. Second argument is an index to start and Third argument is an index to end. Returns string slice `[start, end)` so it does not cause any allocation.
 
 ## How to Work with C
 

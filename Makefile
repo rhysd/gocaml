@@ -58,6 +58,8 @@ TESTS := \
 	gcil/elim_ref_test.go \
 	gcil/program_test.go \
 	codegen/example_test.go \
+	codegen/executable_test.go \
+	codegen/linker_test.go \
 
 all: build test
 
@@ -73,7 +75,7 @@ parser/grammar.go: parser/grammar.go.y
 	goyacc -o parser/grammar.go parser/grammar.go.y
 
 runtime/gocamlrt.o: runtime/gocamlrt.c runtime/gocaml.h
-	$(CC) -Wall -Wextra -pedantic -I./runtime -c runtime/gocamlrt.c -o runtime/gocamlrt.o
+	$(CC) -Wall -Wextra -pedantic -std=c99 -I/usr/local/include -I./runtime -c runtime/gocamlrt.c -o runtime/gocamlrt.o
 runtime/gocamlrt.a: runtime/gocamlrt.o
 	ar -r runtime/gocamlrt.a runtime/gocamlrt.o
 
