@@ -93,13 +93,17 @@ gocaml_string substr(gocaml_string const s, gocaml_int const start, gocaml_int c
     }
 
     int64_t start_idx = start;
-    if (start_idx < 0 || s.size <= start_idx) {
-        start_idx = s.size - 1;
+    if (s.size <= start_idx) {
+        start_idx = s.size; // This makes empty string
+    } else if (start_idx < 0) {
+        start_idx = 0;
     }
 
     int64_t last_idx = last;
-    if (last_idx < 0 || s.size <= last_idx) {
-        last_idx = s.size - 1;
+    if (last_idx < 0) {
+        last_idx = 0;
+    } else if (s.size <= last_idx) {
+        last_idx = s.size;
     }
 
     int64_t new_size = last_idx - start_idx;
