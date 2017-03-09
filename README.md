@@ -149,10 +149,6 @@ Output the value to stdout.
 
 Convert between float and int.
 
-- `array_size :: ('a array) -> int`
-
-Get size of the array
-
 ## How to Work with C
 
 All symbols not defined in source are treated as external symbols. So you can define it in C source and link it to compiled GoCaml

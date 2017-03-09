@@ -43,8 +43,3 @@ gocaml_float float_of_int(gocaml_int const i)
     return (gocaml_float) i;
 }
 
-gocaml_int array_size(gocaml_array const arr)
-{
-    return arr.size;
-}
-
