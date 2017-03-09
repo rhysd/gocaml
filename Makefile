@@ -72,8 +72,8 @@ parser/grammar.go: parser/grammar.go.y
 	go get golang.org/x/tools/cmd/goyacc
 	goyacc -o parser/grammar.go parser/grammar.go.y
 
-runtime/gocamlrt.o: runtime/gocamlrt.c
-	$(CC) -Wall -Wextra -pedantic -c runtime/gocamlrt.c -o runtime/gocamlrt.o
+runtime/gocamlrt.o: runtime/gocamlrt.c runtime/gocaml.h
+	$(CC) -Wall -Wextra -pedantic -I./runtime -c runtime/gocamlrt.c -o runtime/gocamlrt.o
 runtime/gocamlrt.a: runtime/gocamlrt.o
 	ar -r runtime/gocamlrt.a runtime/gocamlrt.o
 

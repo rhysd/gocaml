@@ -1,45 +1,50 @@
 #include <stdio.h>
-#include <stdint.h>
 #include <inttypes.h>
 #include <stdlib.h>
+#include "gocaml.h"
 
-void print_int(int64_t const i)
+void print_int(gocaml_int const i)
 {
     printf("%" PRId64, i);
 }
 
-void print_bool(int const i)
+void print_bool(gocaml_bool const i)
 {
     printf("%s", i ? "true" : "false");
 }
 
-void print_float(double const d)
+void print_float(gocaml_float const d)
 {
     printf("%lg", d);
 }
 
-void println_int(int64_t const i)
+void println_int(gocaml_int const i)
 {
     printf("%" PRId64 "\n", i);
 }
 
-void println_bool(int const i)
+void println_bool(gocaml_bool const i)
 {
     printf("%s\n", i ? "true" : "false");
 }
 
-void println_float(double const d)
+void println_float(gocaml_float const d)
 {
     printf("%lg\n", d);
 }
 
-int64_t float_to_int(double const f)
+gocaml_int float_to_int(gocaml_float const f)
 {
-    return (int64_t) f;
+    return (gocaml_int) f;
 }
 
-double float_of_int(int64_t const i)
+gocaml_float float_of_int(gocaml_int const i)
 {
-    return (double) i;
+    return (gocaml_float) i;
+}
+
+gocaml_int array_size(gocaml_array const arr)
+{
+    return arr.size;
 }
 

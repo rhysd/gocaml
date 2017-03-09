@@ -128,6 +128,31 @@ Flags:
 Compiled code will be linked to [small runtime][]. In runtime, some functions are defined to print values and it includes
 `<stdlib.h>` and `<stdio.h>`. So you can use them from GoCaml codes.
 
+## Builtin Functions
+
+Built-in functions are defined as external symbols.
+
+- `println_int :: (int) -> ()`
+- `println_bool :: (bool) -> ()`
+- `println_float :: (float) -> ()`
+
+Output the value to stdout with newline.
+
+- `print_int :: (int) -> ()`
+- `print_bool :: (bool) -> ()`
+- `print_float :: (float) -> ()`
+
+Output the value to stdout.
+
+- `float_to_int :: (float) -> int`
+- `float_of_int :: (int) -> float`
+
+Convert between float and int.
+
+- `array_size :: ('a array) -> int`
+
+Get size of the array
+
 ## How to Work with C
 
 All symbols not defined in source are treated as external symbols. So you can define it in C source and link it to compiled GoCaml
@@ -136,10 +161,10 @@ code after.
 Let's say to write C code.
 
 ```c
-#include <stdint.h>
+// gocaml.h is put in runtime/ directory. Please add it to include directory path.
+#include "gocaml.h"
 
-// Please use int64_t for int in GoCaml, double for float in GoCaml, int for bool
-int64_t plus100(int64_t const i)
+gocaml_int plus100(gocaml_int const i)
 {
     return i + 100;
 }
