@@ -12,4 +12,9 @@ typedef struct {
     gocaml_int size;
 } gocaml_array;
 
+typedef struct {
+    int8_t *chars; // Null-terminated string
+    gocaml_int size;
+} gocaml_string;
+
 #endif    // GOCAML_H_INCLUDED

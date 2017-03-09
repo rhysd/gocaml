@@ -40,6 +40,11 @@ func TestEmitInsn(t *testing.T) {
 			[]string{"bool false ; type=bool"},
 		},
 		{
+			"string",
+			`"this is\ttest\n"`,
+			[]string{`string "this is\ttest\n" ; type=string`},
+		},
+		{
 			"unary relational op",
 			"not true",
 			[]string{

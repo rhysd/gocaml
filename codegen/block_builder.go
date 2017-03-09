@@ -97,6 +97,17 @@ func (b *blockBuilder) buildEq(ty typing.Type, op *gcil.Binary, lhs, rhs llvm.Va
 		return b.builder.CreateICmp(icmp, lhs, rhs, name)
 	case *typing.Float:
 		return b.builder.CreateFCmp(fcmp, lhs, rhs, name)
+	case *typing.String:
+		eqlFun, ok := b.globalTable["__str_equal"]
+		if !ok {
+			panic("__str_equal() not found")
+		}
+		cmp := b.builder.CreateCall(eqlFun, []llvm.Value{lhs, rhs}, "")
+		i := uint64(1)
+		if op.Op == gcil.NEQ {
+			i = 0
+		}
+		return b.builder.CreateICmp(llvm.IntEQ, cmp, llvm.ConstInt(b.typeBuilder.boolT, i, false /*signed*/), "eql.str")
 	case *typing.Tuple:
 		cmp := llvm.Value{}
 		for i, elemTy := range ty.Elems {
@@ -152,6 +163,18 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		return llvm.ConstInt(b.typeBuilder.intT, uint64(val.Const), true /*sign extend*/)
 	case *gcil.Float:
 		return llvm.ConstFloat(b.typeBuilder.floatT, val.Const)
+	case *gcil.String:
+		strVal := b.builder.CreateAlloca(b.typeBuilder.stringT, "")
+
+		charsVal := b.builder.CreateGlobalStringPtr(val.Const, "")
+		charsPtr := b.builder.CreateStructGEP(strVal, 0, "")
+		b.builder.CreateStore(charsVal, charsPtr)
+
+		sizeVal := llvm.ConstInt(b.typeBuilder.intT, uint64(len(val.Const)), true /*signed*/)
+		sizePtr := b.builder.CreateStructGEP(strVal, 1, "str.size")
+		b.builder.CreateStore(sizeVal, sizePtr)
+
+		return b.builder.CreateLoad(strVal, "str")
 	case *gcil.Unary:
 		child := b.resolve(val.Child)
 		switch val.Op {

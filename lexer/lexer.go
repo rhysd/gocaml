@@ -379,6 +379,26 @@ func lexIdent(l *Lexer) stateFn {
 	return lex
 }
 
+func lexStringLiteral(l *Lexer) stateFn {
+	l.eat() // Eat first '"'
+	for !l.eof {
+		if l.top == '\\' {
+			// Skip escape ('\' and next char)
+			l.eat()
+			l.eat()
+		}
+		if l.top == '"' {
+			l.eat()
+			l.emit(token.STRING_LITERAL)
+			return lex
+		}
+		l.eat()
+	}
+	l.errmsg("Unclosed string literal")
+	l.emitIllegal()
+	return nil
+}
+
 func lex(l *Lexer) stateFn {
 	for {
 		if l.eof {
@@ -419,6 +439,8 @@ func lex(l *Lexer) stateFn {
 			return lexLogicalOp
 		case '&':
 			return lexLogicalOp
+		case '"':
+			return lexStringLiteral
 		default:
 			switch {
 			case unicode.IsSpace(l.top):

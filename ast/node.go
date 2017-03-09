@@ -88,6 +88,11 @@ type (
 		Value float64
 	}
 
+	String struct {
+		Token *token.Token
+		Value string
+	}
+
 	Not struct {
 		OpToken *token.Token
 		Child   Expr
@@ -272,6 +277,13 @@ func (e *Float) Pos() token.Position {
 	return e.Token.Start
 }
 func (e *Float) End() token.Position {
+	return e.Token.End
+}
+
+func (e *String) Pos() token.Position {
+	return e.Token.Start
+}
+func (e *String) End() token.Position {
 	return e.Token.End
 }
 
@@ -492,6 +504,7 @@ func (e *Unit) Name() string      { return "Unit" }
 func (e *Bool) Name() string      { return "Bool" }
 func (e *Int) Name() string       { return "Int" }
 func (e *Float) Name() string     { return "Float" }
+func (e *String) Name() string    { return fmt.Sprintf("String (%s)", e.Token.Value()) }
 func (e *Not) Name() string       { return "Not" }
 func (e *Neg) Name() string       { return "Neg" }
 func (e *Add) Name() string       { return "Add" }

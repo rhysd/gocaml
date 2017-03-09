@@ -59,6 +59,7 @@ import (
 %token<token> BAR_BAR
 %token<token> AND_AND
 %token<token> ARRAY_SIZE
+%token<token> STRING_LITERAL
 
 %right prec_let
 %right SEMICOLON
@@ -225,6 +226,16 @@ parenless_exp:
 				yylex.Error("Parse error")
 			} else {
 				$$ = &ast.Float{$1, f}
+			}
+		}
+	| STRING_LITERAL
+		{
+			from := $1.Value()
+			s, err := strconv.Unquote(from)
+			if err != nil {
+				yylex.Error("Parse error on string literal: " + from)
+			} else {
+				$$ = &ast.String{$1, s}
 			}
 		}
 	| IDENT
