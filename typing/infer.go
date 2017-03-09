@@ -78,6 +78,8 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		return IntType, nil
 	case *ast.Float:
 		return FloatType, nil
+	case *ast.String:
+		return StringType, nil
 	case *ast.Bool:
 		return BoolType, nil
 	case *ast.Not:

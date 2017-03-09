@@ -3,6 +3,7 @@ package gcil
 import (
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 )
 
@@ -84,6 +85,9 @@ type (
 	Float struct {
 		Const float64
 	}
+	String struct {
+		Const string
+	}
 	Unary struct {
 		Op    OperatorKind
 		Child string
@@ -162,6 +166,9 @@ func (v *Int) Print(out io.Writer) {
 }
 func (v *Float) Print(out io.Writer) {
 	fmt.Fprintf(out, "float %f", v.Const)
+}
+func (v *String) Print(out io.Writer) {
+	fmt.Fprintf(out, "string %s", strconv.Quote(v.Const))
 }
 func (v *Unary) Print(out io.Writer) {
 	fmt.Fprintf(out, "unary %s %s", OpTable[v.Op], v.Child)

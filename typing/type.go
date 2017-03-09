@@ -40,6 +40,13 @@ func (t *Float) String() string {
 	return "float"
 }
 
+type String struct {
+}
+
+func (t *String) String() string {
+	return "string"
+}
+
 type Fun struct {
 	Ret    Type
 	Params []Type
@@ -86,8 +93,9 @@ func (t *Var) String() string {
 
 var (
 	// Make singleton type values because it doesn't have any contextual information
-	UnitType  = &Unit{}
-	BoolType  = &Bool{}
-	IntType   = &Int{}
-	FloatType = &Float{}
+	UnitType   = &Unit{}
+	BoolType   = &Bool{}
+	IntType    = &Int{}
+	FloatType  = &Float{}
+	StringType = &String{}
 )

@@ -51,10 +51,11 @@ Variable names follow below naming convention.
 
 | Instruction               | Description                                                                                     |
 |---------------------------|-------------------------------------------------------------------------------------------------|
-| `unit`                    | Create a `()` value                                                                             |
-| `bool {constant}`         | Create a boolean value (`true` or `false`)                                                      |
-| `int {constant}`          | Create an integer value                                                                         |
-| `float {constant}`        | Create an floating point number value                                                           |
+| `unit`                    | Create a `()` value.                                                                            |
+| `bool {constant}`         | Create a boolean value (`true` or `false`).                                                     |
+| `int {constant}`          | Create an integer value.                                                                        |
+| `float {constant}`        | Create a floating point number value.                                                           |
+| `string {constant}`       | Create string value. `{constant}` is a quoted and escaped string literal.                       |
 | `unary {op} {id}`         | Apply unary operator to `{id}`. `{op}` is `-` or `not` or `-.`.                                 |
 | `binary {op} {id} {id}`   | Apply binary operator. Two `{id}`s are lhs and rhs for the operation.                           |
 | `ref {id}`                | Reference to `{id}` variable.                                                                   |

@@ -96,20 +96,10 @@ func unifyVar(l *Var, right Type) error {
 
 func Unify(left, right Type) error {
 	switch l := left.(type) {
-	case *Unit:
-		if _, ok := right.(*Unit); ok {
-			return nil
-		}
-	case *Bool:
-		if _, ok := right.(*Bool); ok {
-			return nil
-		}
-	case *Int:
-		if _, ok := right.(*Int); ok {
-			return nil
-		}
-	case *Float:
-		if _, ok := right.(*Float); ok {
+	case *Unit, *Bool, *Int, *Float, *String:
+		// Types for Unit, Bool, Int, Float and String are singleton instance.
+		// So comparing directly is OK.
+		if l == right {
 			return nil
 		}
 	case *Tuple:

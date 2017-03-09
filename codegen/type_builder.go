@@ -13,6 +13,7 @@ type typeBuilder struct {
 	intT     llvm.Type
 	floatT   llvm.Type
 	boolT    llvm.Type
+	stringT  llvm.Type
 	voidT    llvm.Type
 	voidPtrT llvm.Type
 	sizeT    llvm.Type
@@ -20,17 +21,25 @@ type typeBuilder struct {
 }
 
 func newTypeBuilder(ctx llvm.Context, intPtrTy llvm.Type, env *typing.Env) *typeBuilder {
+	integer := ctx.Int64Type()
 	unit := ctx.StructCreateNamed("gocaml.unit")
 	unit.StructSetBody([]llvm.Type{}, false /*packed*/)
+	str := ctx.StructCreateNamed("gocaml.string")
+	str.StructSetBody([]llvm.Type{
+		llvm.PointerType(ctx.Int8Type(), 0 /*address space*/),
+		integer,
+	}, false /*packed*/)
+
 	return &typeBuilder{
 		ctx,
 		env,
 		unit,
-		ctx.Int64Type(),
+		integer,
 		ctx.DoubleType(),
 		ctx.Int1Type(),
+		str,
 		ctx.VoidType(),
-		llvm.PointerType(ctx.Int8Type(), 0),
+		llvm.PointerType(ctx.Int8Type(), 0 /*address space*/),
 		intPtrTy,
 		map[string]llvm.Type{},
 	}
@@ -111,6 +120,8 @@ func (b *typeBuilder) convertGCIL(from typing.Type) llvm.Type {
 		return b.intT
 	case *typing.Float:
 		return b.floatT
+	case *typing.String:
+		return b.stringT
 	case *typing.Fun:
 		// Function type which occurs in normal expression's type is always closure because
 		// function type variable is always closure. Normal function pointer never occurs in value context.

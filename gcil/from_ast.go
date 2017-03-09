@@ -133,7 +133,7 @@ func (e *emitter) emitLessInsn(kind OperatorKind, lhs, rhs ast.Expr) (typing.Typ
 	// This type constraint may be useful for type inference. But current HM type inference algorithm cannot
 	// handle a union type. In this context, the operand should be `int | float`
 	switch operand.(type) {
-	case *typing.Unit, *typing.Bool, *typing.Fun, *typing.Tuple, *typing.Array:
+	case *typing.Unit, *typing.Bool, *typing.String, *typing.Fun, *typing.Tuple, *typing.Array:
 		e.semanticError(fmt.Sprintf("'%s' can't be compared with operator '%s'", operand.String(), OpTable[kind]), lhs.Pos())
 	}
 	return typing.BoolType, val, prev
@@ -168,6 +168,9 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 	case *ast.Float:
 		ty = typing.FloatType
 		val = &Float{n.Value}
+	case *ast.String:
+		ty = typing.StringType
+		val = &String{n.Value}
 	case *ast.Not:
 		i := e.emitInsn(n.Child)
 		ty, val = e.typeOf(i), &Unary{NOT, i.Ident}

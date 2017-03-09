@@ -17,6 +17,7 @@ type sizeTable struct {
 	data        llvm.TargetData
 	typeBuilder *typeBuilder
 	ptrSize     sizeEntry
+	stringSize  sizeEntry
 }
 
 func newSizeTable(types *typeBuilder, data llvm.TargetData) *sizeTable {
@@ -24,11 +25,16 @@ func newSizeTable(types *typeBuilder, data llvm.TargetData) *sizeTable {
 		data.TypeSizeInBits(types.voidPtrT),
 		uint32(data.ABITypeAlignment(types.voidPtrT) * 8),
 	}
+	stringSize := sizeEntry{
+		data.TypeSizeInBits(types.stringT),
+		uint32(data.ABITypeAlignment(types.stringT) * 8),
+	}
 	return &sizeTable{
 		map[typing.Type]sizeEntry{},
 		data,
 		types,
 		ptrSize,
+		stringSize,
 	}
 }
 
@@ -64,6 +70,7 @@ type debugInfoBuilder struct {
 	typeBuilder *typeBuilder
 	sizes       *sizeTable
 	voidPtrInfo llvm.Metadata
+	stringInfo  llvm.Metadata
 	module      llvm.Module
 }
 
@@ -99,6 +106,21 @@ func newDebugInfoBuilder(module llvm.Module, file *token.Source, tb *typeBuilder
 		SizeInBits:  d.sizes.ptrSize.allocInBits,
 		AlignInBits: d.sizes.ptrSize.alignInBits,
 		Name:        "captures",
+	})
+
+	d.stringInfo = d.builder.CreateStructType(d.compileUnit, llvm.DIStructType{
+		Name:        "string",
+		File:        d.file,
+		SizeInBits:  d.sizes.stringSize.allocInBits,
+		AlignInBits: d.sizes.stringSize.alignInBits,
+		Elements: []llvm.Metadata{
+			d.pointerOf(d.builder.CreateBasicType(llvm.DIBasicType{
+				Name:       "char",
+				SizeInBits: target.TypeSizeInBits(tb.context.Int8Type()),
+				Encoding:   llvm.DW_ATE_signed,
+			}), "chars"),
+			d.basicTypeInfo(typing.IntType, llvm.DW_ATE_signed),
+		},
 	})
 
 	return d, nil
@@ -163,6 +185,8 @@ func (d *debugInfoBuilder) typeInfo(ty typing.Type) llvm.Metadata {
 		return d.basicTypeInfo(ty, llvm.DW_ATE_boolean)
 	case *typing.Float:
 		return d.basicTypeInfo(ty, llvm.DW_ATE_float)
+	case *typing.String:
+		return d.stringInfo
 	case *typing.Unit:
 		size := d.sizes.sizeOf(ty)
 		return d.builder.CreateStructType(d.compileUnit, llvm.DIStructType{
