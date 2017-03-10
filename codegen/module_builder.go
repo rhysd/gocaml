@@ -290,7 +290,9 @@ func (b *moduleBuilder) buildFunBody(insn gcil.FunInsn) {
 func (b *moduleBuilder) buildMain(entry *gcil.Block) {
 	int32T := b.context.Int32Type()
 	t := llvm.FunctionType(int32T, []llvm.Type{}, false /*varargs*/)
-	funVal := llvm.AddFunction(b.module, "main", t)
+	funVal := llvm.AddFunction(b.module, "__gocaml_main", t)
+	funVal.AddFunctionAttr(b.attributes["inlinehint"])
+	funVal.AddFunctionAttr(b.attributes["nounwind"])
 	funVal.AddFunctionAttr(b.attributes["ssp"])
 	funVal.AddFunctionAttr(b.attributes["uwtable"])
 	funVal.AddFunctionAttr(b.attributes["disable-tail-calls"])
@@ -303,12 +305,6 @@ func (b *moduleBuilder) buildMain(entry *gcil.Block) {
 	body := b.context.AddBasicBlock(funVal, "entry")
 	b.builder.SetInsertPointAtEnd(body)
 
-	initGcFun, ok := b.globalTable["GC_init"]
-	if !ok {
-		panic("'GC_init' not found. Function prototypes for libgc were not emitted")
-	}
-	b.builder.CreateCall(initGcFun, []llvm.Value{}, "")
-
 	builder := newBlockBuilder(b)
 	builder.buildBlock(entry)
 
@@ -319,34 +315,17 @@ func (b *moduleBuilder) buildMain(entry *gcil.Block) {
 }
 
 func (b *moduleBuilder) buildLibgcFuncDecls() {
-	for _, fun := range []struct {
-		name string
-		ret  llvm.Type
-		args []llvm.Type
-	}{
-		{
-			"GC_malloc",
-			b.typeBuilder.voidPtrT,
-			[]llvm.Type{b.typeBuilder.sizeT},
-		},
-		{
-			"GC_init",
-			b.typeBuilder.voidT,
-			[]llvm.Type{},
-		},
-	} {
-		t := llvm.FunctionType(fun.ret, fun.args, false /*vaargs*/)
-		v := llvm.AddFunction(b.module, fun.name, t)
-		v.SetLinkage(llvm.ExternalLinkage)
-		v.AddFunctionAttr(b.attributes["nounwind"])
-		b.globalTable[fun.name] = v
-	}
+	t := llvm.FunctionType(b.typeBuilder.voidPtrT, []llvm.Type{b.typeBuilder.sizeT}, false /*vaargs*/)
+	v := llvm.AddFunction(b.module, "GC_malloc", t)
+	v.SetLinkage(llvm.ExternalLinkage)
+	v.AddFunctionAttr(b.attributes["nounwind"])
+	b.globalTable["GC_malloc"] = v
 }
 
 func (b *moduleBuilder) build(prog *gcil.Program) error {
 	// Note:
 	// Currently global variables are external symbols only.
-	b.globalTable = make(map[string]llvm.Value, len(b.env.Externals)+2 /* 2 = libgc functions */)
+	b.globalTable = make(map[string]llvm.Value, len(b.env.Externals)+1 /* 1 = libgc functions */)
 	// Note:
 	// Closures for external functions are also defined.
 	b.funcTable = make(map[string]llvm.Value, len(prog.Toplevel)+len(b.env.Externals))

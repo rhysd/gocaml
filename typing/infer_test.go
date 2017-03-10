@@ -242,6 +242,11 @@ func TestInvalidExpressions(t *testing.T) {
 			code:     `println_bool (str_size "foo")`,
 			expected: "Type mismatch between 'int' and 'bool'",
 		},
+		{
+			what:     "'argv' special global variable",
+			code:     "argv + 12",
+			expected: "Type mismatch between 'int' and 'string array'",
+		},
 	}
 
 	for _, testcase := range testcases {

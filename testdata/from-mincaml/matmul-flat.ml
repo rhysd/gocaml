@@ -37,4 +37,4 @@ print_str "\n";
 print_int (truncate (c.(1).(0)));
 print_str "\n";
 print_int (truncate (c.(1).(1)));
-print_str "\n";
+print_str "\n"

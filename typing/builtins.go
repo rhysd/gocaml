@@ -2,6 +2,7 @@ package typing
 
 func builtinPopulatedTable() map[string]Type {
 	table := map[string]Type{
+		"argv":          &Array{StringType},
 		"print_int":     &Fun{UnitType, []Type{IntType}},
 		"print_bool":    &Fun{UnitType, []Type{BoolType}},
 		"print_float":   &Fun{UnitType, []Type{FloatType}},

@@ -129,6 +129,15 @@ Flags:
 Compiled code will be linked to [small runtime][]. In runtime, some functions are defined to print values and it includes
 `<stdlib.h>` and `<stdio.h>`. So you can use them from GoCaml codes.
 
+## Program Arguments
+
+You can access to program arguments via special global variable `argv`. `argv` is always defined before program starts.
+
+```ml
+print_str "argc: "; println_int (Array.size argv);
+print_str "prog: "; println_str (argv.(0))
+```
+
 ## Builtin Functions
 
 Built-in functions are defined as external symbols.

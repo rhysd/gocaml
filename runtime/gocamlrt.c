@@ -8,6 +8,29 @@
 #define SNPRINTF_MAX 128
 #define LINE_MAX 1024
 
+extern int __gocaml_main();
+
+// string array for argv
+typedef struct {
+    gocaml_string *buf;
+    gocaml_int size;
+} argv_t;
+argv_t argv;
+
+int main(int const argc, char const* const argv_[]) {
+    GC_init();
+    gocaml_string *ptr = (gocaml_string *) GC_malloc(argc * sizeof(gocaml_string *));
+    for (int i = 0; i < argc; ++i) {
+        gocaml_string s;
+        s.chars = (int8_t *) argv_[i];
+        s.size = strlen(argv_[i]);
+        *(ptr + i) = s;
+    }
+    argv.buf = ptr;
+    argv.size = (int64_t) argc;
+    return __gocaml_main();
+}
+
 void print_int(gocaml_int const i)
 {
     printf("%" PRId64, i);
