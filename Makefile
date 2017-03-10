@@ -32,6 +32,7 @@ SRCS := \
 	codegen/block_builder.go \
 	codegen/debug_info_builder.go \
 	codegen/linker.go \
+	codegen/targets.go \
 
 TESTS := \
 	alpha/example_test.go \
@@ -61,6 +62,7 @@ TESTS := \
 	codegen/example_test.go \
 	codegen/executable_test.go \
 	codegen/linker_test.go \
+	codegen/targets_test.go \
 
 all: build test
 
@@ -76,7 +78,7 @@ parser/grammar.go: parser/grammar.go.y
 	goyacc -o parser/grammar.go parser/grammar.go.y
 
 runtime/gocamlrt.o: runtime/gocamlrt.c runtime/gocaml.h
-	$(CC) -Wall -Wextra -std=c99 -I/usr/local/include -I./runtime -c runtime/gocamlrt.c -o runtime/gocamlrt.o
+	$(CC) -Wall -Wextra -std=c99 -I/usr/local/include -I./runtime $(CFLAGS) -c runtime/gocamlrt.c -o runtime/gocamlrt.o
 runtime/gocamlrt.a: runtime/gocamlrt.o
 	ar -r runtime/gocamlrt.a runtime/gocamlrt.o
 
@@ -93,5 +95,8 @@ cov: cover.out
 
 clean:
 	rm -f gocaml y.output parser/grammar.go runtime/gocamlrt.o runtime/gocamlrt.a cover.out cpu.out
+
+tmp:
+	echo $(CFLAGS)
 
 .PHONY: all build clean test cov

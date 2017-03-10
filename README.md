@@ -37,7 +37,8 @@ print_int (gcd 21600 337500)
 - MinCaml assumes external symbols' types are `int` when it can't be inferred. GoCaml does not have such an assumption.
   GoCaml assumes unknown return type of external functions as `()` (`void` in C), but in other cases, falls into compilation error.
   When you use nested external functions call, you need to clarify the return type of inner function call. For example, when `f` in
-  `g (f ())` returns `int`, you need to show it like `g ((f ()) + 0)`.
+  `g (f ())` returns `int`, you need to show it like `g ((f ()) + 0)`. Note that this pitfall does not occur for built-in functions
+  because a compiler knows their types.
 - MinCaml allows `-` unary operator for float literal. So for example `-3.14` is valid but `-f` (where `f` is `float`) is not valid.
   GoCaml does not allow `-` unary operator for float values totally. You need to use `-.` unary operator instead (e.g. `-.3.14`).
 - GoCaml adds more operators. `*` and `/` for integers, `&&` and `||` for booleans.
@@ -99,8 +100,8 @@ $ brew install bdw-gc
 Usage: gocaml [flags] [file]
 
   Compiler for GoCaml.
-  When file is given as argument, compiler will targets it. Otherwise, compiler
-  attempt to read from STDIN as source code to target.
+  When file is given as argument, compiler will compile it. Otherwise, compiler
+  attempt to read from STDIN as source code to compile.
 
 Flags:
   -asm
@@ -122,6 +123,10 @@ Flags:
     	Compile to object file
   -opt int
     	Optimization level (0~3). 0: none, 1: less, 2: default, 3: aggressive (default -1)
+  -show-targets
+    	Show all available targets
+  -target string
+    	Target architecture triple
   -tokens
     	Show tokens for input
 ```
@@ -222,6 +227,42 @@ $ gocaml -ldflags plus100.o test.ml
 
 After the command, you can find `test` executable. Executing by `./test` will show `110`.
 
+## Cross Compilation
+
+For example, let's say to want to make an `x86` binary on `x86_64` Ubuntu.
+
+```
+$ cd /path/to/gocaml
+$ make clean
+# Install gcc-multilib
+$ sudo apt-get install gcc-4.8-multilib
+```
+
+Then you need to know [target triple][] string for the architecture compiler will compile into.
+The format is `{name}-{vendor}-{sys}-{abi}`. (ABI might be omitted)
+
+You can know all the supported targets by below command:
+
+```
+$ ./gocaml -show-targets
+```
+
+Then you can compile source into object file for the target.
+
+```
+# Create object file for specified target
+$ ./gocaml -obj -target i686-linux-gnu source.ml
+
+# Compile runtime for the target
+CC=gcc CFLAGS=-m32 make ./runtime/gocamlrt.a
+```
+
+Finally link object files into one executable binary by hand.
+
+```
+$ gcc -m32 -lgc source.o ./runtime/gocamlrt.a
+```
+
 [MinCaml]: https://github.com/esumii/min-caml
 [goyacc]: https://github.com/cznic/goyacc
 [LLVM]: http://llvm.org/
@@ -244,3 +285,4 @@ After the command, you can find `test` executable. Executing by `./test` will sh
 [LLVM apt repository]: http://apt.llvm.org/
 [Homebrew]: https://brew.sh/index.html
 [libgc]: https://www.hboehm.info/gc/
+[target triple]: https://clang.llvm.org/docs/CrossCompilation.html#target-triple

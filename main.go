@@ -3,30 +3,33 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/rhysd/gocaml/codegen"
 	"github.com/rhysd/gocaml/compiler"
 	"github.com/rhysd/gocaml/token"
 	"os"
 )
 
 var (
-	help       = flag.Bool("help", false, "Show this help")
-	showTokens = flag.Bool("tokens", false, "Show tokens for input")
-	showAST    = flag.Bool("ast", false, "Show AST for input")
-	showGCIL   = flag.Bool("gcil", false, "Emit GoCaml Intermediate Language representation to stdout")
-	externals  = flag.Bool("externals", false, "Display external symbols")
-	llvm       = flag.Bool("llvm", false, "Emit LLVM IR to stdout")
-	asm        = flag.Bool("asm", false, "Emit assembler code to stdout")
-	opt        = flag.Int("opt", -1, "Optimization level (0~3). 0: none, 1: less, 2: default, 3: aggressive")
-	obj        = flag.Bool("obj", false, "Compile to object file")
-	ldflags    = flag.String("ldflags", "", "Flags passed to underlying linker")
-	debug      = flag.Bool("g", false, "Compile with debug information")
+	help        = flag.Bool("help", false, "Show this help")
+	showTokens  = flag.Bool("tokens", false, "Show tokens for input")
+	showAST     = flag.Bool("ast", false, "Show AST for input")
+	showGCIL    = flag.Bool("gcil", false, "Emit GoCaml Intermediate Language representation to stdout")
+	externals   = flag.Bool("externals", false, "Display external symbols")
+	llvm        = flag.Bool("llvm", false, "Emit LLVM IR to stdout")
+	asm         = flag.Bool("asm", false, "Emit assembler code to stdout")
+	opt         = flag.Int("opt", -1, "Optimization level (0~3). 0: none, 1: less, 2: default, 3: aggressive")
+	obj         = flag.Bool("obj", false, "Compile to object file")
+	ldflags     = flag.String("ldflags", "", "Flags passed to underlying linker")
+	debug       = flag.Bool("g", false, "Compile with debug information")
+	target      = flag.String("target", "", "Target architecture triple")
+	showTargets = flag.Bool("show-targets", false, "Show all available targets")
 )
 
 const usageHeader = `Usage: gocaml [flags] [file]
 
   Compiler for GoCaml.
-  When file is given as argument, compiler will targets it. Otherwise, compiler
-  attempt to read from STDIN as source code to target.
+  When file is given as argument, compiler will compile it. Otherwise, compiler
+  attempt to read from STDIN as source code to compile.
 
 Flags:`
 
@@ -69,6 +72,13 @@ func main() {
 		os.Exit(0)
 	}
 
+	if *showTargets {
+		for _, t := range codegen.AllTargets() {
+			fmt.Printf("%s:\t%s\n", t.Name, t.Description)
+		}
+		os.Exit(0)
+	}
+
 	var src *token.Source
 	var err error
 
@@ -85,7 +95,7 @@ func main() {
 
 	c := compiler.Compiler{
 		Optimization: getOptLevel(),
-		TargetTriple: "",
+		TargetTriple: *target,
 		LinkFlags:    *ldflags,
 		DebugInfo:    *debug,
 	}
