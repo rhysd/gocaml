@@ -179,17 +179,17 @@ func TestInvalidExpressions(t *testing.T) {
 		},
 		{
 			what:     "index is not a number",
-			code:     "let a = Array.create 3 1.0 in a.(true)",
+			code:     "let a = Array.make 3 1.0 in a.(true)",
 			expected: "Type mismatch between 'int' and 'bool'",
 		},
 		{
 			what:     "wrong array length type",
-			code:     "let a = Array.create true 1.0 in ()",
+			code:     "let a = Array.make true 1.0 in ()",
 			expected: "Type mismatch between 'int' and 'bool'",
 		},
 		{
 			what:     "element type mismatch in array",
-			code:     "let a = Array.create 3 1.0 in 1 + a.(0)",
+			code:     "let a = Array.make 3 1.0 in 1 + a.(0)",
 			expected: "Type mismatch between 'float' and 'int'",
 		},
 		{
@@ -199,12 +199,12 @@ func TestInvalidExpressions(t *testing.T) {
 		},
 		{
 			what:     "set wrong type value to array",
-			code:     "let a = Array.create 3 1.0 in a.(0) <- true",
+			code:     "let a = Array.make 3 1.0 in a.(0) <- true",
 			expected: "Type mismatch between 'bool' and 'float'",
 		},
 		{
 			what:     "wrong index type in index access",
-			code:     "let a = Array.create 3 1.0 in a.(true) <- 2.0",
+			code:     "let a = Array.make 3 1.0 in a.(true) <- 2.0",
 			expected: "Type mismatch between 'int' and 'bool'",
 		},
 		{
@@ -224,7 +224,7 @@ func TestInvalidExpressions(t *testing.T) {
 		},
 		{
 			what:     "Array.size returns int type value",
-			code:     "(Array.size (Array.create 3 true)) = 3.0",
+			code:     "(Array.size (Array.make 3 true)) = 3.0",
 			expected: "'int' and 'float'",
 		},
 		{

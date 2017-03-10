@@ -62,7 +62,7 @@ func TestEliminatingRef(t *testing.T) {
 		},
 		{
 			"array",
-			"let x = 1 in let arr = Array.create x x in arr.(x); arr.(x) <- x; Array.size arr",
+			"let x = 1 in let arr = Array.make x x in arr.(x); arr.(x) <- x; Array.size arr",
 			[]string{
 				"= array x$t1 x$t1",
 				"= arrload x$t1 arr$t2",

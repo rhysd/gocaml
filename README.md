@@ -43,6 +43,7 @@ print_int (gcd 21600 337500)
   GoCaml does not allow `-` unary operator for float values totally. You need to use `-.` unary operator instead (e.g. `-.3.14`).
 - GoCaml adds more operators. `*` and `/` for integers, `&&` and `||` for booleans.
 - GoCaml has string type. String value is immutable and used with slices.
+- GoCaml does not have `Array.create`, which is an alias to `Array.make`.
 
 ## Prerequisities
 

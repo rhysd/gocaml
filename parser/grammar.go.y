@@ -50,7 +50,7 @@ import (
 %token<token> IN
 %token<token> REC
 %token<token> COMMA
-%token<token> ARRAY_CREATE
+%token<token> ARRAY_MAKE
 %token<token> DOT
 %token<token> LESS_MINUS
 %token<token> SEMICOLON
@@ -158,7 +158,7 @@ exp:
 		{ $$ = &ast.Put{$1, $4, $7} }
 	| exp SEMICOLON exp
 		{ $$ = &ast.Let{$2, ast.NewSymbol(genTempId()), $1, $3} }
-	| ARRAY_CREATE parenless_exp parenless_exp
+	| ARRAY_MAKE parenless_exp parenless_exp
 		%prec prec_app
 		{ $$ = &ast.ArrayCreate{$1, $2, $3} }
 	| ARRAY_SIZE parenless_exp

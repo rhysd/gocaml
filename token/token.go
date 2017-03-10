@@ -44,7 +44,7 @@ const (
 	IN
 	REC
 	COMMA
-	ARRAY_CREATE
+	ARRAY_MAKE
 	DOT
 	LESS_MINUS
 	SEMICOLON
@@ -87,7 +87,7 @@ var tokenTable = [...]string{
 	IN:             "in",
 	REC:            "rec",
 	COMMA:          ",",
-	ARRAY_CREATE:   "Array.create",
+	ARRAY_MAKE:     "Array.make",
 	DOT:            ".",
 	LESS_MINUS:     "<-",
 	SEMICOLON:      ";",

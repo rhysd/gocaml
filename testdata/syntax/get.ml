@@ -1,4 +1,4 @@
 let
-    a = Array.create 1 2
+    a = Array.make 1 2
 in
     print a.(0)

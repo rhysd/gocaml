@@ -339,7 +339,7 @@ func isLetter(r rune) bool {
 
 func lexArrayCreate(l *Lexer) stateFn {
 	if l.top != '.' {
-		l.expected("'.' for 'Array.create'", l.top)
+		l.expected("'.' for 'Array.make'", l.top)
 		return nil
 	}
 	l.eat()
@@ -354,14 +354,14 @@ func lexArrayCreate(l *Lexer) stateFn {
 	// Note:
 	// Ate 'Array' and '.' but no token was emitted. So 'Array.' remains as
 	// current token string.
-	case "Array.create", "Array.make":
-		l.emit(token.ARRAY_CREATE)
+	case "Array.make":
+		l.emit(token.ARRAY_MAKE)
 		return lex
 	case "Array.size":
 		l.emit(token.ARRAY_SIZE)
 		return lex
 	default:
-		l.errmsg(fmt.Sprintf("Expected 'create', 'make' or 'size' for Array.create but got '%s'", ident))
+		l.errmsg(fmt.Sprintf("Expected 'create', 'make' or 'size' for Array.make but got '%s'", ident))
 		l.emitIllegal()
 		return nil
 	}

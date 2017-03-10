@@ -197,7 +197,7 @@ func TestEmitInsn(t *testing.T) {
 		},
 		{
 			"array creation",
-			"Array.create 3 true",
+			"Array.make 3 true",
 			[]string{
 				"int 3 ; type=int",
 				"bool true ; type=bool",
@@ -206,7 +206,7 @@ func TestEmitInsn(t *testing.T) {
 		},
 		{
 			"array size",
-			"Array.size (Array.create 3 true)",
+			"Array.size (Array.make 3 true)",
 			[]string{
 				"int 3 ; type=int",
 				"bool true ; type=bool",
@@ -216,7 +216,7 @@ func TestEmitInsn(t *testing.T) {
 		},
 		{
 			"access to array",
-			"let a = Array.create 3 true in a.(1)",
+			"let a = Array.make 3 true in a.(1)",
 			[]string{
 				"int 3 ; type=int",
 				"bool true ; type=bool",
@@ -228,7 +228,7 @@ func TestEmitInsn(t *testing.T) {
 		},
 		{
 			"modify element of array",
-			"let a = Array.create 3 true in a.(1) <- false",
+			"let a = Array.make 3 true in a.(1) <- false",
 			[]string{
 				"int 3 ; type=int",
 				"bool true ; type=bool",
@@ -347,7 +347,7 @@ func TestSemanticError(t *testing.T) {
 		},
 		{
 			what:     "array is invalid for operator '='",
-			code:     "let a = Array.create  3 3 in a = a",
+			code:     "let a = Array.make  3 3 in a = a",
 			expected: "'int array' can't be compared with operator '='",
 		},
 	}

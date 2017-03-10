@@ -419,7 +419,7 @@ func TestClosureCaptureInInsn(t *testing.T) {
 		o <> p;
 		q = r;
 		(if e then
-			let arr = Array.create f g in
+			let arr = Array.make f g in
 			Array.size arr;
 			arr.(h);
 			arr.(i) <- j
