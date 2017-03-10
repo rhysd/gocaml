@@ -232,6 +232,16 @@ func TestInvalidExpressions(t *testing.T) {
 			code:     "let rec f x = f in f 4",
 			expected: "Cyclic dependency found while unification with",
 		},
+		{
+			what:     "pre-registered external functions (param type)",
+			code:     "println_bool 42",
+			expected: "Type mismatch between 'bool' and 'int'",
+		},
+		{
+			what:     "pre-registered external functions (return type)",
+			code:     `println_bool (str_size "foo")`,
+			expected: "Type mismatch between 'int' and 'bool'",
+		},
 	}
 
 	for _, testcase := range testcases {

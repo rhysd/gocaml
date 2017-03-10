@@ -29,19 +29,9 @@ type Env struct {
 
 // NewEnv creates empty Env instance.
 func NewEnv() *Env {
-	builtins := map[string]Type{}
-	// TODO: Temporary
-	// Add all known builtin functions in advance.
-	builtins["__str_equal"] = &Fun{
-		BoolType,
-		[]Type{
-			StringType,
-			StringType,
-		},
-	}
 	return &Env{
 		map[string]Type{},
-		builtins,
+		builtinPopulatedTable(),
 	}
 }
 

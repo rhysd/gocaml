@@ -14,6 +14,7 @@ SRCS := \
 	typing/deref.go \
 	typing/infer.go \
 	typing/type.go \
+	typing/builtins.go \
 	alpha/transform.go \
 	alpha/mapping.go \
 	gcil/val.go \
