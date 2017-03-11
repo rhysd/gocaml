@@ -71,7 +71,6 @@ Variable names follow below naming convention.
 | `arrload {id} {id}`       | Load element value of array. First `{id}` is index value.                                       |
 | `arrstore {id} {id} {id}` | Store value to array. First `{id}` is index, second `{id}` is array, third `{id}` is set value. |
 | `arrsize {id}`            | Get array size of first `{id}`.                                                                 |
-| `arrlit {ids...}`         | Array literal. `{ids...}` is a comma-separated identifer list.                                  |
 | `xref {id}`               | Reference to external symbol. `{id}` represents the symbol.                                     |
 | `makecls {ids...} {id}`   | Closure object for second `{id}`. First `{ids...}` is a list for captures of the closure.       |
 | `nop`                     | No operation instruction. Currently it's only used as the centinel of instructions list.        |

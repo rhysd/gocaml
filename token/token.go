@@ -54,8 +54,6 @@ const (
 	AND_AND
 	ARRAY_LENGTH
 	STRING_LITERAL
-	LBRACKET
-	RBRACKET
 	EOF
 )
 
@@ -99,8 +97,6 @@ var tokenTable = [...]string{
 	AND_AND:        "&&",
 	ARRAY_LENGTH:   "Array.length",
 	STRING_LITERAL: "STRING_LITERAL",
-	LBRACKET:       "[",
-	RBRACKET:       "]",
 }
 
 // Token instance for GoCaml.

@@ -441,12 +441,6 @@ func lex(l *Lexer) stateFn {
 			return lexLogicalOp
 		case '"':
 			return lexStringLiteral
-		case '[':
-			l.eat()
-			l.emit(token.LBRACKET)
-		case ']':
-			l.eat()
-			l.emit(token.RBRACKET)
 		default:
 			switch {
 			case unicode.IsSpace(l.top):

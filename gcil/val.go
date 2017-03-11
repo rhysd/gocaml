@@ -138,9 +138,6 @@ type (
 	ArrLen struct {
 		Array string
 	}
-	ArrLit struct {
-		Elems []string
-	}
 	XRef struct {
 		Ident string
 	}
@@ -212,9 +209,6 @@ func (v *ArrStore) Print(out io.Writer) {
 }
 func (v *ArrLen) Print(out io.Writer) {
 	fmt.Fprintf(out, "arrlen %s", v.Array)
-}
-func (v *ArrLit) Print(out io.Writer) {
-	fmt.Fprintf(out, "arrlit %s", strings.Join(v.Elems, ","))
 }
 func (v *XRef) Print(out io.Writer) {
 	fmt.Fprintf(out, "xref %s", v.Ident)

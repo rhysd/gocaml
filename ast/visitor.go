@@ -103,10 +103,6 @@ func Visit(v Visitor, e Expr) {
 		Visit(v, n.Array)
 		Visit(v, n.Index)
 		Visit(v, n.Assignee)
-	case *ArrayLit:
-		for _, e := range n.Elems {
-			Visit(v, e)
-		}
 	}
 }
 

@@ -60,8 +60,6 @@ import (
 %token<token> AND_AND
 %token<token> ARRAY_LENGTH
 %token<token> STRING_LITERAL
-%token<token> LBRACKET
-%token<token> RBRACKET
 
 %right prec_let
 %right SEMICOLON
@@ -166,10 +164,6 @@ exp:
 	| ARRAY_LENGTH parenless_exp
 		%prec prec_app
 		{ $$ = &ast.ArraySize{$1, $2} }
-	| LBRACKET RBRACKET
-		{ $$ = &ast.ArrayLit{$1, $2, []ast.Expr{}}}
-	| LBRACKET args RBRACKET
-		{ $$ = &ast.ArrayLit{$1, $3, $2}}
 	| ILLEGAL error
 		{
 			yylex.Error(fmt.Sprintf("Parsing illegal token: %s", $1.String()))

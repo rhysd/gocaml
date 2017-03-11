@@ -75,10 +75,6 @@ func (elim *elimRef) insn(insn *Insn) {
 	case *Array:
 		val.Size = elim.elimRef(val.Size)
 		val.Elem = elim.elimRef(val.Elem)
-	case *ArrLit:
-		for i, e := range val.Elems {
-			val.Elems[i] = elim.elimRef(e)
-		}
 	case *TplLoad:
 		val.From = elim.elimRef(val.From)
 	case *ArrLoad:
