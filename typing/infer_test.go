@@ -218,13 +218,13 @@ func TestInvalidExpressions(t *testing.T) {
 			expected: "Type mismatch between 'float' and '()'",
 		},
 		{
-			what:     "Array.size with invalid argument",
-			code:     "Array.size true",
+			what:     "Array.length with invalid argument",
+			code:     "Array.length true",
 			expected: "} array' and 'bool'",
 		},
 		{
-			what:     "Array.size returns int type value",
-			code:     "(Array.size (Array.make 3 true)) = 3.0",
+			what:     "Array.length returns int type value",
+			code:     "(Array.length (Array.make 3 true)) = 3.0",
 			expected: "'int' and 'float'",
 		},
 		{

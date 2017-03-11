@@ -1,4 +1,4 @@
-print_str "argc: "; println_int (Array.size argv);
+print_str "argc: "; println_int (Array.length argv);
 let prog = argv.(0) in
 let size = str_size prog in
 (* prog is a full path to executable. Check only file extension. *)

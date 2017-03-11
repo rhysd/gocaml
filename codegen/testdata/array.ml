@@ -30,5 +30,5 @@ println_bool (b.(1));
 a.(0) <- (a.(1)) +. a.(0) +. c.(0);
 println_float (a.(0));
 
-println_int (Array.size b);
-print_int (Array.size (getarr()))
+println_int (Array.length b);
+print_int (Array.length (getarr()))

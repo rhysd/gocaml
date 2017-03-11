@@ -420,7 +420,7 @@ func TestClosureCaptureInInsn(t *testing.T) {
 		q = r;
 		(if e then
 			let arr = Array.make f g in
-			Array.size arr;
+			Array.length arr;
 			arr.(h);
 			arr.(i) <- j
 		else

@@ -206,12 +206,12 @@ func TestEmitInsn(t *testing.T) {
 		},
 		{
 			"array size",
-			"Array.size (Array.make 3 true)",
+			"Array.length (Array.make 3 true)",
 			[]string{
 				"int 3 ; type=int",
 				"bool true ; type=bool",
 				"array $k1 $k2 ; type=bool array",
-				"arrsize $k3 ; type=int",
+				"arrlen $k3 ; type=int",
 			},
 		},
 		{

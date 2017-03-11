@@ -135,7 +135,7 @@ type (
 		Index string
 		Rhs   string
 	}
-	ArrSize struct {
+	ArrLen struct {
 		Array string
 	}
 	XRef struct {
@@ -207,8 +207,8 @@ func (v *ArrLoad) Print(out io.Writer) {
 func (v *ArrStore) Print(out io.Writer) {
 	fmt.Fprintf(out, "arrstore %s %s %s", v.Index, v.To, v.Rhs)
 }
-func (v *ArrSize) Print(out io.Writer) {
-	fmt.Fprintf(out, "arrsize %s", v.Array)
+func (v *ArrLen) Print(out io.Writer) {
+	fmt.Fprintf(out, "arrlen %s", v.Array)
 }
 func (v *XRef) Print(out io.Writer) {
 	fmt.Fprintf(out, "xref %s", v.Ident)

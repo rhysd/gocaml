@@ -52,7 +52,7 @@ const (
 	SLASH
 	BAR_BAR
 	AND_AND
-	ARRAY_SIZE
+	ARRAY_LENGTH
 	STRING_LITERAL
 	EOF
 )
@@ -95,7 +95,7 @@ var tokenTable = [...]string{
 	SLASH:          "/",
 	BAR_BAR:        "||",
 	AND_AND:        "&&",
-	ARRAY_SIZE:     "Array.size",
+	ARRAY_LENGTH:   "Array.length",
 	STRING_LITERAL: "STRING_LITERAL",
 }
 

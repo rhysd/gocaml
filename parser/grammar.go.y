@@ -58,7 +58,7 @@ import (
 %token<token> SLASH
 %token<token> BAR_BAR
 %token<token> AND_AND
-%token<token> ARRAY_SIZE
+%token<token> ARRAY_LENGTH
 %token<token> STRING_LITERAL
 
 %right prec_let
@@ -161,7 +161,7 @@ exp:
 	| ARRAY_MAKE parenless_exp parenless_exp
 		%prec prec_app
 		{ $$ = &ast.ArrayCreate{$1, $2, $3} }
-	| ARRAY_SIZE parenless_exp
+	| ARRAY_LENGTH parenless_exp
 		%prec prec_app
 		{ $$ = &ast.ArraySize{$1, $2} }
 	| ILLEGAL error

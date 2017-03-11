@@ -308,7 +308,7 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		array := e.emitInsn(n.Target)
 		prev = array
 		ty = typing.IntType
-		val = &ArrSize{array.Ident}
+		val = &ArrLen{array.Ident}
 	}
 
 	// Note:

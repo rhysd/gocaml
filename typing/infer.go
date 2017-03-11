@@ -276,7 +276,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		}
 		return &Array{Elem: elem}, nil
 	case *ast.ArraySize:
-		if err := env.checkNodeType("argument of 'Array.size'", n.Target, &Array{Elem: &Var{}}); err != nil {
+		if err := env.checkNodeType("argument of 'Array.length'", n.Target, &Array{Elem: &Var{}}); err != nil {
 			return nil, err
 		}
 		return IntType, nil

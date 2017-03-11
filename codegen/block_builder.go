@@ -375,7 +375,7 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		arrPtr := b.builder.CreateExtractValue(toVal, 0, "")
 		elemPtr := b.builder.CreateInBoundsGEP(arrPtr, []llvm.Value{idxVal}, "")
 		return b.builder.CreateStore(rhsVal, elemPtr)
-	case *gcil.ArrSize:
+	case *gcil.ArrLen:
 		fromVal := b.resolve(val.Array)
 		return b.builder.CreateExtractValue(fromVal, 1, "arrsize")
 	case *gcil.XRef:

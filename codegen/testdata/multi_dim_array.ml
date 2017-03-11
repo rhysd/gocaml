@@ -42,7 +42,7 @@ b.(2) <- Array.make 11 99;
 println_int b.(2).(0);
 println_int b.(2).(8);
 
-println_int (Array.size b);
-println_int (Array.size (b.(0)));
-print_int (Array.size (b.(2)))
+println_int (Array.length b);
+println_int (Array.length (b.(0)));
+print_int (Array.length (b.(2)))
 
