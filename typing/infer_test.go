@@ -247,6 +247,11 @@ func TestInvalidExpressions(t *testing.T) {
 			code:     "argv + 12",
 			expected: "Type mismatch between 'int' and 'string array'",
 		},
+		{
+			what:     "array element mismatch",
+			code:     "[1, true]",
+			expected: "Type mismatch between 'int' and 'bool'",
+		},
 	}
 
 	for _, testcase := range testcases {

@@ -60,6 +60,13 @@ func TestPrintAST(t *testing.T) {
 								tok,
 								"string literal",
 							},
+							&ArrayLit{
+								tok,
+								tok,
+								[]Expr{
+									&Int{tok, 42},
+								},
+							},
 						},
 					},
 					&ArrayCreate{
@@ -195,6 +202,8 @@ func TestPrintAST(t *testing.T) {
 -   -   -   -   -   -   ArraySize (0:0-0:0)
 -   -   -   -   -   -   -   VarRef (arr) (0:0-0:0)
 -   -   -   -   -   -   String () (0:0-0:0)
+-   -   -   -   -   -   ArrayLit (1) (0:0-0:0)
+-   -   -   -   -   -   -   Int (0:0-0:0)
 -   -   -   -   -   ArrayCreate (0:0-0:0)
 -   -   -   -   -   -   Int (0:0-0:0)
 -   -   -   -   -   -   Bool (0:0-0:0)

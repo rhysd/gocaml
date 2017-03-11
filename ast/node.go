@@ -250,6 +250,12 @@ type (
 		Index    Expr
 		Assignee Expr
 	}
+
+	ArrayLit struct {
+		LBracket *token.Token
+		RBracket *token.Token
+		Elems    []Expr
+	}
 )
 
 func (e *Unit) Pos() token.Position {
@@ -500,6 +506,13 @@ func (e *Put) End() token.Position {
 	return e.Assignee.End()
 }
 
+func (e *ArrayLit) Pos() token.Position {
+	return e.LBracket.Start
+}
+func (e *ArrayLit) End() token.Position {
+	return e.RBracket.End
+}
+
 func (e *Unit) Name() string      { return "Unit" }
 func (e *Bool) Name() string      { return "Bool" }
 func (e *Int) Name() string       { return "Int" }
@@ -553,3 +566,4 @@ func (e *ArrayCreate) Name() string { return "ArrayCreate" }
 func (e *ArraySize) Name() string   { return "ArraySize" }
 func (e *Get) Name() string         { return "Get" }
 func (e *Put) Name() string         { return "Put" }
+func (e *ArrayLit) Name() string    { return fmt.Sprintf("ArrayLit (%d)", len(e.Elems)) }

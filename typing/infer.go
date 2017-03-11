@@ -312,6 +312,27 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 
 		// Assign to array does not have a value, so return unit type
 		return UnitType, nil
+	case *ast.ArrayLit:
+		if len(n.Elems) == 0 {
+			return &Array{&Var{}}, nil
+		}
+
+		// All elements must be the same type
+		first, err := env.infer(n.Elems[0])
+		if err != nil {
+			return nil, err
+		}
+		for i, e := range n.Elems[1:] {
+			elem, err := env.infer(e)
+			if err != nil {
+				return nil, err
+			}
+			if err = Unify(first, elem); err != nil {
+				return nil, typeError(err, fmt.Sprintf("type mismatch at array literal between 1st and %dth elems", i+2), e.Pos())
+			}
+		}
+
+		return &Array{first}, nil
 	}
 	panic(fmt.Sprintf("Unreachable: %s %v %v", e.Name(), e.Pos(), e.End()))
 }
