@@ -239,7 +239,7 @@ func TestInvalidExpressions(t *testing.T) {
 		},
 		{
 			what:     "pre-registered external functions (return type)",
-			code:     `println_bool (str_size "foo")`,
+			code:     `println_bool (str_length "foo")`,
 			expected: "Type mismatch between 'int' and 'bool'",
 		},
 		{

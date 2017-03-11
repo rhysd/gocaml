@@ -43,7 +43,8 @@ print_int (gcd 21600 337500)
   GoCaml does not allow `-` unary operator for float values totally. You need to use `-.` unary operator instead (e.g. `-.3.14`).
 - GoCaml adds more operators. `*` and `/` for integers, `&&` and `||` for booleans.
 - GoCaml has string type. String value is immutable and used with slices.
-- GoCaml does not have `Array.create`, which is an alias to `Array.make`.
+- GoCaml does not have `Array.create`, which is an alias to `Array.make`. `Array.length` is available to obtain the size of array.
+- Some useful built-in functions are added (described in below section).
 
 ## Prerequisities
 
@@ -171,7 +172,7 @@ Output the value to stdout with newline.
 
 Convert between float and int, string and int, float and int.
 
-- `str_size :: (string) -> int`
+- `str_length :: (string) -> int`
 
 Return the size of string.
 
@@ -213,12 +214,10 @@ $ clang -Wall -c plus100.c -o plus100.o
 Then you can refer the function from GoCaml code:
 
 ```ml
-println_int ((plus100 10) + 0)
+println_int (plus100 10)
 ```
 
 `println_int` is a function defined in runtime. So you don't need to care about it.
-The `+ 0` is necessary to tell a compiler that the type of returned value of `plus100` is `int`. A compiler can know the type
-via type inference.
 
 Finally comile the GoCaml code and the object file together with `gocaml` compiler. You need to link `.o` file after compiling
 GoCaml code by passing the object file to `-ldflags`.

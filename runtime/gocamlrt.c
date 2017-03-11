@@ -82,7 +82,7 @@ gocaml_float int_to_float(gocaml_int const i)
     return (gocaml_float) i;
 }
 
-gocaml_int str_size(gocaml_string const s)
+gocaml_int str_length(gocaml_string const s)
 {
     return (gocaml_int) s.size;
 }

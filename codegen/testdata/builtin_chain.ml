@@ -1,1 +1,1 @@
-print_int (str_size (substr (str_concat "foo" "bar") 2 4))
+print_int (str_length (substr (str_concat "foo" "bar") 2 4))

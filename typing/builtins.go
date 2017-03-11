@@ -13,7 +13,7 @@ func builtinPopulatedTable() map[string]Type {
 		"println_str":   &Fun{UnitType, []Type{StringType}},
 		"float_to_int":  &Fun{IntType, []Type{FloatType}},
 		"int_to_float":  &Fun{FloatType, []Type{IntType}},
-		"str_size":      &Fun{IntType, []Type{StringType}},
+		"str_length":    &Fun{IntType, []Type{StringType}},
 		"__str_equal":   &Fun{BoolType, []Type{StringType, StringType}},
 		"str_concat":    &Fun{StringType, []Type{StringType, StringType}},
 		"substr":        &Fun{StringType, []Type{StringType, IntType, IntType}},
