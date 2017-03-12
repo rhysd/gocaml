@@ -182,12 +182,19 @@ Concat two strings as a new allocated string because strings are immutable in Go
 
 - `substr :: (string, int, int) -> string`
 
-Returns substring of first argument. Second argument is an index to start and Third argument is an index to end. Returns string slice `[start, end)` so it does not cause any allocation.
+Returns substring of first argument. Second argument is an index to start and Third argument is an index to end.
+Returns string slice `[start, end)` so it does not cause any allocation.
 
 - `get_line :: (()) -> string`
 - `get_char :: (()) -> string`
 
 Get user input by line or character and return it as string.
+
+- `to_char_code :: (string) -> int`
+- `from_char_code :: (int) -> string`
+
+Covert between a character and integer. First character of string is converted into integer and
+integer is converted into one character string.
 
 ## How to Work with C
 

@@ -235,3 +235,22 @@ gocaml_string get_char(gocaml_unit _)
     ret.size = 1;
     return ret;
 }
+
+gocaml_int to_char_code(gocaml_string const s)
+{
+    if (s.size == 0) {
+        return 0;
+    }
+    return (int64_t) s.chars[0];
+}
+
+gocaml_string from_char_code(gocaml_int const i)
+{
+    char *const ptr = GC_malloc(2);
+    *ptr = (char) i;
+    *(ptr + 1) = '\0';
+    gocaml_string ret;
+    ret.chars = (int8_t *) ptr;
+    ret.size = 1;
+    return ret;
+}
