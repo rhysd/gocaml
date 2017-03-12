@@ -4,26 +4,28 @@ let rec density_str d =
     if d > 2.0 then "*" else
     "+"
 in
-let rec converge_impl real imag iter creal cimag =
-    if iter > 255.0 || (real *. real +. imag *. imag) >= 4.0 then
-        iter
-    else
-        converge_impl (real *. real -. imag *. imag +. creal) (2.0 *. real *. imag +. cimag) (iter +. 1.0) creal cimag
-in
-let rec converge r i = converge_impl r i 0.0 r i in
-let rec plot x xmax xstep y ymax ystep =
-    let rec plot_line x y =
-        if x >= xmax then () else
-        let dens = converge x y in
-        print_str (density_str dens);
-        plot_line (x +. xstep) y
+let rec converge r i = 
+    let rec go real imag iter creal cimag =
+        if iter > 255.0 || (real *. real +. imag *. imag) >= 4.0 then
+            iter
+        else
+            go (real *. real -. imag *. imag +. creal) (2.0 *. real *. imag +. cimag) (iter +. 1.0) creal cimag
     in
-    if y >= ymax then () else
-    (plot_line x y;
-    println_str "";
-    plot x xmax xstep (y +. ystep) ymax ystep)
+    go r i 0.0 r i
 in
 let rec mandel realstart imagstart realmag imagmag =
+    let rec plot x xmax xstep y ymax ystep =
+        let rec plot_line x y =
+            if x >= xmax then () else
+            let dens = converge x y in
+            print_str (density_str dens);
+            plot_line (x +. xstep) y
+        in
+        if y >= ymax then () else
+        (plot_line x y;
+        println_str "";
+        plot x xmax xstep (y +. ystep) ymax ystep)
+    in
     plot realstart (realstart +. realmag *. 78.0) realmag imagstart (imagstart +. imagmag *. 40.0) imagmag
 in
 mandel (-.2.3) (-.1.3) 0.05 0.07

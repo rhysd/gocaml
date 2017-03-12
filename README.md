@@ -18,6 +18,8 @@ let rec gcd m n =
 print_int (gcd 21600 337500)
 ```
 
+You can see [more examples][examples]. (e.g. [Brainfxxk interpreter][Brainfxxk interpreter example])
+
 ## Tasks
 
 - [x] Lexer -> ([doc][lexer doc])
@@ -294,3 +296,5 @@ $ gcc -m32 -lgc source.o ./runtime/gocamlrt.a
 [Homebrew]: https://brew.sh/index.html
 [libgc]: https://www.hboehm.info/gc/
 [target triple]: https://clang.llvm.org/docs/CrossCompilation.html#target-triple
+[examples]: ./examples
+[Brainfxxk interpreter example]: ./examples/brainfxxk.ml
