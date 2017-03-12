@@ -168,8 +168,8 @@ gocaml_int str_to_int(gocaml_string const s)
     char const backup = s.chars[s.size];
 
     // Note:
-    // Need to guard with this 'if' statement because when the string is allocasted as
-    // global variable, we can't modify it. And we does not need to modify global constant
+    // Need to guard with this 'if' statement because when the string is allocated as global
+    // constant variable, we can't modify it. And we does not need to modify global constant
     // string because it is always NUL-terminated.
     if (s.chars[s.size] != '\0') {
         s.chars[s.size] = '\0'; // Ensure to terminate with NUL.
@@ -189,8 +189,8 @@ gocaml_float str_to_float(gocaml_string const s)
     char const backup = s.chars[s.size];
 
     // Note:
-    // Need to guard with this 'if' statement because when the string is allocasted as
-    // global variable, we can't modify it. And we does not need to modify global constant
+    // Need to guard with this 'if' statement because when the string is allocated as global
+    // constant variable, we can't modify it. And we does not need to modify global constant
     // string because it is always NUL-terminated.
     if (s.chars[s.size] != '\0') {
         s.chars[s.size] = '\0'; // Ensure to terminate with NUL.
@@ -207,6 +207,7 @@ gocaml_float str_to_float(gocaml_string const s)
 
 gocaml_string get_line(gocaml_unit _)
 {
+    (void) _;
     char *const s = fgets((char *) GC_malloc(LINE_MAX), LINE_MAX, stdin);
     gocaml_string ret;
 
@@ -220,5 +221,17 @@ gocaml_string get_line(gocaml_unit _)
 
     ret.chars = (int8_t *) s;
     ret.size = (gocaml_int) strlen(s);
+    return ret;
+}
+
+gocaml_string get_char(gocaml_unit _)
+{
+    (void) _;
+    gocaml_string ret;
+    int *const s = (int *) GC_malloc(sizeof(int) * 2);
+    *s = getchar();
+    *(s + 1) = '\0';
+    ret.chars = (int8_t *) s;
+    ret.size = 1;
     return ret;
 }

@@ -185,8 +185,9 @@ Concat two strings as a new allocated string because strings are immutable in Go
 Returns substring of first argument. Second argument is an index to start and Third argument is an index to end. Returns string slice `[start, end)` so it does not cause any allocation.
 
 - `get_line :: (()) -> string`
+- `get_char :: (()) -> string`
 
-Get user input by line and return it as string.
+Get user input by line or character and return it as string.
 
 ## How to Work with C
 
