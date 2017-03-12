@@ -92,7 +92,8 @@ gocaml_bool __str_equal(gocaml_string const l, gocaml_string const r)
     if (l.size != r.size) {
         return (gocaml_bool) 0;
     }
-    return (gocaml_bool)(strcmp((char *)l.chars, (char *)r.chars) == 0);
+    int const cmp = strncmp((char *)l.chars, (char *)r.chars, (size_t) l.size);
+    return (gocaml_bool) cmp == 0;
 }
 
 gocaml_string str_concat(gocaml_string const l, gocaml_string const r)
