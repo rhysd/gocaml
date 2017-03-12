@@ -2,6 +2,7 @@ package typing
 
 import (
 	"github.com/pkg/errors"
+	"github.com/rhysd/gocaml/common"
 )
 
 type UnificationError struct {
@@ -50,7 +51,7 @@ func unifyTuple(left, right *Tuple) error {
 		l := left.Elems[i]
 		r := right.Elems[i]
 		if err := Unify(l, r); err != nil {
-			return errors.Wrapf(err, "On unifying tuples' %dth elements of '%s' and '%s'\n", i+1, left.String(), right.String())
+			return errors.Wrapf(err, "On unifying tuples' %s elements of '%s' and '%s'\n", common.Ordinal(i+1), left.String(), right.String())
 		}
 	}
 
@@ -69,7 +70,7 @@ func unifyFun(left, right *Fun) error {
 	for i, l := range left.Params {
 		r := right.Params[i]
 		if err := Unify(l, r); err != nil {
-			return errors.Wrapf(err, "On unifying %dth parameter of function '%s' and '%s'\n", i+1, left.String(), right.String())
+			return errors.Wrapf(err, "On unifying %s parameter of function '%s' and '%s'\n", common.Ordinal(i+1), left.String(), right.String())
 		}
 	}
 

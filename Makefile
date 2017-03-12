@@ -33,6 +33,7 @@ SRCS := \
 	codegen/debug_info_builder.go \
 	codegen/linker.go \
 	codegen/targets.go \
+	common/ordinal.go \
 
 TESTS := \
 	alpha/example_test.go \
@@ -63,6 +64,7 @@ TESTS := \
 	codegen/executable_test.go \
 	codegen/linker_test.go \
 	codegen/targets_test.go \
+	common/ordinal_test.go \
 
 all: build test
 
