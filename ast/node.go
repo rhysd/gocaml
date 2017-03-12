@@ -104,23 +104,23 @@ type (
 	}
 
 	Add struct {
-		Left  Expr
-		Right Expr
+		Left, Right Expr
 	}
 
 	Sub struct {
-		Left  Expr
-		Right Expr
+		Left, Right Expr
 	}
 
 	Mul struct {
-		Left  Expr
-		Right Expr
+		Left, Right Expr
 	}
 
 	Div struct {
-		Left  Expr
-		Right Expr
+		Left, Right Expr
+	}
+
+	Mod struct {
+		Left, Right Expr
 	}
 
 	FNeg struct {
@@ -129,77 +129,62 @@ type (
 	}
 
 	FAdd struct {
-		Left  Expr
-		Right Expr
+		Left, Right Expr
 	}
 
 	FSub struct {
-		Left  Expr
-		Right Expr
+		Left, Right Expr
 	}
 
 	FMul struct {
-		Left  Expr
-		Right Expr
+		Left, Right Expr
 	}
 
 	FDiv struct {
-		Left  Expr
-		Right Expr
+		Left, Right Expr
 	}
 
 	Eq struct {
-		Left  Expr
-		Right Expr
+		Left, Right Expr
 	}
 
 	NotEq struct {
-		Left  Expr
-		Right Expr
+		Left, Right Expr
 	}
 
 	Less struct {
-		Left  Expr
-		Right Expr
+		Left, Right Expr
 	}
 
 	LessEq struct {
-		Left  Expr
-		Right Expr
+		Left, Right Expr
 	}
 
 	Greater struct {
-		Left  Expr
-		Right Expr
+		Left, Right Expr
 	}
 
 	GreaterEq struct {
-		Left  Expr
-		Right Expr
+		Left, Right Expr
 	}
 
 	And struct {
-		Left  Expr
-		Right Expr
+		Left, Right Expr
 	}
 
 	Or struct {
-		Left  Expr
-		Right Expr
+		Left, Right Expr
 	}
 
 	If struct {
-		IfToken *token.Token
-		Cond    Expr
-		Then    Expr
-		Else    Expr
+		IfToken          *token.Token
+		Cond, Then, Else Expr
 	}
 
 	Let struct {
-		LetToken *token.Token
-		Symbol   *Symbol
-		Bound    Expr
-		Body     Expr
+		LetToken    *token.Token
+		Symbol      *Symbol
+		Bound, Body Expr
 	}
 
 	VarRef struct {
@@ -223,16 +208,14 @@ type (
 	}
 
 	LetTuple struct {
-		LetToken *token.Token
-		Symbols  []*Symbol
-		Bound    Expr
-		Body     Expr
+		LetToken    *token.Token
+		Symbols     []*Symbol
+		Bound, Body Expr
 	}
 
 	ArrayCreate struct {
 		ArrayToken *token.Token
-		Size       Expr
-		Elem       Expr
+		Size, Elem Expr
 	}
 
 	ArraySize struct {
@@ -241,14 +224,11 @@ type (
 	}
 
 	Get struct {
-		Array Expr
-		Index Expr
+		Array, Index Expr
 	}
 
 	Put struct {
-		Array    Expr
-		Index    Expr
-		Assignee Expr
+		Array, Index, Assignee Expr
 	}
 )
 
@@ -326,6 +306,13 @@ func (e *Div) Pos() token.Position {
 	return e.Left.Pos()
 }
 func (e *Div) End() token.Position {
+	return e.Right.End()
+}
+
+func (e *Mod) Pos() token.Position {
+	return e.Left.Pos()
+}
+func (e *Mod) End() token.Position {
 	return e.Right.End()
 }
 
@@ -511,6 +498,7 @@ func (e *Add) Name() string       { return "Add" }
 func (e *Sub) Name() string       { return "Sub" }
 func (e *Mul) Name() string       { return "Mul" }
 func (e *Div) Name() string       { return "Div" }
+func (e *Mod) Name() string       { return "Mod" }
 func (e *FNeg) Name() string      { return "FNeg" }
 func (e *FAdd) Name() string      { return "FAdd" }
 func (e *FSub) Name() string      { return "FSub" }

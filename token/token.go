@@ -54,6 +54,7 @@ const (
 	AND_AND
 	ARRAY_LENGTH
 	STRING_LITERAL
+	PERCENT
 	EOF
 )
 
@@ -97,6 +98,7 @@ var tokenTable = [...]string{
 	AND_AND:        "&&",
 	ARRAY_LENGTH:   "Array.length",
 	STRING_LITERAL: "STRING_LITERAL",
+	PERCENT:        "%",
 }
 
 // Token instance for GoCaml.

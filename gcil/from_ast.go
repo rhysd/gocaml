@@ -191,6 +191,8 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		ty, val, prev = e.emitBinaryInsn(MUL, n.Left, n.Right)
 	case *ast.Div:
 		ty, val, prev = e.emitBinaryInsn(DIV, n.Left, n.Right)
+	case *ast.Mod:
+		ty, val, prev = e.emitBinaryInsn(MOD, n.Left, n.Right)
 	case *ast.FAdd:
 		ty, val, prev = e.emitBinaryInsn(FADD, n.Left, n.Right)
 	case *ast.FSub:

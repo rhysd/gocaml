@@ -32,7 +32,10 @@ func TestPrintAST(t *testing.T) {
 					},
 					&Neg{
 						tok,
-						&Int{tok, 42},
+						&Mod{
+							&Int{tok, 42},
+							&Int{tok, 42},
+						},
 					},
 				},
 				&Eq{
@@ -180,7 +183,9 @@ func TestPrintAST(t *testing.T) {
 -   -   -   -   -   -   Not (0:0-0:0)
 -   -   -   -   -   -   -   Bool (0:0-0:0)
 -   -   -   -   -   Neg (0:0-0:0)
--   -   -   -   -   -   Int (0:0-0:0)
+-   -   -   -   -   -   Mod (0:0-0:0)
+-   -   -   -   -   -   -   Int (0:0-0:0)
+-   -   -   -   -   -   -   Int (0:0-0:0)
 -   -   -   -   Eq (0:0-0:0)
 -   -   -   -   -   FNeg (0:0-0:0)
 -   -   -   -   -   -   Float (0:0-0:0)

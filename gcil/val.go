@@ -22,6 +22,7 @@ const (
 	SUB
 	MUL
 	DIV
+	MOD
 	FADD
 	FSUB
 	FMUL
@@ -44,6 +45,7 @@ var OpTable = [...]string{
 	SUB:  "-",
 	MUL:  "*",
 	DIV:  "/",
+	MOD:  "%",
 	FADD: "+.",
 	FSUB: "-.",
 	FMUL: "*.",
@@ -93,9 +95,8 @@ type (
 		Child string
 	}
 	Binary struct {
-		Op  OperatorKind
-		Lhs string
-		Rhs string
+		Op       OperatorKind
+		Lhs, Rhs string
 	}
 	Ref struct {
 		Ident string
@@ -119,21 +120,17 @@ type (
 		Elems []string
 	}
 	Array struct {
-		Size string
-		Elem string
+		Size, Elem string
 	}
 	TplLoad struct { // Used for each element of LetTuple
 		From  string
 		Index int
 	}
 	ArrLoad struct {
-		From  string
-		Index string
+		From, Index string
 	}
 	ArrStore struct {
-		To    string
-		Index string
-		Rhs   string
+		To, Index, Rhs string
 	}
 	ArrLen struct {
 		Array string

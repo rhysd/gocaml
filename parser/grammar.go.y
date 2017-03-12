@@ -60,6 +60,7 @@ import (
 %token<token> AND_AND
 %token<token> ARRAY_LENGTH
 %token<token> STRING_LITERAL
+%token<token> PERCENT
 
 %right prec_let
 %right SEMICOLON
@@ -70,7 +71,7 @@ import (
 %left AND_AND
 %left EQUAL LESS_GREATER LESS GREATER LESS_EQUAL GREATER_EQUAL
 %left PLUS MINUS PLUS_DOT MINUS_DOT
-%left STAR SLASH STAR_DOT SLASH_DOT
+%left STAR SLASH STAR_DOT SLASH_DOT PERCENT
 %right prec_unary_minus
 %left prec_app
 %left DOT
@@ -111,6 +112,8 @@ exp:
 		{ $$ = &ast.Mul{$1, $3} }
 	| exp SLASH exp
 		{ $$ = &ast.Div{$1, $3} }
+	| exp PERCENT exp
+		{ $$ = &ast.Mod{$1, $3} }
 	| exp EQUAL exp
 		{ $$ = &ast.Eq{$1, $3} }
 	| exp LESS_GREATER exp

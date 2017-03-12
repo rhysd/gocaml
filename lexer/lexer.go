@@ -419,6 +419,9 @@ func lex(l *Lexer) stateFn {
 			return lexMultOp
 		case '/':
 			return lexMultOp
+		case '%':
+			l.eat()
+			l.emit(token.PERCENT)
 		case '=':
 			l.eat()
 			l.emit(token.EQUAL)

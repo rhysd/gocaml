@@ -100,6 +100,8 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		return env.inferArithmeticBinOp("*", n.Left, n.Right, IntType)
 	case *ast.Div:
 		return env.inferArithmeticBinOp("/", n.Left, n.Right, IntType)
+	case *ast.Mod:
+		return env.inferArithmeticBinOp("%", n.Left, n.Right, IntType)
 	case *ast.FNeg:
 		if err := env.checkNodeType("operand of unary operator '-.'", n.Child, FloatType); err != nil {
 			return nil, err

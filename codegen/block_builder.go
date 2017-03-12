@@ -199,6 +199,8 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 			return b.builder.CreateMul(lhs, rhs, "mul")
 		case gcil.DIV:
 			return b.builder.CreateSDiv(lhs, rhs, "div")
+		case gcil.MOD:
+			return b.builder.CreateSRem(lhs, rhs, "mod")
 		case gcil.FADD:
 			return b.builder.CreateFAdd(lhs, rhs, "fadd")
 		case gcil.FSUB:
