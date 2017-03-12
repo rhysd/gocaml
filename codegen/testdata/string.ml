@@ -44,6 +44,11 @@ println_bool (a <> a);
 println_bool (a = e);
 println_bool (a <> e);
 
+(* compare string slice *)
+println_bool ((substr e 2 4) = "cd");
+println_bool ("cd" = (substr e 2 4));
+println_bool ((substr e 2 4) = (substr e 2 4));
+
 println_str "";
 println_str (str_concat "" "");
 println_str "foo\tbar\tbaz";
