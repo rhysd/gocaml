@@ -78,7 +78,7 @@ func TestExecutable(t *testing.T) {
 				t.Fatal(err)
 			}
 			emitter.RunOptimizationPasses()
-			outfile, err := filepath.Abs("__test_a.out")
+			outfile, err := filepath.Abs(fmt.Sprintf("test.%s.a.out", base))
 			if err != nil {
 				panic(err)
 			}
@@ -106,4 +106,80 @@ func TestExecutable(t *testing.T) {
 			}
 		})
 	}
+}
+
+func BenchmarkExecutableCreation(b *testing.B) {
+	inputs, err := filepath.Glob("testdata/*.ml")
+	if err != nil {
+		panic(err)
+	}
+	if len(inputs) == 0 {
+		panic("No test found")
+	}
+	sources := make(map[string]*token.Source, len(inputs))
+	for _, input := range inputs {
+		source, err := token.NewSourceFromFile(input)
+		if err != nil {
+			b.Fatal(err)
+		}
+		base := filepath.Base(input)
+		sources[base] = source
+	}
+
+	makeEmitter := func(source *token.Source) *Emitter {
+		l := lexer.NewLexer(source)
+		go l.Lex()
+
+		root, err := parser.Parse(l.Tokens)
+		if err != nil {
+			b.Fatal(err)
+		}
+
+		if err = alpha.Transform(root); err != nil {
+			b.Fatal(err)
+		}
+
+		env := typing.NewEnv()
+		if err := env.ApplyTypeAnalysis(root); err != nil {
+			b.Fatal(err)
+		}
+
+		ir, err := gcil.FromAST(root, env)
+		if err != nil {
+			b.Fatal(err)
+		}
+		gcil.ElimRefs(ir, env)
+		prog := closure.Transform(ir)
+
+		opts := EmitOptions{OptimizeDefault, "", "", true}
+		emitter, err := NewEmitter(prog, env, source, opts)
+		if err != nil {
+			b.Fatal(err)
+		}
+		return emitter
+	}
+
+	b.Run("emit executable", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			for base, source := range sources {
+				emitter := makeEmitter(source)
+				emitter.RunOptimizationPasses()
+				outfile, err := filepath.Abs(fmt.Sprintf("test.%s.a.out", base))
+				if err != nil {
+					panic(err)
+				}
+				if err := emitter.EmitExecutable(outfile); err != nil {
+					b.Fatal(err)
+				}
+				defer os.Remove(outfile)
+			}
+		}
+	})
+	b.Run("build LLVM IR", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			for _, source := range sources {
+				_ = makeEmitter(source)
+			}
+		}
+	})
 }

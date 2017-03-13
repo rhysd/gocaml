@@ -155,12 +155,12 @@ func TestInvalidExpressions(t *testing.T) {
 		{
 			what:     "mismatch parameter type",
 			code:     "let rec f a b = a < b in (f 1 1) = (f 1.0 1.0)",
-			expected: "On unifying 1th parameter of function '(int, int) -> bool' and '(float, float) -> bool'",
+			expected: "On unifying 1st parameter of function '(int, int) -> bool' and '(float, float) -> bool'",
 		},
 		{
 			what:     "does not meet parameter type requirements",
 			code:     "let rec f a b = a + b in f 1 1.0",
-			expected: "On unifying 2th parameter of function '(int, int) -> int' and '(int, float) -> int'",
+			expected: "On unifying 2nd parameter of function '(int, int) -> int' and '(int, float) -> int'",
 		},
 		{
 			what:     "wrong number of arguments",

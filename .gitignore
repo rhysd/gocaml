@@ -4,3 +4,6 @@
 /parser/grammar.go
 /runtime/gocamlrt.o
 /runtime/gocamlrt.a
+/cpu.prof
+/codegen.test
+/prof.png

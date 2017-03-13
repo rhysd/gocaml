@@ -89,16 +89,22 @@ test: $(TESTS)
 
 cover.out: $(TESTS)
 	go get github.com/haya14busa/goverage
-	goverage -coverprofile cover.out ./alpha ./ast ./gcil ./closure ./lexer ./parser ./token ./typing ./codegen
+	goverage -coverprofile cover.out ./alpha ./ast ./gcil ./closure ./lexer ./parser ./token ./typing ./codegen ./common
 
 cov: cover.out
 	go get golang.org/x/tools/cmd/cover
 	go tool cover -html=cover.out
 
+cpu.prof codegen.test: $(SRCS) codegen/executable_test.go
+	go test -cpuprofile cpu.prof -bench . -run '^$$' ./codegen
+
+prof: cpu.prof codegen.test
+	go tool pprof codegen.test cpu.prof
+
+prof.png: cpu.prof codegen.test
+	go tool pprof -png codegen.test cpu.prof > prof.png
+
 clean:
-	rm -f gocaml y.output parser/grammar.go runtime/gocamlrt.o runtime/gocamlrt.a cover.out cpu.out
+	rm -f gocaml y.output parser/grammar.go runtime/gocamlrt.o runtime/gocamlrt.a cover.out cpu.prof codegen.test prof.png
 
-tmp:
-	echo $(CFLAGS)
-
-.PHONY: all build clean test cov
+.PHONY: all build clean test cov prof
