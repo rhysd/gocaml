@@ -245,10 +245,11 @@ func (b *moduleBuilder) buildFunBody(insn gcil.FunInsn) {
 	if !ok {
 		panic("Unknown function on building IR: " + name)
 	}
-	body := b.context.AddBasicBlock(funVal, "entry")
-	b.builder.SetInsertPointAtEnd(body)
 
-	blockBuilder := newBlockBuilder(b)
+	allocaBlock := b.context.AddBasicBlock(funVal, "entry")
+	start := b.context.AddBasicBlock(funVal, "start")
+	b.builder.SetInsertPointAtEnd(start)
+	blockBuilder := newBlockBuilder(b, allocaBlock)
 
 	// Extract captured variables
 	closure, isClosure := b.closures[name]
@@ -301,6 +302,18 @@ func (b *moduleBuilder) buildFunBody(insn gcil.FunInsn) {
 	if b.debug != nil {
 		b.debug.clearLocation(b.builder)
 	}
+
+	if allocaBlock.FirstInstruction().C == nil {
+		// When no alloca instruction was used in the function body
+		allocaBlock.EraseFromParent()
+	} else {
+		// Insert allocation block before starting to execute function body
+		//
+		// *Entry* -> [Alloca] -> [Start] -> ... -> *End*
+		//
+		b.builder.SetInsertPointAtEnd(allocaBlock)
+		b.builder.CreateBr(start)
+	}
 }
 
 func (b *moduleBuilder) buildMain(entry *gcil.Block) {
@@ -318,15 +331,27 @@ func (b *moduleBuilder) buildMain(entry *gcil.Block) {
 		b.debug.setMainFuncInfo(funVal, pos.Line)
 	}
 
-	body := b.context.AddBasicBlock(funVal, "entry")
-	b.builder.SetInsertPointAtEnd(body)
-
-	builder := newBlockBuilder(b)
+	allocaBlock := b.context.AddBasicBlock(funVal, "entry")
+	start := b.context.AddBasicBlock(funVal, "start")
+	b.builder.SetInsertPointAtEnd(start)
+	builder := newBlockBuilder(b, allocaBlock)
 	builder.buildBlock(entry)
 
 	b.builder.CreateRet(llvm.ConstInt(int32T, 0, true))
 	if b.debug != nil {
 		b.debug.clearLocation(b.builder)
+	}
+
+	if allocaBlock.FirstInstruction().C == nil {
+		// When no alloca instruction was used in the function body
+		allocaBlock.EraseFromParent()
+	} else {
+		// Insert allocation block before starting to execute function body
+		//
+		// *Entry* -> [Alloca] -> [Start] -> ... -> *End*
+		//
+		b.builder.SetInsertPointAtEnd(allocaBlock)
+		b.builder.CreateBr(start)
 	}
 }
 

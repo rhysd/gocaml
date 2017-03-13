@@ -29,13 +29,14 @@ func getOpCmpPredicate(op gcil.OperatorKind) (llvm.IntPredicate, llvm.FloatPredi
 
 type blockBuilder struct {
 	*moduleBuilder
-	registers map[string]llvm.Value
-	unitVal   llvm.Value
+	registers   map[string]llvm.Value
+	unitVal     llvm.Value
+	allocaBlock llvm.BasicBlock
 }
 
-func newBlockBuilder(b *moduleBuilder) *blockBuilder {
+func newBlockBuilder(b *moduleBuilder, allocaBlock llvm.BasicBlock) *blockBuilder {
 	unit := llvm.ConstNamedStruct(b.typeBuilder.unitT, []llvm.Value{})
-	return &blockBuilder{b, map[string]llvm.Value{}, unit}
+	return &blockBuilder{b, map[string]llvm.Value{}, unit, allocaBlock}
 }
 
 func (b *blockBuilder) resolve(ident string) llvm.Value {
@@ -80,6 +81,20 @@ func (b *blockBuilder) buildArrayMalloc(ty llvm.Type, numElems llvm.Value, name 
 	tySizeVal := llvm.ConstInt(b.typeBuilder.sizeT, size, false /*sign extend*/)
 	sizeVal := b.builder.CreateMul(tySizeVal, b.builder.CreateTrunc(numElems, b.typeBuilder.sizeT, ""), "")
 	return b.buildMallocRaw(ty, sizeVal, name)
+}
+
+func (b *blockBuilder) buildAlloca(t llvm.Type, name string) llvm.Value {
+	saved := b.builder.GetInsertBlock()
+	b.builder.SetInsertPointAtEnd(b.allocaBlock)
+	alloca := b.builder.CreateAlloca(t, name)
+
+	// XXX:
+	// This function assumes that the previous insertion point was at the end of the block.
+	// If it pointed the middle of block, this function would fail to restore insertion point.
+	// This is because there is no LLVM-C API corresponding to IRBuilderBase::GetInsertPoint.
+	b.builder.SetInsertPointAtEnd(saved)
+
+	return alloca
 }
 
 func (b *blockBuilder) buildEq(ty typing.Type, op *gcil.Binary, lhs, rhs llvm.Value) llvm.Value {
@@ -164,7 +179,7 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 	case *gcil.Float:
 		return llvm.ConstFloat(b.typeBuilder.floatT, val.Const)
 	case *gcil.String:
-		strVal := b.builder.CreateAlloca(b.typeBuilder.stringT, "")
+		strVal := b.buildAlloca(b.typeBuilder.stringT, "")
 
 		charsVal := b.builder.CreateGlobalStringPtr(val.Const, "")
 		charsPtr := b.builder.CreateStructGEP(strVal, 0, "")
@@ -319,7 +334,7 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		// Copy second argument to all elements of allocated array
 		// Initialize array object {ptr, size}
 		elemTy := b.typeBuilder.convertGCIL(t.Elem)
-		ptr := b.builder.CreateAlloca(b.typeBuilder.convertGCIL(t), ident)
+		ptr := b.buildAlloca(b.typeBuilder.convertGCIL(t), ident)
 
 		sizeVal := b.resolve(val.Size)
 		arrVal := b.buildArrayMalloc(elemTy, sizeVal, "array.ptr")
@@ -328,7 +343,7 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 
 		// Prepare 2nd argument value and iteration variable for the loop
 		elemVal := b.resolve(val.Elem)
-		iterPtr := b.builder.CreateAlloca(b.typeBuilder.intT, "arr.init.iter")
+		iterPtr := b.buildAlloca(b.typeBuilder.intT, "arr.init.iter")
 		b.builder.CreateStore(llvm.ConstInt(b.typeBuilder.intT, 0, false), iterPtr)
 
 		// Start of the initialization loop
@@ -400,7 +415,7 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		// instead of global value itself.
 		funVal := b.buildExternalClosureWrapper(val.Ident, funTy)
 		clsTy := b.context.StructType([]llvm.Type{funVal.Type(), b.typeBuilder.voidPtrT}, false /*packed*/)
-		alloc := b.builder.CreateAlloca(clsTy, "")
+		alloc := b.buildAlloca(clsTy, "")
 		funPtr := b.builder.CreateStructGEP(alloc, 0, "")
 		b.builder.CreateStore(funVal, funPtr)
 		return b.builder.CreateLoad(alloc, val.Ident+".cls")
@@ -420,7 +435,7 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		capturesTy := b.typeBuilder.buildClosureCaptures(val.Fun, closure)
 		closureTy.StructSetBody([]llvm.Type{funPtrTy, llvm.PointerType(capturesTy, 0 /*address space*/)}, false /*packed*/)
 
-		closureVal := b.builder.CreateAlloca(closureTy, "")
+		closureVal := b.buildAlloca(closureTy, "")
 
 		// Set function pointer to first field of closure
 		funPtr, ok := b.funcTable[val.Fun]
