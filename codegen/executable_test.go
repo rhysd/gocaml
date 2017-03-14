@@ -43,6 +43,13 @@ func TestExecutable(t *testing.T) {
 			panic(fmt.Sprintf("Expected output file '%s' was not found for code '%s'", outputFile, input))
 		}
 		t.Run(base, func(t *testing.T) {
+			defer func() {
+				err := recover()
+				if err != nil {
+					t.Fatal(err)
+				}
+			}()
+
 			s, err := token.NewSourceFromFile(input)
 			if err != nil {
 				t.Fatal(err)

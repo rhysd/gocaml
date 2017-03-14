@@ -64,24 +64,29 @@ func (b *typeBuilder) buildClosureCaptures(name string, closure []string) llvm.T
 	return captures
 }
 
-func (b *typeBuilder) buildExternalFun(from *typing.Fun) (funTy llvm.Type, clsTy llvm.Type) {
-	clsRet := b.convertGCIL(from.Ret)
-	funRet := clsRet
-	if funRet == b.unitT {
+func (b *typeBuilder) buildExternalFun(from *typing.Fun) llvm.Type {
+	ret := b.convertGCIL(from.Ret)
+	if ret == b.unitT {
 		// If return type of external function is unit, use void instead of unit
 		// because external function (usually written in C) does not have unit type.
 		// Instead, it has void for the purpose.
-		funRet = b.voidT
+		ret = b.voidT
 	}
-	l := len(from.Params) + 1
-	params := make([]llvm.Type, 0, l)
+	params := make([]llvm.Type, 0, len(from.Params))
+	for _, p := range from.Params {
+		params = append(params, b.convertGCIL(p))
+	}
+	return llvm.FunctionType(ret, params, false /*varargs*/)
+}
+
+func (b *typeBuilder) buildExternalClosure(from *typing.Fun) llvm.Type {
+	ret := b.convertGCIL(from.Ret)
+	params := make([]llvm.Type, 0, len(from.Params)+1)
 	params = append(params, b.voidPtrT)
 	for _, p := range from.Params {
 		params = append(params, b.convertGCIL(p))
 	}
-	clsTy = llvm.FunctionType(clsRet, params, false /*varargs*/)
-	funTy = llvm.FunctionType(funRet, params[1:], false /*varargs*/)
-	return
+	return llvm.FunctionType(ret, params, false /*varargs*/)
 }
 
 // Note:

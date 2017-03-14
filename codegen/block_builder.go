@@ -386,7 +386,8 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 			panic("Type for external value not found: " + val.Ident)
 		}
 
-		if _, ok := ty.(*typing.Fun); !ok {
+		funTy, ok := ty.(*typing.Fun)
+		if !ok {
 			x, ok := b.globalTable[val.Ident]
 			if !ok {
 				panic("Value for external value not found: " + val.Ident)
@@ -396,11 +397,7 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 
 		// When external function is used as variable, it must be wrapped as closure
 		// instead of global value itself.
-		clsName := val.Ident + "$closure"
-		funVal, ok := b.funcTable[clsName]
-		if !ok {
-			panic("Closure for external function not found: " + clsName)
-		}
+		funVal := b.buildExternalClosureWrapper(val.Ident, funTy)
 		clsTy := b.context.StructType([]llvm.Type{funVal.Type(), b.typeBuilder.voidPtrT}, false /*packed*/)
 		alloc := b.builder.CreateAlloca(clsTy, "")
 		funPtr := b.builder.CreateStructGEP(alloc, 0, "")

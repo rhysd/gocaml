@@ -130,23 +130,54 @@ func (b *moduleBuilder) dispose() {
 	}
 }
 
-func (b *moduleBuilder) buildExternalClosureBody(closureVal, funVal llvm.Value, funTy *typing.Fun) {
+// Wrap as a closure for the external symbol function.
+// This is necessary when the external symbol function is used as a variable.
+// In GoCaml, all function variable falls back into closure value.
+// External symbol function should also be closure in the case.
+func (b *moduleBuilder) buildExternalClosureWrapper(funName string, ty *typing.Fun) llvm.Value {
+	name := funName + "$closure"
+	if f, ok := b.funcTable[name]; ok {
+		return f
+	}
+
 	if b.debug != nil {
 		b.debug.clearLocation(b.builder)
 	}
-	body := b.context.AddBasicBlock(closureVal, "entry")
+
+	// Build declaration of closure wrapper
+	tyVal := b.typeBuilder.buildExternalClosure(ty)
+	val := llvm.AddFunction(b.module, name, tyVal)
+	val.SetLinkage(llvm.PrivateLinkage)
+	val.AddFunctionAttr(b.attributes["alwaysinline"])
+	val.AddFunctionAttr(b.attributes["nounwind"])
+	val.AddFunctionAttr(b.attributes["ssp"])
+	val.AddFunctionAttr(b.attributes["uwtable"])
+	val.AddFunctionAttr(b.attributes["disable-tail-calls"])
+	b.funcTable[name] = val
+
+	extFunVal, ok := b.globalTable[funName]
+	if !ok {
+		panic("No external symbol for closure wrapper not found: " + funName)
+	}
+
+	// Build definition of closure wrapper
+	saved := b.builder.GetInsertBlock()
+	body := b.context.AddBasicBlock(val, "entry")
 	b.builder.SetInsertPointAtEnd(body)
-	lenArgs := len(funTy.Params)
+	lenArgs := len(ty.Params)
 	args := make([]llvm.Value, 0, lenArgs)
 	for i := 0; i < lenArgs; i++ {
-		args = append(args, closureVal.Param(i+1))
+		args = append(args, val.Param(i+1))
 	}
-	ret := b.builder.CreateCall(funVal, args, "")
-	if funTy.Ret == typing.UnitType {
+	ret := b.builder.CreateCall(extFunVal, args, "")
+	if ty.Ret == typing.UnitType {
 		// When the external function returns void
 		ret = llvm.ConstNamedStruct(b.typeBuilder.unitT, []llvm.Value{})
 	}
 	b.builder.CreateRet(ret)
+	b.builder.SetInsertPointAtEnd(saved)
+
+	return val
 }
 
 func (b *moduleBuilder) buildExternalDecl(name string, from typing.Type) {
@@ -155,26 +186,11 @@ func (b *moduleBuilder) buildExternalDecl(name string, from typing.Type) {
 		panic("unreachable") // because type variables are dereferenced at type analysis
 	case *typing.Fun:
 		// Make a declaration for the external symbol function
-		funTy, clsTy := b.typeBuilder.buildExternalFun(ty)
-		funVal := llvm.AddFunction(b.module, name, funTy)
-		funVal.SetLinkage(llvm.ExternalLinkage)
-		funVal.AddFunctionAttr(b.attributes["disable-tail-calls"])
-		b.globalTable[name] = funVal
-
-		// Wrap as a closure for ethe external symbol function.
-		// This is necessary when the external symbol function is used as a variable.
-		// In GoCaml, all function variable falls back into closure value.
-		// External symbol function should also be closure in the case.
-		clsName := name + "$closure"
-		clsVal := llvm.AddFunction(b.module, clsName, clsTy)
-		clsVal.SetLinkage(llvm.PrivateLinkage)
-		clsVal.AddFunctionAttr(b.attributes["alwaysinline"])
-		clsVal.AddFunctionAttr(b.attributes["nounwind"])
-		clsVal.AddFunctionAttr(b.attributes["ssp"])
-		clsVal.AddFunctionAttr(b.attributes["uwtable"])
-		clsVal.AddFunctionAttr(b.attributes["disable-tail-calls"])
-		b.funcTable[clsName] = clsVal
-		b.buildExternalClosureBody(clsVal, funVal, ty)
+		tyVal := b.typeBuilder.buildExternalFun(ty)
+		val := llvm.AddFunction(b.module, name, tyVal)
+		val.SetLinkage(llvm.ExternalLinkage)
+		val.AddFunctionAttr(b.attributes["disable-tail-calls"])
+		b.globalTable[name] = val
 	default:
 		t := b.typeBuilder.convertGCIL(from)
 		v := llvm.AddGlobal(b.module, t, name)
