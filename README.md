@@ -151,49 +151,49 @@ print_str "prog: "; println_str (argv.(0))
 
 Built-in functions are defined as external symbols.
 
-- `print_int :: (int) -> ()`
-- `print_bool :: (bool) -> ()`
-- `print_float :: (float) -> ()`
-- `print_str :: (string) -> ()`
+- `print_int : int -> ()`
+- `print_bool : bool -> ()`
+- `print_float : float -> ()`
+- `print_str : string -> ()`
 
 Output the value to stdout.
 
-- `println_int :: (int) -> ()`
-- `println_bool :: (bool) -> ()`
-- `println_float :: (float) -> ()`
-- `println_str :: (string) -> ()`
+- `println_int : int -> ()`
+- `println_bool : bool -> ()`
+- `println_float : float -> ()`
+- `println_str : string -> ()`
 
 Output the value to stdout with newline.
 
-- `float_to_int :: (float) -> int`
-- `int_to_float :: (int) -> float`
-- `int_to_str :: (int) -> string`
-- `str_to_int :: (string) -> int`
-- `float_to_str :: (float) -> string`
-- `str_to_float :: (string) -> float`
+- `float_to_int : float -> int`
+- `int_to_float : int -> float`
+- `int_to_str : int -> string`
+- `str_to_int : string -> int`
+- `float_to_str : float -> string`
+- `str_to_float : string -> float`
 
 Convert between float and int, string and int, float and int.
 
-- `str_length :: (string) -> int`
+- `str_length : string -> int`
 
 Return the size of string.
 
-- `str_concat :: (string, string) -> string`
+- `str_concat : string -> string -> string`
 
 Concat two strings as a new allocated string because strings are immutable in GoCaml.
 
-- `substr :: (string, int, int) -> string`
+- `substr : string -> int -> int -> string`
 
 Returns substring of first argument. Second argument is an index to start and Third argument is an index to end.
 Returns string slice `[start, end)` so it does not cause any allocation.
 
-- `get_line :: (()) -> string`
-- `get_char :: (()) -> string`
+- `get_line : () -> string`
+- `get_char : () -> string`
 
 Get user input by line or character and return it as string.
 
-- `to_char_code :: (string) -> int`
-- `from_char_code :: (int) -> string`
+- `to_char_code : string -> int`
+- `from_char_code : int -> string`
 
 Covert between a character and integer. First character of string is converted into integer and
 integer is converted into one character string.
