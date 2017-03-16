@@ -48,6 +48,173 @@ You can see [more examples][examples]. (e.g. [Brainfxxk interpreter][Brainfxxk i
 - GoCaml does not have `Array.create`, which is an alias to `Array.make`. `Array.length` is available to obtain the size of array.
 - Some useful built-in functions are added (described in below section).
 
+## Language Spec
+
+### Program
+
+```ml
+()
+```
+
+Program is represented as one expression which MUST be evaluated as unit `()` type. So above is the simplest program for GoCaml.
+
+### Sequence Expression
+
+Sequenced program can be represented by joining multiple expressons with `;`.
+
+```ml
+e1; e2; e3; e4
+```
+
+In above program, expressions are evaluated in order of `e1 -> e2 -> e3 -> e4` and the sequenced expression is evaluated to the value of `e4`.
+Program must be evaluated to unit type, so the `e4` expression must be evaluated to `()` (unit value).
+
+### Comments
+
+There is a block comment syntax. It starts with `(*` and ends with `*)`. Any comment must be closed with `*)`, otherwise it falls into syntax error.
+
+```ml
+(*
+   This is comment.
+*)
+```
+
+### Constants
+
+There are unit, integer, boolean, float and string constants.
+
+```ml
+(* integer *)
+42;
+
+(* float *)
+3.0;
+3.14e+10;
+3.14e-10;
+1.;
+
+(* boolean *)
+true;
+false;
+
+(* string *)
+"hello, world";
+"contains\tescapes\n";
+
+(* only one constant which is typed to unit *)
+()
+```
+
+### Show values
+
+`print_*` and `println_*` built-in functions are available to output values to stdout.
+
+```ml
+print_int 42;
+println_bool true
+```
+
+Please see 'Built-in functions' section below for more detail.
+
+### Unary operators
+
+You can use some unary prefixed operators.
+
+```ml
+-42;
+
+(* GoCaml distinguishes float and int in operators. -. is a float version of - *)
+-.3.14;
+
+not true;
+
+()
+```
+
+### Arithmetic binary operators
+
+As mentioned above, GoCaml distinguishes int and float in operators. Operators for float values are suffixed by `.` (dot).
+
+```ml
+(* integer calcuration *)
+1 + 2;
+1 - 2;
+1 * 2;
+1 / 2;
+
+(* float calcuration *)
+1.0 + 2.0;
+1.0 - 2.0;
+1.0 * 2.0;
+1.0 / 2.0;
+
+()
+```
+
+Integer operators must have integer values as their operands. And float operators must have float values as their operands.
+There is no implicit conversion. You need to convert explicitly by using built-in functions (e.g. `3.14 +. (int_to_float 42)`).
+
+### Relational binary operators
+
+Equal operator is `=` (NOT `==`), Not-equal operator is `<>`. Compare operators are the same as C (`<`, `<=`, `>` and `>=`).
+
+```ml
+42 = 42; (* => true *)
+42 <> 42; (* => false *)
+
+3.14 > 2.0;
+1.0 < 3.0;
+2.0 >= 2.0;
+1.0 <= 3.0;
+
+()
+```
+
+Tuples (described below) and strings can be compared with `=` or `<>`, but cannot be compared with `<`, `<=`, `>` and `>=`.
+Arrays (described below) cannot be compared directly with any compare operators. You need to compare each element explicitly.
+
+### Variable
+
+`let` expression binds some value to a variable.
+
+```ml
+(* 42 is bound to a *)
+let a = 42 in
+(* You can use the variable as value in any expression *)
+a + 4;
+
+()
+```
+
+The syntax is `let {name} = {e1} in {e2}`. `e2` will be evaluated where `e1` is bound to `name`. By chain `let`, you can define multiple variables.
+
+```ml
+let pi = 3.14.1592 in
+let r = 2 in
+let area = r *. r *. pi in
+print_float area
+```
+
+Functions are first-class object in GoCaml. So you can also bind functions as value.
+
+```ml
+let rec hello = println_str "hello" in
+let f = hello in
+
+(* Shows "helllo" *)
+f();
+
+(* Binds external function *)
+let p = println_str in
+
+(* Shows "hi" *)
+p "hi"
+```
+
+## T.B.W
+
+More topics (functions, tuples, arrays)
+
 ## Prerequisities
 
 - Go 1.2+ (Go 1.7+ is recommended)
@@ -147,7 +314,7 @@ print_str "argc: "; println_int (Array.length argv);
 print_str "prog: "; println_str (argv.(0))
 ```
 
-## Builtin Functions
+## Built-in Functions
 
 Built-in functions are defined as external symbols.
 
