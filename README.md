@@ -4,7 +4,7 @@ GoCaml :camel:
 [![Windows Build Status][]][Appveyor]
 [![Coverage Status][]][Coveralls]
 
-GoCaml is a [MinCaml][] implementation in Go using [LLVM][]. MinCaml is a minimal subset of OCaml for educational purpose ([spec][MinCaml spec]).
+GoCaml is a [MinCaml][] implementation in Go using [LLVM][]. MinCaml is a minimal subset of OCaml for educational purpose. It is statically-typed and compiled into a binary. ([spec][MinCaml spec])
 
 This project aims my practices for understanding type inference, closure transform and introducing own intermediate language (IL) to own language.
 
@@ -52,11 +52,7 @@ You can see [more examples][examples]. (e.g. [Brainfxxk interpreter][Brainfxxk i
 
 ### Program
 
-```ml
-()
-```
-
-Program is represented as one expression which MUST be evaluated as unit `()` type. So above is the simplest program for GoCaml.
+Program is represented as one expression which MUST be evaluated as unit type. So `()` is the smallest program for GoCaml.
 
 ### Sequence Expression
 
@@ -154,7 +150,7 @@ As mentioned above, GoCaml distinguishes int and float in operators. Operators f
 Integer operators must have integer values as their operands. And float operators must have float values as their operands.
 There is no implicit conversion. You need to convert explicitly by using built-in functions (e.g. `3.14 +. (int_to_float 42)`).
 
-### Relational binary operators
+### Relational operators
 
 Equal operator is `=` (NOT `==`), Not-equal operator is `<>`. Compare operators are the same as C (`<`, `<=`, `>` and `>=`).
 
@@ -172,6 +168,14 @@ Equal operator is `=` (NOT `==`), Not-equal operator is `<>`. Compare operators 
 
 Tuples (described below) and strings can be compared with `=` or `<>`, but cannot be compared with `<`, `<=`, `>` and `>=`.
 Arrays (described below) cannot be compared directly with any compare operators. You need to compare each element explicitly.
+
+### Logical operators
+
+`&&` and `||` are available for boolean values.
+
+```ml
+println_bool (true || false && false || false)
+```
 
 ### Variable
 
@@ -195,14 +199,26 @@ let area = r *. r *. pi in
 print_float area
 ```
 
-Functions are first-class object in GoCaml. So you can also bind functions as value.
+And you can redefine the same name variable as already-defined ones.
 
 ```ml
-let rec hello = println_str "hello" in
+let a = 42 in
+println_int a;
+let a = true in
+println_bool a
+```
+
+The first `a` and the second `a` are different variable. Second one just shadows first one.
+So you can always redefine any variable names as any type. Shadowed variable can be no longer referred.
+
+Functions are first-class object in GoCaml. So you can also bind functions to variable as value.
+
+```ml
+let rec hello _ = println_str "hello" in
 let f = hello in
 
 (* Shows "helllo" *)
-f();
+f ();
 
 (* Binds external function *)
 let p = println_str in
@@ -211,9 +227,86 @@ let p = println_str in
 p "hi"
 ```
 
+### Functions
+
+`let rec` is a keyword to define a function. Syntax is `let rec name params... = e1 in e2` where function `name` is defined as `e1` and then `e2` will be evaluated.
+`f a b c` is an expression to apply function `f` with argument `a`, `b` and `c`.
+As long as the argument is simple, you don't need to use `()`.
+
+Note that, if you use some complecated expression (for example, binary operators), you need to use `()` like
+`f (a+b) c`. If you specify `f a + b c`, it would be parsed as `(f a) + (b c)`.
+
+```ml
+let rec f a b c = a + b + c in
+let d = f 10 20 30 in
+
+(* Output: 60 *)
+println_int d
+```
+
+You can make a recursive function as below.
+
+```ml
+let rec fib x =
+    if x <= 1 then 1 else
+    fib (x - 1) + fib (x - 2)
+in
+println_int (fib 10)
+```
+
+Functions can be nested.
+
+```ml
+let rec sqrt x =
+    let rec abs x = if x > 0.0 then x else -.x in
+    let rec go z p =
+        if abs (p -. z) <= 0.00001 then z else
+        let (p, z) = z, z -. (z *. z -. x) /. (2.0 *. z) in
+        go z p
+    in
+    go x 0.0
+in
+println_float (sqrt 10.0)
+
+(* Error because of out of scope: go 10.0 0.0 *)
+```
+
+In above example, `abs` and `go` is nested in `sqrt`. Nested function is a hidden implementation of the outer function because inner scope is not visible from outside.
+
+Functions can capture any outer variables (=environment). Functions which captured outer
+environment are called 'closure'.  As many functional languages or modern languages,
+GoCaml has closure functions.
+
+```ml
+(* Define variable *)
+let pi = 3.14 in
+
+(* Captures outer defined variable 'pi' into its body *)
+let rec circle r = r *. r *. pi in
+
+(* Invoke closure *)
+println_float (circle 10.0)
+```
+
+Below is a bit more complecated example:
+
+```ml
+let rec make_special_value_adder _ =
+    let special_value = 42 in
+    let rec f x = x + special_value in
+    f
+in
+let add_special_value = make_special_value_adder() in
+
+(* Output: 142 *)
+println_int (add_special_value 100)
+```
+
+Here, inner function `f` captures hidden variable `special_value`. `make_special_value_adder` returns a closure which captured the variable.
+
 ## T.B.W
 
-More topics (functions, tuples, arrays)
+More topics (tuples, arrays, external symbols)
 
 ## Prerequisities
 
