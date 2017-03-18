@@ -165,7 +165,7 @@ func TestInvalidExpressions(t *testing.T) {
 		{
 			what:     "wrong number of arguments",
 			code:     "let rec f a b = a + b in f 1",
-			expected: "Number of parameters of function does not match between '(int, int) -> int' and '(int) -> int'",
+			expected: "Number of parameters of function does not match: 2 vs 1 (between '(int, int) -> int' and '(int) -> int')",
 		},
 		{
 			what:     "type mismatch in return type",

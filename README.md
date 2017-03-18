@@ -50,11 +50,15 @@ You can see [more examples][examples]. (e.g. [Brainfxxk interpreter][Brainfxxk i
 
 ## Language Spec
 
-### Program
+<details>
+<summary>Program</summary>
 
 Program is represented as one expression which MUST be evaluated as unit type. So `()` is the smallest program for GoCaml.
 
-### Sequence Expression
+</details>
+
+<details>
+<summary>Sequence Expression</summary>
 
 Sequenced program can be represented by joining multiple expressons with `;`.
 
@@ -65,7 +69,10 @@ e1; e2; e3; e4
 In above program, expressions are evaluated in order of `e1 -> e2 -> e3 -> e4` and the sequenced expression is evaluated to the value of `e4`.
 Program must be evaluated to unit type, so the `e4` expression must be evaluated to `()` (unit value).
 
-### Comments
+</details>
+
+<details>
+<summary>Comments</summary>
 
 There is a block comment syntax. It starts with `(*` and ends with `*)`. Any comment must be closed with `*)`, otherwise it falls into syntax error.
 
@@ -75,7 +82,10 @@ There is a block comment syntax. It starts with `(*` and ends with `*)`. Any com
 *)
 ```
 
-### Constants
+</details>
+
+<details>
+<summary>Constants</summary>
 
 There are unit, integer, boolean, float and string constants.
 
@@ -101,7 +111,10 @@ false;
 ()
 ```
 
-### Show values
+</details>
+
+<details>
+<summary>Show values</summary>
 
 `print_*` and `println_*` built-in functions are available to output values to stdout.
 
@@ -112,7 +125,10 @@ println_bool true
 
 Please see 'Built-in functions' section below for more detail.
 
-### Unary operators
+</details>
+
+<details>
+<summary>Unary operators</summary>
 
 You can use some unary prefixed operators.
 
@@ -127,7 +143,10 @@ not true;
 ()
 ```
 
-### Arithmetic binary operators
+</details>
+
+<details>
+<summary>Arithmetic binary operators</summary>
 
 As mentioned above, GoCaml distinguishes int and float in operators. Operators for float values are suffixed by `.` (dot).
 
@@ -150,7 +169,10 @@ As mentioned above, GoCaml distinguishes int and float in operators. Operators f
 Integer operators must have integer values as their operands. And float operators must have float values as their operands.
 There is no implicit conversion. You need to convert explicitly by using built-in functions (e.g. `3.14 +. (int_to_float 42)`).
 
-### Relational operators
+</details>
+
+<details>
+<summary>Relational operators</summary>
 
 Equal operator is `=` (NOT `==`), Not-equal operator is `<>`. Compare operators are the same as C (`<`, `<=`, `>` and `>=`).
 
@@ -169,7 +191,10 @@ Equal operator is `=` (NOT `==`), Not-equal operator is `<>`. Compare operators 
 Tuples (described below) and strings can be compared with `=` or `<>`, but cannot be compared with `<`, `<=`, `>` and `>=`.
 Arrays (described below) cannot be compared directly with any compare operators. You need to compare each element explicitly.
 
-### Logical operators
+</details>
+
+<details>
+<summary>Logical operators</summary>
 
 `&&` and `||` are available for boolean values.
 
@@ -177,7 +202,10 @@ Arrays (described below) cannot be compared directly with any compare operators.
 println_bool (true || false && false || false)
 ```
 
-### Variable
+</details>
+
+<details>
+<summary>Variable</summary>
 
 `let` expression binds some value to a variable.
 
@@ -227,7 +255,10 @@ let p = println_str in
 p "hi"
 ```
 
-### Functions
+</details>
+
+<details>
+<summary>Functions</summary>
 
 `let rec` is a keyword to define a function. Syntax is `let rec name params... = e1 in e2` where function `name` is defined as `e1` and then `e2` will be evaluated.
 `f a b c` is an expression to apply function `f` with argument `a`, `b` and `c`.
@@ -304,7 +335,10 @@ println_int (add 100)
 
 Here, inner function `f` captures hidden variable `special_value`. `make_special_value_adder` returns a closure which captured the variable.
 
-### Tuples
+</details>
+
+<details>
+<summary>Tuples</summary>
 
 N-elements tuple can be created with comma-separated expression `e1, e2, ..., en`. Element of tuple can be extracted with `let` expression.
 
@@ -321,7 +355,10 @@ let rec fst pair = let x, _ = pair in x in
 println_int (fst (42, true))
 ```
 
-### Arrays
+</details>
+
+<details>
+<summary>Arrays</summary>
 
 Array can be created with `Array.make size elem` where created array is allocated with `size` elemens
 and all elements are initialized as `elem`.
@@ -347,7 +384,10 @@ Note that arrays are NOT immutable because of performance (GoCaml doesn't have p
 `e1.(e2) <- e3` is always evaluated to `()` and updates the element destructively.
 Accessing to out of bounds of arrays causes undefined behavior.
 
-### External symbols
+</details>
+
+<details>
+<summary>External symbols</summary>
 
 All symbols which are not defined but used are treated as external symbols.
 External symbol means `extern` names in C. So you have responsibility to define the symbols
@@ -369,6 +409,8 @@ some_func ();
 (* Below 'pow' function is inferred as float -> float -> float *)
 print_float (pow 3.0 1.0 2.0)
 ```
+
+</details>
 
 ## Prerequisities
 
