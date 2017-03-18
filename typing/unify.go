@@ -44,7 +44,7 @@ func occur(v *Var, rhs Type) bool {
 func unifyTuple(left, right *Tuple) error {
 	length := len(left.Elems)
 	if length != len(right.Elems) {
-		return errors.Errorf("Number of elements of tuple does not match between '%s' and '%s'", left.String(), right.String())
+		return errors.Errorf("Number of elements of tuple does not match: %d v.s. %d (between '%s' and '%s')", length, len(right.Elems), left.String(), right.String())
 	}
 
 	for i := 0; i < length; i++ {
@@ -64,7 +64,7 @@ func unifyFun(left, right *Fun) error {
 	}
 
 	if len(left.Params) != len(right.Params) {
-		return errors.Errorf("Number of parameters of function does not match between '%s' and '%s'", left.String(), right.String())
+		return errors.Errorf("Number of parameters of function does not match: %d v.s. %d (between '%s' and '%s')", len(left.Params), len(right.Params), left.String(), right.String())
 	}
 
 	for i, l := range left.Params {

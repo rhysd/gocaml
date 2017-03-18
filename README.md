@@ -291,22 +291,84 @@ println_float (circle 10.0)
 Below is a bit more complecated example:
 
 ```ml
-let rec make_special_value_adder _ =
-    let special_value = 42 in
-    let rec f x = x + special_value in
+let rec make_adder x =
+    let z = 1 in
+    let rec f y = x + y + z in
     f
 in
-let add_special_value = make_special_value_adder() in
+let add = make_adder 3 in
 
-(* Output: 142 *)
-println_int (add_special_value 100)
+(* Output: 104 *)
+println_int (add 100)
 ```
 
 Here, inner function `f` captures hidden variable `special_value`. `make_special_value_adder` returns a closure which captured the variable.
 
-## T.B.W
+### Tuples
 
-More topics (tuples, arrays, external symbols)
+N-elements tuple can be created with comma-separated expression `e1, e2, ..., en`. Element of tuple can be extracted with `let` expression.
+
+```
+(* (int, bool, string) is bound to t *)
+let t = 1, true, "aaa" in
+
+(* Destructuring tuple with `let` expression *)
+let i, b, s = t in
+
+let rec fst pair = let x, _ = pair in x in
+
+(* Show '42' *)
+println_int (fst (42, true))
+```
+
+### Arrays
+
+Array can be created with `Array.make size elem` where created array is allocated with `size` elemens
+and all elements are initialized as `elem`.
+
+`arr.(idx)` accesses to the element of array where `arr` is an array and `idx` is an integer.
+And `arr.(idx) <- val` updates the `idx`th element to `val`.
+
+```ml
+(* Make boolean array whose size is 42 *)
+let arr = Array.make 42 true in
+
+(* Output: true *)
+println_bool arr.(8)
+
+(* Update element *)
+arr.(8) <- false;
+
+(* Output: false *)
+println_bool arr.(8)
+```
+
+Note that arrays are NOT immutable because of performance (GoCaml doesn't have persistentarray).
+`e1.(e2) <- e3` is always evaluated to `()` and updates the element destructively.
+Accessing to out of bounds of arrays causes undefined behavior.
+
+### External symbols
+
+All symbols which are not defined but used are treated as external symbols.
+External symbol means `extern` names in C. So you have responsibility to define the symbols
+in other object which will be linked to executable. Please see below 'How to Work with C'
+section to know how to do that.
+
+Note that all external symbols' types MUST be determined by type inference. Unknown type symbol causes compilation error.
+
+```ml
+(* This causes compile error because type of 'x' is unknown *)
+x;
+
+(* Type of 'y' is known as 'int' because it's passed to argument of `println_int` *)
+println_int y;
+
+(* When return type of function is (), it is treated as void in C *)
+some_func ();
+
+(* Below 'pow' function is inferred as float -> float -> float *)
+print_float (pow 3.0 1.0 2.0)
+```
 
 ## Prerequisities
 
