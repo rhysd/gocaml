@@ -18,7 +18,7 @@ let rec gcd m n =
 print_int (gcd 21600 337500)
 ```
 
-You can see [more examples][examples]. (e.g. [Brainfxxk interpreter][Brainfxxk interpreter example])
+You can see [more examples][examples]. (e.g. [Brainfxxk interpreter][Brainfxxk interpreter example], [N-Queens puzzle][N-Queens puzzle example])
 
 ## Tasks
 
@@ -661,4 +661,5 @@ $ gcc -m32 -lgc source.o ./runtime/gocamlrt.a
 [target triple]: https://clang.llvm.org/docs/CrossCompilation.html#target-triple
 [examples]: ./examples
 [Brainfxxk interpreter example]: ./examples/brainfxxk.ml
+[N-Queens puzzle example]: ./examples/n-queens.ml
 [LLVM official binary]: http://releases.llvm.org/download.html#4.0.0
