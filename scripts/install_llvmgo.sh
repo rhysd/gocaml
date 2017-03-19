@@ -69,9 +69,9 @@ fi
 
 cd "$LLVM_GO_LLVM_DIR"
 
-export CGO_CPPFLAGS="${CGO_CPPFLAGS} $($LLVM_CONFIG --cppflags)"
-export CGO_CXXFLAGS="${CGO_CXXFLAGS} $($LLVM_CONFIG --cxxflags)"
-export CGO_LDFLAGS="${CGO_LDFLAGS} $($LLVM_CONFIG --ldflags --libs --system-libs all | tr '\n' ' ')"
+export CGO_CPPFLAGS="${CGO_CPPFLAGS} $($LLVM_CONFIG --cppflags) ${GOCAML_CPPFLAGS}"
+export CGO_CXXFLAGS="${CGO_CXXFLAGS} $($LLVM_CONFIG --cxxflags) ${GOCAML_CXXFLAGS}"
+export CGO_LDFLAGS="${CGO_LDFLAGS} $($LLVM_CONFIG --ldflags --libs --system-libs all | tr '\n' ' ') ${GOCAML_LDFLAGS}"
 
 echo "CGO_CPPFLAGS='$CGO_CPPFLAGS'"
 echo "CGO_CXXFLAGS='$CGO_CXXFLAGS'"

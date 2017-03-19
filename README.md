@@ -435,16 +435,15 @@ $ USE_SYSTEM_LLVM=true make
 
 If you want to use `USE_SYSTEM_LLVM`, you need to install LLVM 4.0.0 in advance.
 
-If you use Debian-family Linux, use [LLVM apt repository][]
+If you use Debian-family Linux, use [LLVM apt repository][] or download [LLVM official binary][].
 
 ```sh
 $ sudo apt-get install libllvm4.0 llvm-4.0-dev
+$ export LLVM_CONFIG=llvm-config-4.0
 ```
 
 If you use macOS, use [Homebrew][]. GoCaml's installation script will automatically detect LLVM
 installed with Homebrew.
-
-*Note:* LLVM 4.0 is now on an RC stage. So it doesn't come to Homebrew yet.
 
 ```sh
 $ brew install llvm
@@ -662,3 +661,4 @@ $ gcc -m32 -lgc source.o ./runtime/gocamlrt.a
 [target triple]: https://clang.llvm.org/docs/CrossCompilation.html#target-triple
 [examples]: ./examples
 [Brainfxxk interpreter example]: ./examples/brainfxxk.ml
+[LLVM official binary]: http://releases.llvm.org/download.html#4.0.0
