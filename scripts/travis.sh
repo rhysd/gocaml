@@ -5,18 +5,10 @@ set -e
 export USE_SYSTEM_LLVM=true
 
 if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+    brew update
     brew install bdw-gc
-    # brew update
-    # brew install llvm
-    #
-    # Fallback until LLVM 4.0 comes to Homebrew
-    mkdir -p llvm-4.0.0-rc3-workaround
-    if [ ! -d llvm-4.0.0-rc3-workaround/bin ]; then
-        wget -O clang+llvm-4.0.0-rc3.tar.xz http://www.llvm.org/pre-releases/4.0.0/rc3/clang+llvm-4.0.0-rc3-x86_64-apple-darwin.tar.xz
-        tar -xvf clang+llvm-4.0.0-rc3.tar.xz --strip 1 -C llvm-4.0.0-rc3-workaround
-    fi
-    export LLVM_CONFIG="$(pwd)/llvm-4.0.0-rc3-workaround/bin/llvm-config"
-
+    brew install llvm --with-libffi
+    export LLVM_CONFIG="/usr/local/Cellar/llvm/4.0.0/bin/llvm-config"
     make build
     go test -v ./...
 else

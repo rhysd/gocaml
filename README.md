@@ -444,8 +444,6 @@ $ sudo apt-get install libllvm4.0 llvm-4.0-dev
 If you use macOS, use [Homebrew][]. GoCaml's installation script will automatically detect LLVM
 installed with Homebrew.
 
-*Note:* LLVM 4.0 is now on an RC stage. So it doesn't come to Homebrew yet.
-
 ```sh
 $ brew install llvm
 ```
