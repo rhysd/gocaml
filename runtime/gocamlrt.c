@@ -112,7 +112,7 @@ gocaml_string str_concat(gocaml_string const l, gocaml_string const r)
 }
 
 // Slice [start,last) like Go's str[start:last]
-gocaml_string substr(gocaml_string const s, gocaml_int const start, gocaml_int const last)
+gocaml_string str_sub(gocaml_string const s, gocaml_int const start, gocaml_int const last)
 {
     if (s.size == 0) {
         return s;

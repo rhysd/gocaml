@@ -1,4 +1,5 @@
-let rec char_at s idx = substr s idx (idx + 1) in
+let rec char_at s idx = str_sub s idx (idx + 1) in
+
 let rec program tape =
     let mem = Array.make 30000 0 in
     let tape_size = str_length tape in

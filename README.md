@@ -545,7 +545,7 @@ Return the size of string.
 
 Concat two strings as a new allocated string because strings are immutable in GoCaml.
 
-- `substr : string -> int -> int -> string`
+- `str_sub : string -> int -> int -> string`
 
 Returns substring of first argument. Second argument is an index to start and Third argument is an index to end.
 Returns string slice `[start, end)` so it does not cause any allocation.
