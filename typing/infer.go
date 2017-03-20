@@ -52,7 +52,7 @@ func (env *Env) inferRelationalBinOp(op string, left, right ast.Expr) (Type, err
 		return nil, err
 	}
 	if err = Unify(l, r); err != nil {
-		return nil, typeError(err, fmt.Sprintf("type mismatch of operands at rational operator '%s'", op), left.Pos())
+		return nil, typeError(err, fmt.Sprintf("type mismatch at operands of relational operator '%s'", op), left.Pos())
 	}
 	return BoolType, nil
 }
@@ -64,7 +64,7 @@ func (env *Env) inferLogicalOp(op string, left, right ast.Expr) (Type, error) {
 			return nil, err
 		}
 		if err = Unify(BoolType, t); err != nil {
-			return nil, typeError(err, fmt.Sprintf("type mismatch of %dth operand at logical operator '%s'", i+1, op), e.Pos())
+			return nil, typeError(err, fmt.Sprintf("type mismatch at %dth operand of logical operator '%s'", i+1, op), e.Pos())
 		}
 	}
 	return BoolType, nil
@@ -124,7 +124,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 	case *ast.LessEq:
 		return env.inferRelationalBinOp("<=", n.Left, n.Right)
 	case *ast.Greater:
-		return env.inferRelationalBinOp("<", n.Left, n.Right)
+		return env.inferRelationalBinOp(">", n.Left, n.Right)
 	case *ast.GreaterEq:
 		return env.inferRelationalBinOp(">=", n.Left, n.Right)
 	case *ast.And:

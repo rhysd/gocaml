@@ -1,0 +1,52 @@
+let rec show_array a =
+    let size = Array.length a in
+    let rec show_elems idx =
+        if idx >= size then () else
+        (print_int a.(idx); print_str " "; show_elems (idx + 1))
+    in
+    print_str "[ ";
+    show_elems 0;
+    println_str "]"
+in
+let rec quick_sort xs =
+    let rec swap i j =
+        let tmp = xs.(i) in
+        xs.(i) <- xs.(j);
+        xs.(j) <- tmp
+    in
+    let rec go left right =
+        if left >= right then () else
+        let pivot = xs.((left + right) / 2) in
+        let rec partition l r =
+            let rec next_left i =
+                if pivot <= xs.(i) then i else
+                next_left (i+1)
+            in
+            let rec next_right i =
+                if pivot >= xs.(i) then i else
+                next_right (i-1)
+            in
+            let l = next_left l in
+            let r = next_right r in
+            if l >= r then (l, r) else
+            (swap l r; partition (l+1) (r-1))
+        in
+        let (l, r) = partition left right in
+        go left (l-1);
+        go (r+1) right
+    in
+    go 0 (Array.length xs - 1);
+    xs
+in
+let a = Array.make 10 0 in
+a.(0) <- 4;
+a.(1) <- 8;
+a.(2) <- 1;
+a.(3) <- 8;
+a.(4) <- 3;
+a.(5) <- 0;
+a.(6) <- 5;
+a.(7) <- 6;
+a.(8) <- 3;
+a.(9) <- 0;
+show_array (quick_sort a)
