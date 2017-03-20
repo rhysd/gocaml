@@ -561,10 +561,18 @@ Get user input by line or character and return it as string.
 Covert between a character and integer. First character of string is converted into integer and
 integer is converted into one character string.
 
+
+- `do_garbage_collection : () -> ()`
+- `enable_garbage_collection : () -> ()`
+- `disable_garbage_collection : () -> ()`
+
+These functions control behavior of GC. `do_garbage_collection` runs GC with stopping the world.
+`enable_garbage_collection`/`disable_garbage_collection` starts/stops GC. (GC is enabled by default)
+
 ## How to Work with C
 
-All symbols not defined in source are treated as external symbols. So you can define it in C source and link it to compiled GoCaml
-code after.
+All symbols not defined in source are treated as external symbols. So you can define it in C source
+and link it to compiled GoCaml code after.
 
 Let's say to write C code.
 

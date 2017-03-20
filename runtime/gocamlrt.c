@@ -255,3 +255,21 @@ gocaml_string from_char_code(gocaml_int const i)
     ret.size = 1;
     return ret;
 }
+
+void do_garbage_collection(gocaml_unit _)
+{
+    (void) _;
+    GC_gcollect();
+}
+
+void enable_garbage_collection(gocaml_unit _)
+{
+    (void) _;
+    GC_enable();
+}
+
+void disable_garbage_collection(gocaml_unit _)
+{
+    (void) _;
+    GC_disable();
+}
