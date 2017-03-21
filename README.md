@@ -383,18 +383,27 @@ print_float (pow 3.0 1.0 2.0)
 
 ## Installation
 
+### Linux or macOS
+
+For Linux or macOS, below commands build `gocam` binary at root of the repository.
+
 ```sh
 $ go get -d github.com/rhysd/gocaml
 $ cd $GOPATH/src/github.com/rhysd/gocaml
 
 # Full-installation with building LLVM locally
 $ make
+```
 
+Using `USE_SYSTEM_LLVM=true`, it will build `gocaml` binary with system-installed LLVM libraries.
+Note that it still clones LLVM repository to obtain Go bindings of llvm-c.
+
+```
 # Use system-installed LLVM. You need to install LLVM in advance (see below)
 $ USE_SYSTEM_LLVM=true make
 ```
 
-If you want to use `USE_SYSTEM_LLVM`, you need to install LLVM 4.0.0 in advance.
+To use `USE_SYSTEM_LLVM`, you need to install LLVM 4.0.0 with system's package manager in advance.
 
 If you use Debian-family Linux, use [LLVM apt repository][] or download [LLVM official binary][].
 
@@ -419,6 +428,22 @@ $ sudo apt-get install libgc-dev
 # On macOS
 $ brew install bdw-gc
 ```
+
+### Windows
+
+Currently Windows is not well-supported. You need to clone LLVM repository to `$GOPATH/src/llvm.org/` and
+build Go bindings of llvm-c following [the instruction][Go binding building instruction].
+It needs `cmake` command and C++ toolchain.
+
+It also needs to build [libgc][] static library and put it to library path.
+
+After installing [goyacc][], generate a parser code with it.
+
+```
+$ goyacc -o parser/grammar.go parser/grammar.go.y
+```
+
+Finally you can build `gocaml` binary with `go build`.
 
 ## Usage
 
@@ -632,3 +657,5 @@ $ gcc -m32 -lgc source.o ./runtime/gocamlrt.a
 [Brainfxxk interpreter example]: ./examples/brainfxxk.ml
 [N-Queens puzzle example]: ./examples/n-queens.ml
 [LLVM official binary]: http://releases.llvm.org/download.html#4.0.0
+[Go binding building instruction]: https://github.com/llvm-mirror/llvm/blob/master/bindings/go/README.txt
+[goyacc]: https://godoc.org/golang.org/x/tools/cmd/goyacc
