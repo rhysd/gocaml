@@ -487,6 +487,9 @@ Flags:
 Compiled code will be linked to [small runtime][]. In runtime, some functions are defined to print values and it includes
 `<stdlib.h>` and `<stdio.h>`. So you can use them from GoCaml codes.
 
+`gocaml` uses `clang` for linking objects by default. If you want to use other linker, set `$GOCAML_LINKER_CMD` environment
+variable to your favorite linker command.
+
 ## Program Arguments
 
 You can access to program arguments via special global variable `argv`. `argv` is always defined before program starts.

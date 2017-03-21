@@ -52,7 +52,11 @@ type linker struct {
 }
 
 func newDefaultLinker(ldflags string) *linker {
-	return &linker{"clang", ldflags}
+	cmd := os.Getenv("GOCAML_LINKER_CMD")
+	if cmd == "" {
+		cmd = "clang"
+	}
+	return &linker{cmd, ldflags}
 }
 
 func (lnk *linker) makeError(args []string, msg string) error {

@@ -41,3 +41,13 @@ func TestRuntimeNotFound(t *testing.T) {
 		t.Fatalf("Unexpected error message '%s'", err.Error())
 	}
 }
+
+func TestCustomizeLinkerCommand(t *testing.T) {
+	saved := os.Getenv("GOCAML_LINKER_CMD")
+	defer os.Setenv("GOCAML_LINKER_CMD", saved)
+	os.Setenv("GOCAML_LINKER_CMD", "linker-command-for-test")
+	l := newDefaultLinker("")
+	if l.linkerCmd != "linker-command-for-test" {
+		t.Fatalf("Wanted 'linker-command-for-test' as linker command but had '%s'", l.linkerCmd)
+	}
+}
