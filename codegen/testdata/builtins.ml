@@ -30,4 +30,12 @@ println_int (str_to_int "-1234");
 
 println_float (str_to_float "3.14");
 println_float (str_to_float "-1.4142");
+
+println_int (bit_and 2 1);
+println_int (bit_or 3 1);
+println_int (bit_xor 3 1);
+println_int (bit_lsft 1 10);
+println_int (bit_rsft 256 4);
+println_int (bit_inv 0);
+
 ()

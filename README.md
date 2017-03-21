@@ -558,6 +558,15 @@ integer is converted into one character string.
 These functions control behavior of GC. `do_garbage_collection` runs GC with stopping the world.
 `enable_garbage_collection`/`disable_garbage_collection` starts/stops GC. (GC is enabled by default)
 
+- `bit_and : int -> int -> int`
+- `bit_or : int -> int -> int`
+- `bit_xor : int -> int -> int`
+- `bit_rsft : int -> int -> int`
+- `bit_lsft : int -> int -> int`
+- `bit_inv : int -> int`
+
+Built-in functions instead of bitwise operators.
+
 ## How to Work with C
 
 All symbols not defined in source are treated as external symbols. So you can define it in C source

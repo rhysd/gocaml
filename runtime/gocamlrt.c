@@ -273,3 +273,22 @@ void disable_garbage_collection(gocaml_unit _)
     (void) _;
     GC_disable();
 }
+
+gocaml_int bit_and(gocaml_int const l, gocaml_int const r) {
+    return l & r;
+}
+gocaml_int bit_or(gocaml_int const l, gocaml_int const r) {
+    return l | r;
+}
+gocaml_int bit_xor(gocaml_int const l, gocaml_int const r) {
+    return l ^ r;
+}
+gocaml_int bit_rsft(gocaml_int const l, gocaml_int const r) {
+    return l >> r;
+}
+gocaml_int bit_lsft(gocaml_int const l, gocaml_int const r) {
+    return l << r;
+}
+gocaml_int bit_inv(gocaml_int const i) {
+    return ~i;
+}
