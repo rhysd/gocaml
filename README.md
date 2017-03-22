@@ -567,6 +567,10 @@ These functions control behavior of GC. `do_garbage_collection` runs GC with sto
 
 Built-in functions instead of bitwise operators.
 
+- `time_now : () -> int`
+
+Returns epoch time in seconds.
+
 ## How to Work with C
 
 All symbols not defined in source are treated as external symbols. So you can define it in C source

@@ -4,6 +4,7 @@
 #include <string.h>
 #include <gc.h>
 #include "gocaml.h"
+#include <time.h>
 
 #define SNPRINTF_MAX 128
 #define LINE_MAX 1024
@@ -291,4 +292,8 @@ gocaml_int bit_lsft(gocaml_int const l, gocaml_int const r) {
 }
 gocaml_int bit_inv(gocaml_int const i) {
     return ~i;
+}
+gocaml_int time_now(gocaml_unit _) {
+    (void) _;
+    return (gocaml_int) time(NULL);
 }

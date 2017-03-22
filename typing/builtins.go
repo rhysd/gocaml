@@ -31,6 +31,7 @@ func builtinPopulatedTable() map[string]Type {
 		"bit_rsft":                   &Fun{IntType, []Type{IntType, IntType}},
 		"bit_lsft":                   &Fun{IntType, []Type{IntType, IntType}},
 		"bit_inv":                    &Fun{IntType, []Type{IntType}},
+		"time_now":                   &Fun{IntType, []Type{UnitType}},
 		"do_garbage_collection":      &Fun{UnitType, []Type{UnitType}},
 		"enable_garbage_collection":  &Fun{UnitType, []Type{UnitType}},
 		"disable_garbage_collection": &Fun{UnitType, []Type{UnitType}},
