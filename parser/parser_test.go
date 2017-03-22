@@ -107,6 +107,34 @@ func TestTooLargeIntLiteral(t *testing.T) {
 	}()
 	r, err := Parse(c)
 	if err == nil {
-		t.Fatalf("Illegal token must raise an error but got %v", r)
+		t.Fatalf("Invalid int literal must raise an error but got %v", r)
+	}
+}
+
+func TestInvalidStringLiteral(t *testing.T) {
+	src := token.NewDummySource("\"a\nb\"\n")
+	tokens := []token.Token{
+		token.Token{
+			Kind:  token.STRING_LITERAL,
+			Start: token.Position{1, 1, 0},
+			End:   token.Position{2, 3, 5},
+			File:  src,
+		},
+		token.Token{
+			Kind:  token.EOF,
+			Start: token.Position{3, 1, 6},
+			End:   token.Position{3, 1, 6},
+			File:  src,
+		},
+	}
+	c := make(chan token.Token)
+	go func() {
+		for _, t := range tokens {
+			c <- t
+		}
+	}()
+	r, err := Parse(c)
+	if err == nil {
+		t.Fatalf("Invalid string literal must raise an error but got %v", r)
 	}
 }

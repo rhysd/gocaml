@@ -29,7 +29,7 @@ func (l *pseudoLexer) Lex(lval *yySymType) int {
 			case token.COMMENT:
 				continue
 			case token.ILLEGAL:
-				return 1
+				return -1
 			}
 
 			// XXX:
