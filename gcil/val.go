@@ -82,7 +82,7 @@ type (
 		Const bool
 	}
 	Int struct {
-		Const int
+		Const int64
 	}
 	Float struct {
 		Const float64

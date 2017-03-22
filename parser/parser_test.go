@@ -76,3 +76,37 @@ func TestParseInvalid(t *testing.T) {
 		t.Fatalf("Illegal token must raise an error but got %v", r)
 	}
 }
+
+func TestTooLargeIntLiteral(t *testing.T) {
+	src := token.NewDummySource("15104326773957059092")
+	tokens := []token.Token{
+		token.Token{
+			Kind:  token.IDENT,
+			Start: token.Position{1, 1, 0},
+			End:   token.Position{1, 12, 11},
+			File:  src,
+		},
+		token.Token{
+			Kind:  token.INT,
+			Start: token.Position{1, 13, 12},
+			End:   token.Position{1, 33, 32},
+			File:  src,
+		},
+		token.Token{
+			Kind:  token.EOF,
+			Start: token.Position{2, 1, 33},
+			End:   token.Position{2, 1, 33},
+			File:  src,
+		},
+	}
+	c := make(chan token.Token)
+	go func() {
+		for _, t := range tokens {
+			c <- t
+		}
+	}()
+	r, err := Parse(c)
+	if err == nil {
+		t.Fatalf("Illegal token must raise an error but got %v", r)
+	}
+}

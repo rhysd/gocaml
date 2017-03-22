@@ -215,9 +215,9 @@ parenless_exp:
 		{ $$ = &ast.Bool{$1, $1.Value() == "true"} }
 	| INT
 		{
-			i, err := strconv.Atoi($1.Value())
+			i, err := strconv.ParseInt($1.Value(), 10, 64)
 			if err != nil {
-				yylex.Error("Parse error")
+				yylex.Error("Parse error at int literal: " + err.Error())
 			} else {
 				$$ = &ast.Int{$1, i}
 			}
@@ -226,7 +226,7 @@ parenless_exp:
 		{
 			f, err := strconv.ParseFloat($1.Value(), 64)
 			if err != nil {
-				yylex.Error("Parse error")
+				yylex.Error("Parse error at float literal: " + err.Error())
 			} else {
 				$$ = &ast.Float{$1, f}
 			}
@@ -236,7 +236,7 @@ parenless_exp:
 			from := $1.Value()
 			s, err := strconv.Unquote(from)
 			if err != nil {
-				yylex.Error("Parse error on string literal: " + from)
+				yylex.Error(fmt.Sprintf("Parse error at string literal %s: %s", from, err.Error()))
 			} else {
 				$$ = &ast.String{$1, s}
 			}

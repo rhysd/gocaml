@@ -28,6 +28,8 @@ func (l *pseudoLexer) Lex(lval *yySymType) int {
 				return 0
 			case token.COMMENT:
 				continue
+			case token.ILLEGAL:
+				return 1
 			}
 
 			// XXX:
@@ -45,8 +47,8 @@ func (l *pseudoLexer) Error(msg string) {
 	l.errorMessage.WriteString(fmt.Sprintf("  * %s\n", msg))
 }
 
-func (l *pseudoLexer) getErrorMessage() error {
-	return fmt.Errorf("%d errors while parsing\n%s", l.errorCount, l.errorMessage.String())
+func (l *pseudoLexer) getError() error {
+	return fmt.Errorf("%d error(s) while parsing\n%s", l.errorCount, l.errorMessage.String())
 }
 
 // Parse parses given tokens and returns parsed AST.
@@ -57,8 +59,8 @@ func Parse(tokens chan token.Token) (ast.Expr, error) {
 	l := &pseudoLexer{tokens: tokens}
 	ret := yyParse(l)
 
-	if ret != 0 {
-		return nil, l.getErrorMessage()
+	if ret != 0 || l.errorCount != 0 {
+		return nil, l.getError()
 	}
 
 	root := l.result

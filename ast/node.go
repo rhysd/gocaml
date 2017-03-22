@@ -80,7 +80,7 @@ type (
 
 	Int struct {
 		Token *token.Token
-		Value int
+		Value int64
 	}
 
 	Float struct {
