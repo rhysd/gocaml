@@ -104,7 +104,20 @@ prof: cpu.prof codegen.test
 prof.png: cpu.prof codegen.test
 	go tool pprof -png codegen.test cpu.prof > prof.png
 
-clean:
-	rm -f gocaml y.output parser/grammar.go runtime/gocamlrt.o runtime/gocamlrt.a cover.out cpu.prof codegen.test prof.png
+gocaml-darwin-x86_64.zip: gocaml runtime/gocamlrt.a
+	rm -rf gocaml-darwin-x86_64 gocaml-darwin-x86_64.zip
+	mkdir -p gocaml-darwin-x86_64/runtime
+	mkdir -p gocaml-darwin-x86_64/include
+	cp gocaml gocaml-darwin-x86_64/
+	cp runtime/gocamlrt.a gocaml-darwin-x86_64/runtime/
+	cp runtime/gocaml.h gocaml-darwin-x86_64/include/
+	cp README.md LICENSE gocaml-darwin-x86_64/
+	zip gocaml-darwin-x86_64.zip -r gocaml-darwin-x86_64
+	rm -rf gocaml-darwin-x86_64
 
-.PHONY: all build clean test cov prof
+release: gocaml-darwin-x86_64.zip
+
+clean:
+	rm -f gocaml y.output parser/grammar.go runtime/gocamlrt.o runtime/gocamlrt.a cover.out cpu.prof codegen.test prof.png gocaml-darwin-x86_64.zip
+
+.PHONY: all build clean test cov prof release
