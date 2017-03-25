@@ -8,6 +8,8 @@ GoCaml is a [MinCaml][] implementation in Go using [LLVM][]. MinCaml is a minima
 
 This project aims my practices for understanding type inference, closure transform and introducing own intermediate language (IL) to own language.
 
+[Japanese presentation](https://speakerdeck.com/rhysd/go-detukurufan-yong-yan-yu-chu-li-xi-shi-zhuang-zhan-lue)
+
 Example:
 
 ```ml
