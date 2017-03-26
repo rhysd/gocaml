@@ -147,7 +147,14 @@ func TestPrintAST(t *testing.T) {
 							&Int{tok, 42},
 						},
 					},
-					&Int{tok, 0},
+					&Match{
+						tok,
+						&Some{tok, &Int{tok, 1}},
+						&None{tok},
+						&None{tok},
+						NewSymbol("foo"),
+						tok.End,
+					},
 				},
 			},
 		},
@@ -244,7 +251,11 @@ func TestPrintAST(t *testing.T) {
 -   -   -   -   -   Apply (0:0-0:0)
 -   -   -   -   -   -   VarRef (f) (0:0-0:0)
 -   -   -   -   -   -   Int (0:0-0:0)
--   -   -   -   -   Int (0:0-0:0)
+-   -   -   -   -   Match (0:0-0:0)
+-   -   -   -   -   -   Some (0:0-0:0)
+-   -   -   -   -   -   -   Int (0:0-0:0)
+-   -   -   -   -   -   None (0:0-0:0)
+-   -   -   -   -   -   None (0:0-0:0)
 `
 	actual := <-ch
 	if expected != actual {

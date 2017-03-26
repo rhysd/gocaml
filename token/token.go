@@ -55,6 +55,12 @@ const (
 	ARRAY_LENGTH
 	STRING_LITERAL
 	PERCENT
+	MATCH
+	WITH
+	BAR
+	SOME
+	NONE
+	MINUS_GREATER
 	EOF
 )
 
@@ -99,6 +105,12 @@ var tokenTable = [...]string{
 	ARRAY_LENGTH:   "Array.length",
 	STRING_LITERAL: "STRING_LITERAL",
 	PERCENT:        "%",
+	MATCH:          "match",
+	WITH:           "with",
+	BAR:            "|",
+	SOME:           "Some",
+	NONE:           "None",
+	MINUS_GREATER:  "->",
 }
 
 // Token instance for GoCaml.

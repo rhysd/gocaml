@@ -90,6 +90,14 @@ func (l *Lexer) emitIdent(ident string) {
 		l.emit(token.REC)
 	case "not":
 		l.emit(token.NOT)
+	case "match":
+		l.emit(token.MATCH)
+	case "with":
+		l.emit(token.WITH)
+	case "Some":
+		l.emit(token.SOME)
+	case "None":
+		l.emit(token.NONE)
 	default:
 		l.emit(token.IDENT)
 	}
@@ -218,12 +226,22 @@ func lexAdditiveOp(l *Lexer) stateFn {
 	}
 	l.eat()
 
-	if l.top == '.' {
+	switch l.top {
+	case '.':
 		l.eat()
 		l.emit(dot)
-	} else {
+	case '>':
+		if op == token.MINUS {
+			// Lexing '->'
+			l.eat()
+			l.emit(token.MINUS_GREATER)
+		} else {
+			l.emit(op)
+		}
+	default:
 		l.emit(op)
 	}
+
 	return lex
 }
 
@@ -244,20 +262,31 @@ func lexMultOp(l *Lexer) stateFn {
 	return lex
 }
 
-func lexLogicalOp(l *Lexer) stateFn {
-	op := token.BAR_BAR
+func lexBar(l *Lexer) stateFn {
 	prev := l.top
-	if prev == '&' {
-		op = token.AND_AND
-	}
 	l.eat()
 
 	if prev != l.top {
-		l.expected(fmt.Sprintf("logical operator %s%s", prev, prev), l.top)
+		l.emit(token.BAR)
+		return lex
+	}
+
+	l.eat()
+	l.emit(token.BAR_BAR)
+
+	return lex
+}
+
+func lexLogicalAnd(l *Lexer) stateFn {
+	prev := l.top
+	l.eat()
+
+	if prev != l.top {
+		l.expected("logical operator &&", l.top)
 		return nil
 	}
 	l.eat()
-	l.emit(op)
+	l.emit(token.AND_AND)
 
 	return lex
 }
@@ -439,9 +468,9 @@ func lex(l *Lexer) stateFn {
 			l.eat()
 			l.emit(token.SEMICOLON)
 		case '|':
-			return lexLogicalOp
+			return lexBar
 		case '&':
-			return lexLogicalOp
+			return lexLogicalAnd
 		case '"':
 			return lexStringLiteral
 		default:

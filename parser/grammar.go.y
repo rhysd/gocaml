@@ -61,10 +61,17 @@ import (
 %token<token> ARRAY_LENGTH
 %token<token> STRING_LITERAL
 %token<token> PERCENT
+%token<token> MATCH
+%token<token> WITH
+%token<token> BAR
+%token<token> SOME
+%token<token> NONE
+%token<token> MINUS_GREATER
 
 %right prec_let
 %right SEMICOLON
 %right prec_if
+%right prec_match
 %right LESS_MINUS
 %left COMMA
 %left BAR_BAR
@@ -133,6 +140,18 @@ exp:
 	| IF exp THEN exp ELSE exp
 		%prec prec_if
 		{ $$ = &ast.If{$1, $2, $4, $6} }
+	| MATCH exp WITH BAR SOME IDENT MINUS_GREATER exp BAR NONE MINUS_GREATER exp
+		%prec prec_match
+		{
+			none := $12
+			$$ = &ast.Match{$1, $2, $8, none, ast.NewSymbol($6.Value()), none.Pos()}
+		}
+	| MATCH exp WITH BAR NONE MINUS_GREATER exp BAR SOME IDENT MINUS_GREATER exp
+		%prec prec_match
+		{
+			some := $12
+			$$ = &ast.Match{$1, $2, some, $7, ast.NewSymbol($10.Value()), some.Pos()}
+		}
 	| MINUS_DOT exp
 		%prec prec_unary_minus
 		{ $$ = &ast.FNeg{$1, $2} }
@@ -167,6 +186,10 @@ exp:
 	| ARRAY_LENGTH parenless_exp
 		%prec prec_app
 		{ $$ = &ast.ArraySize{$1, $2} }
+	| SOME exp
+		{ $$ = &ast.Some{$1, $2} }
+	| NONE
+		{ $$ = &ast.None{$1} }
 	| ILLEGAL error
 		{
 			yylex.Error(fmt.Sprintf("Parsing illegal token: %s", $1.String()))

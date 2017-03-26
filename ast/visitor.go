@@ -106,6 +106,12 @@ func Visit(v Visitor, e Expr) {
 		Visit(v, n.Array)
 		Visit(v, n.Index)
 		Visit(v, n.Assignee)
+	case *Match:
+		Visit(v, n.Target)
+		Visit(v, n.IfSome)
+		Visit(v, n.IfNone)
+	case *Some:
+		Visit(v, n.Child)
 	}
 }
 

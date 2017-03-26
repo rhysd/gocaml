@@ -352,6 +352,22 @@ Note that arrays are NOT immutable because of performance (GoCaml doesn't have p
 `e1.(e2) <- e3` is always evaluated to `()` and updates the element destructively.
 Accessing to out of bounds of arrays causes undefined behavior.
 
+### Option Type
+
+Option type represents some value or none.
+
+```ml
+let rec print o =
+    match o with
+      | Some i -> println_int o
+      | None   -> println_str "none"
+in
+print None
+print (Some 42)
+```
+
+Currently `match with` expression is only for option type because GoCaml doesn't have variant types.
+
 ### External symbols
 
 All symbols which are not defined but used are treated as external symbols.

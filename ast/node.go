@@ -230,6 +230,23 @@ type (
 	Put struct {
 		Array, Index, Assignee Expr
 	}
+
+	Match struct {
+		StartToken     *token.Token
+		Target         Expr
+		IfSome, IfNone Expr
+		SomeIdent      *Symbol
+		EndPos         token.Position
+	}
+
+	Some struct {
+		StartToken *token.Token
+		Child      Expr
+	}
+
+	None struct {
+		Token *token.Token
+	}
 )
 
 func (e *Unit) Pos() token.Position {
@@ -487,6 +504,27 @@ func (e *Put) End() token.Position {
 	return e.Assignee.End()
 }
 
+func (e *Match) Pos() token.Position {
+	return e.StartToken.Start
+}
+func (e *Match) End() token.Position {
+	return e.EndPos
+}
+
+func (e *Some) Pos() token.Position {
+	return e.StartToken.Start
+}
+func (e *Some) End() token.Position {
+	return e.Child.End()
+}
+
+func (e *None) Pos() token.Position {
+	return e.Token.Start
+}
+func (e *None) End() token.Position {
+	return e.Token.End
+}
+
 func (e *Unit) Name() string      { return "Unit" }
 func (e *Bool) Name() string      { return "Bool" }
 func (e *Int) Name() string       { return "Int" }
@@ -541,3 +579,6 @@ func (e *ArrayCreate) Name() string { return "ArrayCreate" }
 func (e *ArraySize) Name() string   { return "ArraySize" }
 func (e *Get) Name() string         { return "Get" }
 func (e *Put) Name() string         { return "Put" }
+func (e *Match) Name() string       { return "Match" }
+func (e *Some) Name() string        { return "Some" }
+func (e *None) Name() string        { return "None" }
