@@ -90,6 +90,7 @@ import (
 %type<decls> params
 %type<decls> pat
 %type<funcdef> fundef
+%type<token> match_arm_start
 %type<> program
 
 %start program
@@ -140,17 +141,17 @@ exp:
 	| IF exp THEN exp ELSE exp
 		%prec prec_if
 		{ $$ = &ast.If{$1, $2, $4, $6} }
-	| MATCH exp WITH BAR SOME IDENT MINUS_GREATER exp BAR NONE MINUS_GREATER exp
+	| MATCH exp match_arm_start SOME IDENT MINUS_GREATER exp BAR NONE MINUS_GREATER exp
 		%prec prec_match
 		{
-			none := $12
-			$$ = &ast.Match{$1, $2, $8, none, ast.NewSymbol($6.Value()), none.Pos()}
+			none := $11
+			$$ = &ast.Match{$1, $2, $7, none, ast.NewSymbol($5.Value()), none.Pos()}
 		}
-	| MATCH exp WITH BAR NONE MINUS_GREATER exp BAR SOME IDENT MINUS_GREATER exp
+	| MATCH exp match_arm_start NONE MINUS_GREATER exp BAR SOME IDENT MINUS_GREATER exp
 		%prec prec_match
 		{
-			some := $12
-			$$ = &ast.Match{$1, $2, some, $7, ast.NewSymbol($10.Value()), some.Pos()}
+			some := $11
+			$$ = &ast.Match{$1, $2, some, $6, ast.NewSymbol($9.Value()), some.Pos()}
 		}
 	| MINUS_DOT exp
 		%prec prec_unary_minus
@@ -268,6 +269,9 @@ parenless_exp:
 		{ $$ = &ast.VarRef{$1, ast.NewSymbol($1.Value())} }
 	| parenless_exp DOT LPAREN exp RPAREN
 		{ $$ = &ast.Get{$1, $4} }
+
+match_arm_start:
+	WITH BAR | WITH
 
 %%
 
