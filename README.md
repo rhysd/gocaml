@@ -198,7 +198,7 @@ a + 4;
 The syntax is `let {name} = {e1} in {e2}`. `e2` will be evaluated where `e1` is bound to `name`. By chain `let`, you can define multiple variables.
 
 ```ml
-let pi = 3.14.1592 in
+let pi = 3.141592 in
 let r = 2 in
 let area = r *. r *. pi in
 print_float area
@@ -222,7 +222,7 @@ Functions are first-class object in GoCaml. So you can also bind functions to va
 let rec hello _ = println_str "hello" in
 let f = hello in
 
-(* Shows "helllo" *)
+(* Shows "hello" *)
 f ();
 
 (* Binds external function *)
