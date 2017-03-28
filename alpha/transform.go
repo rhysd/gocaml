@@ -101,6 +101,13 @@ func (t *transformer) Visit(node ast.Expr) ast.Visitor {
 		ast.Visit(t, n.Body)
 		t.pop()
 		return nil
+	case *ast.Match:
+		ast.Visit(t, n.Target)
+		t.nest()
+		t.register(n.SomeIdent)
+		ast.Visit(t, n.IfSome)
+		ast.Visit(t, n.IfNone)
+		t.pop()
 	case *ast.VarRef:
 		mapped, ok := t.current.resolve(n.Symbol.DisplayName)
 		if !ok {

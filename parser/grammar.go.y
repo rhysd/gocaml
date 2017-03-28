@@ -189,8 +189,6 @@ exp:
 		{ $$ = &ast.ArraySize{$1, $2} }
 	| SOME exp
 		{ $$ = &ast.Some{$1, $2} }
-	| NONE
-		{ $$ = &ast.None{$1} }
 	| ILLEGAL error
 		{
 			yylex.Error(fmt.Sprintf("Parsing illegal token: %s", $1.String()))
@@ -265,6 +263,8 @@ parenless_exp:
 				$$ = &ast.String{$1, s}
 			}
 		}
+	| NONE
+		{ $$ = &ast.None{$1} }
 	| IDENT
 		{ $$ = &ast.VarRef{$1, ast.NewSymbol($1.Value())} }
 	| parenless_exp DOT LPAREN exp RPAREN

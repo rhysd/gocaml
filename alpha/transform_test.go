@@ -61,6 +61,40 @@ func TestNested(t *testing.T) {
 	}
 }
 
+func TestMatch(t *testing.T) {
+	tok := &token.Token{}
+	someRef := &ast.VarRef{
+		tok,
+		ast.NewSymbol("a"),
+	}
+	noneRef := &ast.VarRef{
+		tok,
+		ast.NewSymbol("a"),
+	}
+	root := &ast.Match{
+		tok,
+		&ast.Int{tok, 42},
+		someRef,
+		noneRef,
+		ast.NewSymbol("a"),
+		token.Position{},
+	}
+
+	if err := Transform(root); err != nil {
+		t.Fatal(err)
+	}
+
+	if root.SomeIdent.Name != "a$t1" {
+		t.Fatalf("Symbol in match expression is not transformed correctly. Expected a$t1 but actually %s", root.SomeIdent.Name)
+	}
+	if someRef.Symbol.Name != "a$t1" {
+		t.Errorf("Symbol in some arm must refer a$t1 but %s", someRef.Symbol.Name)
+	}
+	if noneRef.Symbol.Name != "a$t1" {
+		t.Errorf("Symbol in none arm must refer a$t1 but %s", noneRef.Symbol.Name)
+	}
+}
+
 func TestLetTuple(t *testing.T) {
 	ref := &ast.VarRef{
 		nil,

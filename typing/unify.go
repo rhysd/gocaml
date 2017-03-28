@@ -21,6 +21,8 @@ func occur(v *Var, rhs Type) bool {
 		}
 	case *Array:
 		return occur(v, t.Elem)
+	case *Option:
+		return occur(v, t.Elem)
 	case *Fun:
 		if occur(v, t.Ret) {
 			return true
@@ -109,6 +111,10 @@ func Unify(left, right Type) error {
 		}
 	case *Array:
 		if r, ok := right.(*Array); ok {
+			return Unify(l.Elem, r.Elem)
+		}
+	case *Option:
+		if r, ok := right.(*Option); ok {
 			return Unify(l.Elem, r.Elem)
 		}
 	case *Fun:

@@ -314,6 +314,34 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 
 		// Assign to array does not have a value, so return unit type
 		return UnitType, nil
+	case *ast.Some:
+		elem, err := env.infer(n.Child)
+		if err != nil {
+			return nil, err
+		}
+		return &Option{elem}, nil
+	case *ast.None:
+		return &Option{&Var{}}, nil
+	case *ast.Match:
+		elem := &Var{}
+		matched := &Option{elem}
+		if err := env.checkNodeType("matching target in 'match' expression", n.Target, matched); err != nil {
+			return nil, err
+		}
+
+		env.Table[n.SomeIdent.Name] = elem
+		some, err := env.infer(n.IfSome)
+		if err != nil {
+			return nil, err
+		}
+		none, err := env.infer(n.IfNone)
+		if err != nil {
+			return nil, err
+		}
+		if err = Unify(some, none); err != nil {
+			return nil, typeError(err, "mismatch of types between 'Some' arm and 'None' arm in 'match' expression", n.Pos())
+		}
+		return some, nil
 	}
 	panic(fmt.Sprintf("Unreachable: %s %v %v", e.Name(), e.Pos(), e.End()))
 }

@@ -80,6 +80,14 @@ func (t *Array) String() string {
 	return fmt.Sprintf("%s array", t.Elem.String())
 }
 
+type Option struct {
+	Elem Type
+}
+
+func (t *Option) String() string {
+	return fmt.Sprintf("%s option", t.Elem.String())
+}
+
 type Var struct {
 	Ref Type
 }

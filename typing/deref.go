@@ -51,6 +51,12 @@ func unwrap(target Type) (Type, bool) {
 			return nil, false
 		}
 		t.Elem = e
+	case *Option:
+		e, ok := unwrap(t.Elem)
+		if !ok {
+			return nil, false
+		}
+		t.Elem = e
 	case *Var:
 		return unwrapVar(t)
 	}
@@ -90,12 +96,12 @@ func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
 // In MinCaml, unknown type value will be fallbacked into Int.
 // But GoCaml decided to fallback unit type.
 //
-//   1. When type variable is empty (e.g. not $1(unknown list), but $1(unknown))
+//   1. When type variable is empty
 //   2. When the type variable appears in return type of external function symbol.
 //
-// For example, `print_int 42; ()` causes a type error such as 'type of $tmp1 is unknown'
-// This is because it will be transformed to `let $tmp1 = print_int 42 in ()` and return
-// type of external function `print_int` is unknown.
+// For example, `print 42; ()` causes a type error such as 'type of $tmp1 is unknown'.
+// This is because it will be transformed to `let $tmp1 = print 42 in ()` and return
+// type of external function `print` is unknown.
 // To avoid kinds of this error, GoCaml decided to assign `()` to the return type.
 // Then $tmp can be inferred as `()`. $tmp1 is always unused variable. So it doesn't
 // cause any problem, I believe.
@@ -158,6 +164,8 @@ func (d *typeVarDereferencer) Visit(node ast.Expr) ast.Visitor {
 		for _, sym := range n.Symbols {
 			d.derefSym(n, sym)
 		}
+	case *ast.Match:
+		d.derefSym(n, n.SomeIdent)
 	}
 	return d
 }

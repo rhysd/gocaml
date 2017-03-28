@@ -46,6 +46,12 @@ func testTypeEquals(l, r Type) bool {
 			return l.Ref == nil && r.Ref == nil
 		}
 		return testTypeEquals(l.Ref, r.Ref)
+	case *Option:
+		r, ok := r.(*Option)
+		if !ok {
+			return false
+		}
+		return testTypeEquals(l.Elem, r.Elem)
 	default:
 		panic("Unreachable")
 	}
@@ -66,6 +72,8 @@ func TestUnwrapExternalSimpleTypes(t *testing.T) {
 					[]Type{FloatType, IntType},
 				},
 				&Array{IntType},
+				&Option{IntType},
+				&Option{&Option{&Array{IntType}}},
 			},
 		},
 		&Fun{IntType, []Type{FloatType, BoolType}},
@@ -90,6 +98,7 @@ func TestUnwrapTypeVarsInExternals(t *testing.T) {
 		{&Var{&Var{IntType}}, IntType},
 		{&Tuple{[]Type{&Var{FloatType}, &Var{IntType}}}, &Tuple{[]Type{FloatType, IntType}}},
 		{&Array{&Var{&Tuple{[]Type{&Var{IntType}, UnitType}}}}, &Array{&Tuple{[]Type{IntType, UnitType}}}},
+		{&Option{&Var{&Option{&Var{IntType}}}}, &Option{&Option{IntType}}},
 	} {
 		actual := v.derefExternalSym("test", tc.input)
 		if !testTypeEquals(actual, tc.expected) {
@@ -110,6 +119,8 @@ func TestRaiseErrorOnUnknownTypeInExternals(t *testing.T) {
 		&Array{&Var{}},
 		&Fun{IntType, []Type{&Var{&Var{}}}},
 		&Fun{&Array{&Var{}}, []Type{}},
+		&Option{&Var{}},
+		&Fun{&Option{&Var{}}, []Type{}},
 	} {
 		v.derefExternalSym("test", ty)
 		if len(v.errors) == 0 {

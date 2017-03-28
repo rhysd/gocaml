@@ -252,6 +252,31 @@ func TestInvalidExpressions(t *testing.T) {
 			code:     "argv + 12",
 			expected: "Type mismatch between 'int' and 'string array'",
 		},
+		{
+			what:     "Option type",
+			code:     "let a = Some 42 in let b = Some true in a = b",
+			expected: "Type mismatch between 'int' and 'bool'",
+		},
+		{
+			what:     "matching target in match expression",
+			code:     "match 42 with Some i -> 0 | None -> 0",
+			expected: "matching target in 'match' expression must be '{",
+		},
+		{
+			what:     "matched symbol type and matching expression",
+			code:     "match Some 42 with Some i -> not i | None -> false",
+			expected: "Type mismatch between 'int' and 'bool'",
+		},
+		{
+			what:     "match expression arms",
+			code:     "match Some 42 with Some i -> 3.14 | None -> true",
+			expected: "mismatch of types between 'Some' arm and 'None' arm in 'match' expression",
+		},
+		{
+			what:     "None type comparison",
+			code:     "let o = None in o = 42",
+			expected: "} option' and 'int'",
+		},
 	}
 
 	for _, testcase := range testcases {
