@@ -1,5 +1,138 @@
+diff --git a/bindings/go/llvm/IRBindings.cpp b/bindings/go/llvm/IRBindings.cpp
+index 20cc05043f2..4bfa1bbaf0c 100644
+--- a/bindings/go/llvm/IRBindings.cpp
++++ b/bindings/go/llvm/IRBindings.cpp
+@@ -14,6 +14,7 @@
+ #include "IRBindings.h"
+ #include "llvm/IR/Attributes.h"
+ #include "llvm/IR/DebugLoc.h"
++#include "llvm/IR/DebugInfoMetadata.h"
+ #include "llvm/IR/Function.h"
+ #include "llvm/IR/IRBuilder.h"
+ #include "llvm/IR/LLVMContext.h"
+@@ -71,6 +72,18 @@ void LLVMSetCurrentDebugLocation2(LLVMBuilderRef Bref, unsigned Line,
+                     InlinedAt ? unwrap<MDNode>(InlinedAt) : nullptr));
+ }
+ 
++LLVMDebugLocMetadata LLVMGetCurrentDebugLocation2(LLVMBuilderRef Bref) {
++  const auto& Loc = unwrap(Bref)->getCurrentDebugLocation();
++  const auto* InlinedAt = Loc.getInlinedAt();
++  const LLVMDebugLocMetadata md{
++    Loc.getLine(),
++    Loc.getCol(),
++    wrap(Loc.getScope()),
++    InlinedAt == nullptr ? nullptr : wrap(InlinedAt->getRawInlinedAt()),
++  };
++  return md;
++}
++
+ void LLVMSetSubprogram(LLVMValueRef Func, LLVMMetadataRef SP) {
+   unwrap<Function>(Func)->setSubprogram(unwrap<DISubprogram>(SP));
+ }
+diff --git a/bindings/go/llvm/IRBindings.h b/bindings/go/llvm/IRBindings.h
+index 21147712ed5..f4f490391d4 100644
+--- a/bindings/go/llvm/IRBindings.h
++++ b/bindings/go/llvm/IRBindings.h
+@@ -27,6 +27,12 @@ extern "C" {
+ #endif
+ 
+ typedef struct LLVMOpaqueMetadata *LLVMMetadataRef;
++struct LLVMDebugLocMetadata{
++    unsigned Line;
++    unsigned Col;
++    LLVMMetadataRef Scope;
++    LLVMMetadataRef InlinedAt;
++};
+ 
+ LLVMMetadataRef LLVMConstantAsMetadata(LLVMValueRef Val);
+ 
+@@ -46,6 +52,8 @@ void LLVMSetCurrentDebugLocation2(LLVMBuilderRef Bref, unsigned Line,
+                                   unsigned Col, LLVMMetadataRef Scope,
+                                   LLVMMetadataRef InlinedAt);
+ 
++struct LLVMDebugLocMetadata LLVMGetCurrentDebugLocation2(LLVMBuilderRef Bref);
++
+ void LLVMSetSubprogram(LLVMValueRef Fn, LLVMMetadataRef SP);
+ 
+ #ifdef __cplusplus
+diff --git a/bindings/go/llvm/ir.go b/bindings/go/llvm/ir.go
+index b263c07c512..fe191beb381 100644
+--- a/bindings/go/llvm/ir.go
++++ b/bindings/go/llvm/ir.go
+@@ -1226,9 +1226,23 @@ func (b Builder) InsertWithName(instr Value, name string) {
+ func (b Builder) Dispose() { C.LLVMDisposeBuilder(b.C) }
+ 
+ // Metadata
++type DebugLoc struct {
++	Line, Col      uint
++	Scope          Metadata
++	InlinedAt      Metadata
++}
+ func (b Builder) SetCurrentDebugLocation(line, col uint, scope, inlinedAt Metadata) {
+ 	C.LLVMSetCurrentDebugLocation2(b.C, C.unsigned(line), C.unsigned(col), scope.C, inlinedAt.C)
+ }
++// Get current debug location. Please do not call this function until setting debug location with SetCurrentDebugLocation()
++func (b Builder) GetCurrentDebugLocation() (loc DebugLoc) {
++	md := C.LLVMGetCurrentDebugLocation2(b.C)
++	loc.Line = uint(md.Line)
++	loc.Col = uint(md.Col)
++	loc.Scope = Metadata{C: md.Scope}
++	loc.InlinedAt = Metadata{C: md.InlinedAt}
++	return
++}
+ func (b Builder) SetInstDebugLocation(v Value) { C.LLVMSetInstDebugLocation(b.C, v.C) }
+ func (b Builder) InsertDeclare(module Module, storage Value, md Value) Value {
+ 	f := module.NamedFunction("llvm.dbg.declare")
+diff --git a/bindings/go/llvm/ir_test.go b/bindings/go/llvm/ir_test.go
+index 13e113957b4..9f44ff9ed20 100644
+--- a/bindings/go/llvm/ir_test.go
++++ b/bindings/go/llvm/ir_test.go
+@@ -95,3 +95,43 @@ func TestAttributes(t *testing.T) {
+ 		testAttribute(t, name)
+ 	}
+ }
++
++func TestDebugLoc(t *testing.T) {
++	mod := NewModule("")
++	defer mod.Dispose()
++
++	ctx := mod.Context()
++
++	b := ctx.NewBuilder()
++	defer b.Dispose()
++
++	d := NewDIBuilder(mod)
++	defer func() {
++		d.Finalize()
++		d.Destroy()
++	}()
++	file := d.CreateFile("dummy_file", "dummy_dir")
++	voidInfo := d.CreateBasicType(DIBasicType{Name: "void"})
++	typeInfo := d.CreateSubroutineType(DISubroutineType{file, []Metadata{voidInfo}})
++	scope := d.CreateFunction(file, DIFunction{
++		Name:         "foo",
++		LinkageName:  "foo",
++		Line:         10,
++		ScopeLine:    10,
++		Type:         typeInfo,
++		File:         file,
++		IsDefinition: true,
++	})
++
++	b.SetCurrentDebugLocation(10, 20, scope, Metadata{})
++	loc := b.GetCurrentDebugLocation()
++	if loc.Line != 10 {
++		t.Errorf("Got line %d, though wanted 10", loc.Line)
++	}
++	if loc.Col != 20 {
++		t.Errorf("Got column %d, though wanted 20", loc.Col)
++	}
++	if loc.Scope.C != scope.C {
++		t.Errorf("Got metadata %v as scope, though wanted %v", loc.Scope.C, scope.C)
++	}
++}
 diff --git a/bindings/go/llvm/transforms_pmbuilder.go b/bindings/go/llvm/transforms_pmbuilder.go
-index 3d79d6e..b164e58 100644
+index 3d79d6e2f32..b164e58812b 100644
 --- a/bindings/go/llvm/transforms_pmbuilder.go
 +++ b/bindings/go/llvm/transforms_pmbuilder.go
 @@ -43,6 +43,26 @@ func (pmb PassManagerBuilder) PopulateFunc(pm PassManager) {
