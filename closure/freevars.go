@@ -77,6 +77,12 @@ func (fvg *freeVarsGatherer) exploreInsn(insn *gcil.Insn) {
 		fvg.add(val.Rhs)
 	case *gcil.ArrLen:
 		fvg.add(val.Array)
+	case *gcil.Some:
+		fvg.add(val.Elem)
+	case *gcil.IsSome:
+		fvg.add(val.OptVal)
+	case *gcil.DerefSome:
+		fvg.add(val.SomeVal)
 	case *gcil.Fun:
 		make, ok := fvg.transform.replacedFuns[insn]
 		if !ok {

@@ -187,7 +187,7 @@ exp:
 	| ARRAY_LENGTH parenless_exp
 		%prec prec_app
 		{ $$ = &ast.ArraySize{$1, $2} }
-	| SOME exp
+	| SOME parenless_exp
 		{ $$ = &ast.Some{$1, $2} }
 	| ILLEGAL error
 		{

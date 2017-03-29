@@ -283,6 +283,56 @@ func TestEmitInsn(t *testing.T) {
 				"END: else",
 			},
 		},
+		{
+			"option value",
+			"if true then None else Some 42",
+			[]string{
+				"bool true ; type=bool",
+				"if $k1 ; type=int option",
+				"BEGIN: then",
+				"none ; type=int option",
+				"END: then",
+				"BEGIN: else",
+				"int 42 ; type=int",
+				"some $k3 ; type=int option",
+				"END: else",
+			},
+		},
+		{
+			"match with some value",
+			"match Some 42 with Some i -> i + 3 | None -> 42",
+			[]string{
+				"int 42 ; type=int",
+				"some $k1 ; type=int option",
+				"issome $k2 ; type=bool",
+				"if $k3 ; type=int",
+				"BEGIN: then",
+				"i$t1 = derefsome $k2 ; type=int",
+				"ref i$t1 ; type=int",
+				"int 3 ; type=int",
+				"binary + $k4 $k5 ; type=int",
+				"END: then",
+				"BEGIN: else",
+				"int 42 ; type=int",
+				"END: else",
+			},
+		},
+		{
+			"match with none value",
+			"match None with Some i -> i | None -> false",
+			[]string{
+				"none ; type=bool option",
+				"issome $k1 ; type=bool",
+				"if $k2 ; type=bool",
+				"BEGIN: then",
+				"i$t1 = derefsome $k1 ; type=bool",
+				"ref i$t1 ; type=bool",
+				"END: then",
+				"BEGIN: else",
+				"bool false ; type=bool",
+				"END: else",
+			},
+		},
 	}
 
 	for _, tc := range cases {
@@ -344,6 +394,11 @@ func TestSemanticError(t *testing.T) {
 			what:     "tuple is invalid for operator '<'",
 			code:     "let t = (1, 2) in t < t",
 			expected: "'(int, int)' can't be compared with operator '<'",
+		},
+		{
+			what:     "option is invalid for operator '<'",
+			code:     "let a = Some 3 in a < None",
+			expected: "'int option' can't be compared with operator '<'",
 		},
 		{
 			what:     "array is invalid for operator '='",

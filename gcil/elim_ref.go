@@ -86,6 +86,12 @@ func (elim *elimRef) insn(insn *Insn) {
 		val.Rhs = elim.elimRef(val.Rhs)
 	case *ArrLen:
 		val.Array = elim.elimRef(val.Array)
+	case *Some:
+		val.Elem = elim.elimRef(val.Elem)
+	case *IsSome:
+		val.OptVal = elim.elimRef(val.OptVal)
+	case *DerefSome:
+		val.SomeVal = elim.elimRef(val.SomeVal)
 	}
 }
 

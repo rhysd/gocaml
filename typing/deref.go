@@ -181,5 +181,14 @@ func (env *Env) DerefTypeVars(root ast.Expr) error {
 		return fmt.Errorf("Error while type inference (dereferencing type vars)\n%s", strings.Join(v.errors, "\n"))
 	}
 
+	for n, t := range env.NoneTypes {
+		deref, ok := unwrap(t.Elem)
+		if !ok {
+			p := n.Pos()
+			panic(fmt.Sprintf("FATAL: Dereferencing type of 'None' value must not fail. Value at (line:%d, col:%d) was wrongly typed as %s", p.Line, p.Column, t.String()))
+		}
+		t.Elem = deref
+	}
+
 	return nil
 }

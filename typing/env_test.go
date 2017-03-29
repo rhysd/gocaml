@@ -148,3 +148,29 @@ func TestDumpResult(t *testing.T) {
 		t.Errorf("Output does not contain external symbols table: %s", out)
 	}
 }
+
+func TestDerefNoneTypes(t *testing.T) {
+	s := token.NewDummySource("let rec f x = () in f (Some 42); f None; let a = None in f a")
+	l := lexer.NewLexer(s)
+	go l.Lex()
+	root, err := parser.Parse(l.Tokens)
+	if err != nil {
+		panic(root)
+	}
+
+	env := NewEnv()
+	if err := env.ApplyTypeAnalysis(root); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(env.NoneTypes) != 2 {
+		t.Fatal("None type values were not detected")
+	}
+
+	for _, o := range env.NoneTypes {
+		v, ok := o.Elem.(*Var)
+		if ok {
+			t.Errorf("Element type of 'None' value was not dereferenced: %s", v.String())
+		}
+	}
+}

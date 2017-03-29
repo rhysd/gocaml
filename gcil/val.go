@@ -135,6 +135,17 @@ type (
 	ArrLen struct {
 		Array string
 	}
+	Some struct {
+		Elem string
+	}
+	None struct {
+	}
+	IsSome struct {
+		OptVal string
+	}
+	DerefSome struct {
+		SomeVal string
+	}
 	XRef struct {
 		Ident string
 	}
@@ -150,10 +161,11 @@ type (
 var (
 	UnitVal = &Unit{}
 	NOPVal  = &NOP{}
+	NoneVal = &None{}
 )
 
 func (v *Unit) Print(out io.Writer) {
-	fmt.Fprintf(out, "unit")
+	fmt.Fprint(out, "unit")
 }
 func (v *Bool) Print(out io.Writer) {
 	fmt.Fprintf(out, "bool %v", v.Const)
@@ -211,8 +223,20 @@ func (v *XRef) Print(out io.Writer) {
 	fmt.Fprintf(out, "xref %s", v.Ident)
 }
 func (v *NOP) Print(out io.Writer) {
-	fmt.Fprintf(out, "nop")
+	fmt.Fprint(out, "nop")
 }
 func (v *MakeCls) Print(out io.Writer) {
 	fmt.Fprintf(out, "makecls (%s) %s", strings.Join(v.Vars, ","), v.Fun)
+}
+func (v *Some) Print(out io.Writer) {
+	fmt.Fprintf(out, "some %s", v.Elem)
+}
+func (v *None) Print(out io.Writer) {
+	fmt.Fprint(out, "none")
+}
+func (v *IsSome) Print(out io.Writer) {
+	fmt.Fprintf(out, "issome %s", v.OptVal)
+}
+func (v *DerefSome) Print(out io.Writer) {
+	fmt.Fprintf(out, "derefsome %s", v.SomeVal)
 }

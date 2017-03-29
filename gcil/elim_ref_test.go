@@ -84,6 +84,16 @@ func TestEliminatingRef(t *testing.T) {
 				"= appx print_int",
 			},
 		},
+		{
+			"option value",
+			"match Some 42 with Some i -> -i | None -> 3",
+			[]string{
+				"= int 42",
+				"= some $k1",
+				"i$t1 = derefsome $k2",
+				"unary - i$t1",
+			},
+		},
 	}
 
 	for _, tc := range cases {

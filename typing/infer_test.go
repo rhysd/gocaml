@@ -302,3 +302,24 @@ func TestInvalidExpressions(t *testing.T) {
 		})
 	}
 }
+
+func TestRegisterNoneTypes(t *testing.T) {
+	s := token.NewDummySource("let rec f x = () in f (Some 42); f None; let a = None in f a")
+	l := lexer.NewLexer(s)
+	go l.Lex()
+	e, err := parser.Parse(l.Tokens)
+	if err != nil {
+		panic(err)
+	}
+	if err = alpha.Transform(e); err != nil {
+		panic(err)
+	}
+	env := NewEnv()
+	_, err = env.infer(e)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(env.NoneTypes) != 2 {
+		t.Errorf("2 None node should be detected but actually %d", len(env.NoneTypes))
+	}
+}

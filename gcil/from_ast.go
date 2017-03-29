@@ -97,6 +97,29 @@ func (e *emitter) emitFunInsn(node *ast.LetRec) *Insn {
 	return body
 }
 
+func (e *emitter) emitMatchInsn(node *ast.Match) (typing.Type, Val, *Insn) {
+	pos := node.Pos()
+	matched := e.emitInsn(node.Target)
+	id := e.genID()
+	e.types.Table[id] = typing.BoolType
+	cond := Concat(NewInsn(id, &IsSome{matched.Ident}, pos), matched)
+
+	matchedTy, ok := e.types.Table[matched.Ident].(*typing.Option)
+	if !ok {
+		panic("Type of 'match' expression target not found")
+	}
+	name := node.SomeIdent.Name
+	e.types.Table[name] = matchedTy.Elem
+
+	derefInsn := NewInsn(name, &DerefSome{matched.Ident}, pos)
+	someBlk, _ := e.emitBlock("then", node.IfSome)
+	someBlk.Prepend(derefInsn)
+
+	noneBlk, armTy := e.emitBlock("else", node.IfNone)
+
+	return armTy, &If{cond.Ident, someBlk, noneBlk}, cond
+}
+
 func (e *emitter) emitLetTupleInsn(node *ast.LetTuple) *Insn {
 	if len(node.Symbols) == 0 {
 		panic("LetTuple node must contain at least one symbol")
@@ -133,7 +156,7 @@ func (e *emitter) emitLessInsn(kind OperatorKind, lhs, rhs ast.Expr) (typing.Typ
 	// This type constraint may be useful for type inference. But current HM type inference algorithm cannot
 	// handle a union type. In this context, the operand should be `int | float`
 	switch operand.(type) {
-	case *typing.Unit, *typing.Bool, *typing.String, *typing.Fun, *typing.Tuple, *typing.Array:
+	case *typing.Unit, *typing.Bool, *typing.String, *typing.Fun, *typing.Tuple, *typing.Array, *typing.Option:
 		e.semanticError(fmt.Sprintf("'%s' can't be compared with operator '%s'", operand.String(), OpTable[kind]), lhs.Pos())
 	}
 	return typing.BoolType, val, prev
@@ -311,6 +334,24 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		prev = array
 		ty = typing.IntType
 		val = &ArrLen{array.Ident}
+	case *ast.Some:
+		child := e.emitInsn(n.Child)
+		prev = child
+		childTy, ok := e.types.Table[child.Ident]
+		if !ok {
+			panic("Child type for 'Some' value is unknown")
+		}
+		ty = &typing.Option{childTy}
+		val = &Some{child.Ident}
+	case *ast.None:
+		var ok bool
+		ty, ok = e.types.NoneTypes[n]
+		if !ok {
+			panic("Type of 'None' value is unknown")
+		}
+		val = NoneVal
+	case *ast.Match:
+		ty, val, prev = e.emitMatchInsn(n)
 	}
 
 	// Note:

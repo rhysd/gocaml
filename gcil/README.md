@@ -73,5 +73,9 @@ Variable names follow below naming convention.
 | `arrsize {id}`            | Get array size of first `{id}`.                                                                 |
 | `xref {id}`               | Reference to external symbol. `{id}` represents the symbol.                                     |
 | `makecls {ids...} {id}`   | Closure object for second `{id}`. First `{ids...}` is a list for captures of the closure.       |
+| `some {id}`               | Make `Some` value containing `{id}` value                                                       |
+| `none`                    | Make `None` value                                                                               |
+| `issome {id}`             | Create a bool value which represents `{id}` is a `Some` value or not.                           |
+| `derefsome {id}`          | Derefernce `Some` value in `{id}`                                                               |
 | `nop`                     | No operation instruction. Currently it's only used as the centinel of instructions list.        |
 

@@ -366,6 +366,15 @@ print None
 print (Some 42)
 ```
 
+First `|` can be omitted so you can write it in one line.
+
+```ml
+if match o with Some i -> true | None -> false then
+  println_str "some!"
+else
+  println_str "none..."
+```
+
 Currently `match with` expression is only for option type because GoCaml doesn't have variant types.
 
 ### External symbols

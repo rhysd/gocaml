@@ -321,7 +321,9 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		}
 		return &Option{elem}, nil
 	case *ast.None:
-		return &Option{&Var{}}, nil
+		t := &Option{&Var{}}
+		env.NoneTypes[n] = t
+		return t, nil
 	case *ast.Match:
 		elem := &Var{}
 		matched := &Option{elem}

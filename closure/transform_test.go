@@ -308,6 +308,31 @@ func TestClosureTransform(t *testing.T) {
 				"h$t6": []string{"a$t1"},
 			},
 		},
+		{
+			what: "option values",
+			code: "let o = None in let rec f x = match o with Some i -> i | None -> 42 in f (Some 13); f o",
+			closures: map[string][]string{
+				"f$t2": []string{"o$t1"},
+			},
+			toplevel: []string{},
+			entry: []string{
+				"none ; type=int option",
+			},
+		},
+		{
+			what: "capture match var",
+			code: "(match Some 42 with Some i -> let rec f x = x + i in f | None -> let rec f x = x * 2 in f)",
+			closures: map[string][]string{
+				"f$t6": []string{"i$t1"},
+				"f$t8": []string{},
+			},
+			toplevel: []string{},
+			entry: []string{
+				"some $k1 ; type=int option",
+				"issome $k2 ; type=bool",
+				"derefsome $k2 ; type=int",
+			},
+		},
 	}
 
 	for _, tc := range cases {
