@@ -106,7 +106,6 @@ func (t *transformer) Visit(node ast.Expr) ast.Visitor {
 		t.nest()
 		t.register(n.SomeIdent)
 		ast.Visit(t, n.IfSome)
-		ast.Visit(t, n.IfNone)
 		t.pop()
 		ast.Visit(t, n.IfNone)
 		return nil

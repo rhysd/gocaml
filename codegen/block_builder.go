@@ -185,9 +185,10 @@ func (b *blockBuilder) buildEqOption(ty *typing.Option, bin *gcil.Binary, lhs, r
 	rhsDeref := b.buildDerefSome(rhs, ty)
 	bothEqVal := b.buildEq(ty.Elem, bin, lhsDeref, rhsDeref)
 	b.builder.CreateBr(endBlk)
+	bothLastBlk := b.builder.GetInsertBlock()
 
 	// Otherwise, see issome(lhs) || issome(rhs)
-	elseBlk.MoveAfter(b.builder.GetInsertBlock())
+	elseBlk.MoveAfter(bothLastBlk)
 	b.builder.SetInsertPointAtEnd(elseBlk)
 	// Either lhs or rhs is Some(v).
 	elseEqVal := b.builder.CreateOr(lhsIsSome, rhsIsSome, "")
@@ -198,7 +199,7 @@ func (b *blockBuilder) buildEqOption(ty *typing.Option, bin *gcil.Binary, lhs, r
 
 	b.builder.SetInsertPointAtEnd(endBlk)
 	phi := b.builder.CreatePHI(b.typeBuilder.boolT, "eq.opt.merge")
-	phi.AddIncoming([]llvm.Value{bothEqVal, elseEqVal}, []llvm.BasicBlock{bothSomeBlk, elseBlk})
+	phi.AddIncoming([]llvm.Value{bothEqVal, elseEqVal}, []llvm.BasicBlock{bothLastBlk, elseBlk})
 	return phi
 }
 
@@ -249,9 +250,7 @@ func (b *blockBuilder) buildDerefSome(optVal llvm.Value, ty *typing.Option) llvm
 		v := b.builder.CreateLShr(optVal, one, "")
 		// Truncate to the same size bits
 		return b.builder.CreateTrunc(v, b.typeBuilder.boolT, "derefsome")
-	case *typing.String, *typing.Fun, *typing.Array:
-		return b.builder.CreateExtractValue(optVal, 1, "derefsome")
-	case *typing.Tuple:
+	case *typing.String, *typing.Fun, *typing.Array, *typing.Tuple:
 		return optVal
 	case *typing.Option, *typing.Unit:
 		return b.builder.CreateExtractValue(optVal, 1, "derefsome")
