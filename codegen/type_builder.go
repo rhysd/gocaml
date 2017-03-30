@@ -7,17 +7,20 @@ import (
 )
 
 type typeBuilder struct {
-	context  llvm.Context
-	env      *typing.Env
-	unitT    llvm.Type
-	intT     llvm.Type
-	floatT   llvm.Type
-	boolT    llvm.Type
-	stringT  llvm.Type
-	voidT    llvm.Type
-	voidPtrT llvm.Type
-	sizeT    llvm.Type
-	captures map[string]llvm.Type
+	context   llvm.Context
+	env       *typing.Env
+	unitT     llvm.Type
+	intT      llvm.Type
+	floatT    llvm.Type
+	boolT     llvm.Type
+	stringT   llvm.Type
+	voidT     llvm.Type
+	voidPtrT  llvm.Type
+	sizeT     llvm.Type
+	optIntT   llvm.Type
+	optBoolT  llvm.Type
+	optFloatT llvm.Type
+	captures  map[string]llvm.Type
 }
 
 func newTypeBuilder(ctx llvm.Context, intPtrTy llvm.Type, env *typing.Env) *typeBuilder {
@@ -41,6 +44,9 @@ func newTypeBuilder(ctx llvm.Context, intPtrTy llvm.Type, env *typing.Env) *type
 		ctx.VoidType(),
 		llvm.PointerType(ctx.Int8Type(), 0 /*address space*/),
 		intPtrTy,
+		ctx.IntType(65), // 64bit int + 1bit flag
+		ctx.IntType(2),  // 1bit int + 1bit flag
+		ctx.IntType(65), // 64bit float + 1bit flag
 		map[string]llvm.Type{},
 	}
 }
@@ -115,6 +121,34 @@ func (b *typeBuilder) buildClosure(ty *typing.Fun) llvm.Type {
 	return b.context.StructType([]llvm.Type{funPtr, b.voidPtrT}, false /*packed*/)
 }
 
+func (b *typeBuilder) buildOption(ty *typing.Option) llvm.Type {
+	switch elem := ty.Elem.(type) {
+	case *typing.Int:
+		return b.optIntT
+	case *typing.Bool:
+		return b.optBoolT
+	case *typing.Float:
+		return b.optFloatT
+	case *typing.String, *typing.Fun, *typing.Tuple, *typing.Array:
+		// Represents 'None' value with NULL pointer
+		return b.convertGCIL(elem)
+	case *typing.Option:
+		elems := []llvm.Type{
+			b.boolT,
+			b.buildOption(elem),
+		}
+		return b.context.StructType(elems, false /*packed*/)
+	case *typing.Unit:
+		elems := []llvm.Type{
+			b.boolT,
+			b.unitT,
+		}
+		return b.context.StructType(elems, false /*packed*/)
+	default:
+		panic("unreachable: " + ty.String())
+	}
+}
+
 func (b *typeBuilder) convertGCIL(from typing.Type) llvm.Type {
 	switch ty := from.(type) {
 	case *typing.Unit:
@@ -144,6 +178,8 @@ func (b *typeBuilder) convertGCIL(from typing.Type) llvm.Type {
 			// size
 			b.intT,
 		}, false /*packed*/)
+	case *typing.Option:
+		return b.buildOption(ty)
 	case *typing.Var:
 		panic("unreachable")
 	default:
