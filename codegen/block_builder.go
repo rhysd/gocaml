@@ -97,14 +97,14 @@ func (b *blockBuilder) buildAlloca(t llvm.Type, name string) llvm.Value {
 	return alloca
 }
 
-func (b *blockBuilder) buildEq(ty typing.Type, op *gcil.Binary, lhs, rhs llvm.Value) llvm.Value {
-	icmp, fcmp, name := getOpCmpPredicate(op.Op)
+func (b *blockBuilder) buildEq(ty typing.Type, bin *gcil.Binary, lhs, rhs llvm.Value) llvm.Value {
+	icmp, fcmp, name := getOpCmpPredicate(bin.Op)
 
 	switch ty := ty.(type) {
 	case *typing.Unit:
 		// `() = ()` is always true and `() <> ()` will never be true.
 		i := uint64(1)
-		if op.Op == gcil.NEQ {
+		if bin.Op == gcil.NEQ {
 			i = 0
 		}
 		return llvm.ConstInt(b.typeBuilder.boolT, i, false /*sign extend*/)
@@ -119,7 +119,7 @@ func (b *blockBuilder) buildEq(ty typing.Type, op *gcil.Binary, lhs, rhs llvm.Va
 		}
 		cmp := b.builder.CreateCall(eqlFun, []llvm.Value{lhs, rhs}, "")
 		i := uint64(1)
-		if op.Op == gcil.NEQ {
+		if bin.Op == gcil.NEQ {
 			i = 0
 		}
 		return b.builder.CreateICmp(llvm.IntEQ, cmp, llvm.ConstInt(b.typeBuilder.boolT, i, false /*signed*/), "eql.str")
@@ -128,7 +128,7 @@ func (b *blockBuilder) buildEq(ty typing.Type, op *gcil.Binary, lhs, rhs llvm.Va
 		for i, elemTy := range ty.Elems {
 			l := b.builder.CreateLoad(b.builder.CreateStructGEP(lhs, i, "tpl.left"), "")
 			r := b.builder.CreateLoad(b.builder.CreateStructGEP(rhs, i, "tpl.right"), "")
-			elemCmp := b.buildEq(elemTy, op, l, r)
+			elemCmp := b.buildEq(elemTy, bin, l, r)
 			if cmp.C == nil {
 				cmp = elemCmp
 			} else {
@@ -144,6 +144,8 @@ func (b *blockBuilder) buildEq(ty typing.Type, op *gcil.Binary, lhs, rhs llvm.Va
 		lfun := b.builder.CreateExtractValue(lhs, 0, "")
 		rfun := b.builder.CreateExtractValue(rhs, 0, "")
 		return b.builder.CreateICmp(icmp, lfun, rfun, name+".fun")
+	case *typing.Option:
+		return b.buildEqOption(ty, bin, lhs, rhs)
 	case *typing.Array:
 		panic("unreachable")
 	default:
@@ -161,6 +163,100 @@ func (b *blockBuilder) buildLess(val *gcil.Binary, lhs, rhs llvm.Value) llvm.Val
 		return b.builder.CreateFCmp(fpred, lhs, rhs, name)
 	default:
 		panic(fmt.Sprintf("Invalid type for '%s' operator: %s", name, lty.String()))
+	}
+}
+
+func (b *blockBuilder) buildEqOption(ty *typing.Option, bin *gcil.Binary, lhs, rhs llvm.Value) llvm.Value {
+	tyVal := b.typeBuilder.buildOption(ty)
+	lhsIsSome := b.buildIsSome(lhs, tyVal, ty)
+	rhsIsSome := b.buildIsSome(rhs, tyVal, ty)
+
+	parent := b.builder.GetInsertBlock().Parent()
+	bothSomeBlk := llvm.AddBasicBlock(parent, "eq.opt.both")
+	elseBlk := llvm.AddBasicBlock(parent, "eq.opt.else")
+	endBlk := llvm.AddBasicBlock(parent, "eq.opt.end")
+
+	cond := b.builder.CreateAnd(lhsIsSome, rhsIsSome, "")
+	b.builder.CreateCondBr(cond, bothSomeBlk, elseBlk)
+
+	// When both values are Some(v), compare contained values
+	b.builder.SetInsertPointAtEnd(bothSomeBlk)
+	lhsDeref := b.buildDerefSome(lhs, ty)
+	rhsDeref := b.buildDerefSome(rhs, ty)
+	bothEqVal := b.buildEq(ty.Elem, bin, lhsDeref, rhsDeref)
+	b.builder.CreateBr(endBlk)
+
+	// Otherwise, see issome(lhs) || issome(rhs)
+	elseBlk.MoveAfter(b.builder.GetInsertBlock())
+	b.builder.SetInsertPointAtEnd(elseBlk)
+	// Either lhs or rhs is Some(v).
+	elseEqVal := b.builder.CreateOr(lhsIsSome, rhsIsSome, "")
+	if bin.Op == gcil.EQ {
+		elseEqVal = b.builder.CreateNot(elseEqVal, "")
+	}
+	b.builder.CreateBr(endBlk)
+
+	b.builder.SetInsertPointAtEnd(endBlk)
+	phi := b.builder.CreatePHI(b.typeBuilder.boolT, "eq.opt.merge")
+	phi.AddIncoming([]llvm.Value{bothEqVal, elseEqVal}, []llvm.BasicBlock{bothSomeBlk, elseBlk})
+	return phi
+}
+
+func (b *blockBuilder) buildIsSome(optVal llvm.Value, tyVal llvm.Type, ty *typing.Option) llvm.Value {
+	switch ty.Elem.(type) {
+	case *typing.Int, *typing.Bool, *typing.Float:
+		one := llvm.ConstInt(tyVal, 1, false /*signed*/)
+		// Extract flag value
+		flag := b.builder.CreateAnd(optVal, one, "")
+		// flag == 1 means that it contains a value
+		return b.builder.CreateICmp(llvm.IntEQ, flag, one, "issome")
+	case *typing.String, *typing.Fun, *typing.Array:
+		ptr := b.builder.CreateExtractValue(optVal, 0, "")
+		return b.builder.CreateIsNull(ptr, "issome")
+	case *typing.Tuple:
+		return b.builder.CreateIsNull(optVal, "issome")
+	case *typing.Option, *typing.Unit:
+		flag := b.builder.CreateExtractValue(optVal, 0, "")
+		return b.builder.CreateICmp(
+			llvm.IntEQ,
+			flag,
+			llvm.ConstInt(b.typeBuilder.boolT, 1, false /*signed*/),
+			"issome",
+		)
+	default:
+		panic("unreachable")
+	}
+}
+
+func (b *blockBuilder) buildDerefSome(optVal llvm.Value, ty *typing.Option) llvm.Value {
+	switch ty.Elem.(type) {
+	case *typing.Int:
+		// shift 1 bit to squash a flag
+		one := llvm.ConstInt(llvm.IntType(65), 1, false /*signed*/)
+		v := b.builder.CreateLShr(optVal, one, "")
+		// Truncate to the same size bits
+		return b.builder.CreateTrunc(v, b.typeBuilder.intT, "derefsome")
+	case *typing.Float:
+		// shift 1 bit to squash a flag
+		one := llvm.ConstInt(llvm.IntType(65), 1, false /*signed*/)
+		v := b.builder.CreateLShr(optVal, one, "")
+		// Truncate to the same size bits
+		v = b.builder.CreateTrunc(v, llvm.IntType(64), "")
+		return b.builder.CreateBitCast(v, b.typeBuilder.convertGCIL(ty.Elem), "derefsome")
+	case *typing.Bool:
+		// shift 1 bit to squash a flag
+		one := llvm.ConstInt(llvm.IntType(2), 1, false /*signed*/)
+		v := b.builder.CreateLShr(optVal, one, "")
+		// Truncate to the same size bits
+		return b.builder.CreateTrunc(v, b.typeBuilder.boolT, "derefsome")
+	case *typing.String, *typing.Fun, *typing.Array:
+		return b.builder.CreateExtractValue(optVal, 1, "derefsome")
+	case *typing.Tuple:
+		return optVal
+	case *typing.Option, *typing.Unit:
+		return b.builder.CreateExtractValue(optVal, 1, "derefsome")
+	default:
+		panic("unreachable")
 	}
 }
 
@@ -516,67 +612,14 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		if !ok {
 			panic("Type of IsSome is not an option type: " + b.typeOf(val.OptVal).String())
 		}
-
-		tyVal := b.typeBuilder.buildOption(ty)
-		switch ty.Elem.(type) {
-		case *typing.Int, *typing.Bool, *typing.Float:
-			one := llvm.ConstInt(tyVal, 1, false /*signed*/)
-			// Extract flag value
-			flag := b.builder.CreateAnd(optVal, one, "")
-			// flag == 1 means that it contains a value
-			return b.builder.CreateICmp(llvm.IntEQ, flag, one, "issome")
-		case *typing.String, *typing.Fun, *typing.Array:
-			ptr := b.builder.CreateExtractValue(optVal, 0, "")
-			return b.builder.CreateIsNull(ptr, "issome")
-		case *typing.Tuple:
-			return b.builder.CreateIsNull(optVal, "issome")
-		case *typing.Option, *typing.Unit:
-			flag := b.builder.CreateExtractValue(optVal, 0, "")
-			return b.builder.CreateICmp(
-				llvm.IntEQ,
-				flag,
-				llvm.ConstInt(b.typeBuilder.boolT, 1, false /*signed*/),
-				"issome",
-			)
-		default:
-			panic("unreachable")
-		}
+		return b.buildIsSome(optVal, b.typeBuilder.buildOption(ty), ty)
 	case *gcil.DerefSome:
 		optVal := b.resolve(val.SomeVal)
 		ty, ok := b.typeOf(val.SomeVal).(*typing.Option)
 		if !ok {
 			panic("Type of DerefSome is not an option type: " + b.typeOf(val.SomeVal).String())
 		}
-
-		switch ty.Elem.(type) {
-		case *typing.Int:
-			// shift 1 bit to squash a flag
-			one := llvm.ConstInt(llvm.IntType(65), 1, false /*signed*/)
-			v := b.builder.CreateLShr(optVal, one, "")
-			// Truncate to the same size bits
-			return b.builder.CreateTrunc(v, b.typeBuilder.intT, "derefsome")
-		case *typing.Float:
-			// shift 1 bit to squash a flag
-			one := llvm.ConstInt(llvm.IntType(65), 1, false /*signed*/)
-			v := b.builder.CreateLShr(optVal, one, "")
-			// Truncate to the same size bits
-			v = b.builder.CreateTrunc(v, llvm.IntType(64), "")
-			return b.builder.CreateBitCast(v, b.typeBuilder.convertGCIL(ty.Elem), "derefsome")
-		case *typing.Bool:
-			// shift 1 bit to squash a flag
-			one := llvm.ConstInt(llvm.IntType(2), 1, false /*signed*/)
-			v := b.builder.CreateLShr(optVal, one, "")
-			// Truncate to the same size bits
-			return b.builder.CreateTrunc(v, b.typeBuilder.boolT, "derefsome")
-		case *typing.String, *typing.Fun, *typing.Array:
-			return b.builder.CreateExtractValue(optVal, 1, "derefsome")
-		case *typing.Tuple:
-			return optVal
-		case *typing.Option, *typing.Unit:
-			return b.builder.CreateExtractValue(optVal, 1, "derefsome")
-		default:
-			panic("unreachable")
-		}
+		return b.buildDerefSome(optVal, ty)
 	case *gcil.NOP:
 		panic("unreachable")
 	default:
