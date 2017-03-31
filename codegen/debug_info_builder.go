@@ -223,6 +223,29 @@ func (d *debugInfoBuilder) typeInfo(ty typing.Type) llvm.Metadata {
 			Elements:    elems,
 		})
 		return d.pointerOf(allocated, name)
+	case *typing.Option:
+		switch ty := ty.Elem.(type) {
+		case *typing.Int, *typing.Bool, *typing.Float:
+			return d.basicTypeInfo(ty, llvm.DW_ATE_unsigned)
+		case *typing.String, *typing.Fun, *typing.Array, *typing.Tuple:
+			return d.typeInfo(ty)
+		case *typing.Option, *typing.Unit:
+			size := d.sizes.sizeOf(ty)
+			elems := []llvm.Metadata{
+				d.basicTypeInfo(ty, llvm.DW_ATE_boolean),
+				d.typeInfo(ty),
+			}
+			name := ty.String()
+			return d.builder.CreateStructType(d.compileUnit, llvm.DIStructType{
+				Name:        name,
+				File:        d.file,
+				SizeInBits:  size.allocInBits,
+				AlignInBits: size.alignInBits,
+				Elements:    elems,
+			})
+		default:
+			panic("unreachable")
+		}
 	default:
 		panic("cannot handle debug info for type " + ty.String())
 	}
