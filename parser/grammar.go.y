@@ -20,6 +20,7 @@ import (
 	token *token.Token
 	funcdef *ast.FuncDef
 	decls []*ast.Symbol
+	decl *ast.Symbol
 }
 
 %token<token> ILLEGAL
@@ -91,6 +92,7 @@ import (
 %type<decls> pat
 %type<funcdef> fundef
 %type<token> match_arm_start
+%type<decl> match_ident
 %type<> program
 
 %start program
@@ -141,17 +143,17 @@ exp:
 	| IF exp THEN exp ELSE exp
 		%prec prec_if
 		{ $$ = &ast.If{$1, $2, $4, $6} }
-	| MATCH exp match_arm_start SOME IDENT MINUS_GREATER exp BAR NONE MINUS_GREATER exp
+	| MATCH exp match_arm_start SOME match_ident MINUS_GREATER exp BAR NONE MINUS_GREATER exp
 		%prec prec_match
 		{
 			none := $11
-			$$ = &ast.Match{$1, $2, $7, none, ast.NewSymbol($5.Value()), none.Pos()}
+			$$ = &ast.Match{$1, $2, $7, none, $5, none.Pos()}
 		}
-	| MATCH exp match_arm_start NONE MINUS_GREATER exp BAR SOME IDENT MINUS_GREATER exp
+	| MATCH exp match_arm_start NONE MINUS_GREATER exp BAR SOME match_ident MINUS_GREATER exp
 		%prec prec_match
 		{
 			some := $11
-			$$ = &ast.Match{$1, $2, some, $6, ast.NewSymbol($9.Value()), some.Pos()}
+			$$ = &ast.Match{$1, $2, some, $6, $9, some.Pos()}
 		}
 	| MINUS_DOT exp
 		%prec prec_unary_minus
@@ -272,6 +274,12 @@ parenless_exp:
 
 match_arm_start:
 	WITH BAR | WITH
+
+match_ident:
+	LPAREN IDENT RPAREN
+		{ $$ = ast.NewSymbol($2.Value()) }
+	| IDENT
+		{ $$ = ast.NewSymbol($1.Value()) }
 
 %%
 
