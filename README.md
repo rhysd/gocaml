@@ -49,6 +49,7 @@ You can see [more examples][examples]. (e.g. [Brainfxxk interpreter][Brainfxxk i
 - GoCaml has string type. String value is immutable and used with slices.
 - GoCaml does not have `Array.create`, which is an alias to `Array.make`. `Array.length` is available to obtain the size of array.
 - Some useful built-in functions are added (described in below section).
+- [Option type][] is implemented in GoCaml. Please see below 'Option Type' section or [test cases][option type test cases].
 
 ## Language Spec
 
@@ -373,6 +374,18 @@ if match o with Some i -> true | None -> false then
   println_str "some!"
 else
   println_str "none..."
+```
+
+Option values can be compared with `=` or `<>` directly.
+
+```ml
+let rec is_some x = x <> None in
+let rec is_none x = (x = None) in
+
+println_bool (is_some (Some 42));
+println_bool (is_some None);
+println_bool (is_none (Some 42));
+println_bool (is_none None)
 ```
 
 Currently `match with` expression is only for option type because GoCaml doesn't have variant types.
@@ -702,3 +715,5 @@ $ gcc -m32 -lgc source.o ./runtime/gocamlrt.a
 [LLVM official binary]: http://releases.llvm.org/download.html#4.0.0
 [Go binding building instruction]: https://github.com/llvm-mirror/llvm/blob/master/bindings/go/README.txt
 [goyacc]: https://godoc.org/golang.org/x/tools/cmd/goyacc
+[Option type]: https://en.wikipedia.org/wiki/Option_type
+[option type test cases]: ./codegen/testdata/option_values.ml
