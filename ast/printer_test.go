@@ -251,7 +251,7 @@ func TestPrintAST(t *testing.T) {
 -   -   -   -   -   Apply (0:0-0:0)
 -   -   -   -   -   -   VarRef (f) (0:0-0:0)
 -   -   -   -   -   -   Int (0:0-0:0)
--   -   -   -   -   Match (0:0-0:0)
+-   -   -   -   -   Match (foo) (0:0-0:0)
 -   -   -   -   -   -   Some (0:0-0:0)
 -   -   -   -   -   -   -   Int (0:0-0:0)
 -   -   -   -   -   -   None (0:0-0:0)

@@ -108,6 +108,8 @@ func (t *transformer) Visit(node ast.Expr) ast.Visitor {
 		ast.Visit(t, n.IfSome)
 		ast.Visit(t, n.IfNone)
 		t.pop()
+		ast.Visit(t, n.IfNone)
+		return nil
 	case *ast.VarRef:
 		mapped, ok := t.current.resolve(n.Symbol.DisplayName)
 		if !ok {
@@ -116,10 +118,10 @@ func (t *transformer) Visit(node ast.Expr) ast.Visitor {
 		}
 		n.Symbol = mapped
 		return nil
+	default:
+		// Visit recursively
+		return t
 	}
-
-	// Visit recursively
-	return t
 }
 
 // Transform adds identical names to all identifiers in AST nodes.

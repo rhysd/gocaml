@@ -71,7 +71,7 @@ func TestMatch(t *testing.T) {
 		tok,
 		ast.NewSymbol("a"),
 	}
-	root := &ast.Match{
+	match := &ast.Match{
 		tok,
 		&ast.Int{tok, 42},
 		someRef,
@@ -79,15 +79,20 @@ func TestMatch(t *testing.T) {
 		ast.NewSymbol("a"),
 		token.Position{},
 	}
+	root := &ast.Let{
+		tok, ast.NewSymbol("a"),
+		&ast.Int{tok, 42},
+		match,
+	}
 
 	if err := Transform(root); err != nil {
 		t.Fatal(err)
 	}
 
-	if root.SomeIdent.Name != "a$t1" {
-		t.Fatalf("Symbol in match expression is not transformed correctly. Expected a$t1 but actually %s", root.SomeIdent.Name)
+	if match.SomeIdent.Name != "a$t2" {
+		t.Fatalf("Symbol in match expression is not transformed correctly. Expected a$t1 but actually %s", match.SomeIdent.Name)
 	}
-	if someRef.Symbol.Name != "a$t1" {
+	if someRef.Symbol.Name != "a$t2" {
 		t.Errorf("Symbol in some arm must refer a$t1 but %s", someRef.Symbol.Name)
 	}
 	if noneRef.Symbol.Name != "a$t1" {

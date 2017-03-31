@@ -579,6 +579,6 @@ func (e *ArrayCreate) Name() string { return "ArrayCreate" }
 func (e *ArraySize) Name() string   { return "ArraySize" }
 func (e *Get) Name() string         { return "Get" }
 func (e *Put) Name() string         { return "Put" }
-func (e *Match) Name() string       { return "Match" }
+func (e *Match) Name() string       { return fmt.Sprintf("Match (%s)", e.SomeIdent.DisplayName) }
 func (e *Some) Name() string        { return "Some" }
 func (e *None) Name() string        { return "None" }

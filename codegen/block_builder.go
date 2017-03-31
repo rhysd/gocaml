@@ -563,13 +563,20 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		}
 
 		switch ty.Elem.(type) {
-		case *typing.Int, *typing.Bool, *typing.Float:
+		case *typing.Int, *typing.Bool:
 			tyVal := b.typeBuilder.buildOption(ty)
 			// Extend 1 bit for flag
 			extended := b.builder.CreateZExt(elemVal, tyVal, "")
 			// Lowest bit is a flag. So shift left by 1 bit
 			shifted := b.builder.CreateShl(extended, llvm.ConstInt(tyVal, 1, false /*signed*/), "")
 			// Set flag to 1
+			return b.builder.CreateOr(shifted, llvm.ConstInt(tyVal, 1, false /*signed*/), "")
+		case *typing.Float:
+			// Similar to Int or Bool cases, but bitcast is required
+			tyVal := b.typeBuilder.buildOption(ty)
+			casted := b.builder.CreateBitCast(elemVal, llvm.Int64Type(), "")
+			extended := b.builder.CreateZExt(casted, tyVal, "")
+			shifted := b.builder.CreateShl(extended, llvm.ConstInt(tyVal, 1, false /*signed*/), "")
 			return b.builder.CreateOr(shifted, llvm.ConstInt(tyVal, 1, false /*signed*/), "")
 		case *typing.String, *typing.Fun, *typing.Array, *typing.Tuple:
 			// They use NULL pointer for 'None' value. So nothing to do to make 'Some' value.

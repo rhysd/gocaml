@@ -323,8 +323,8 @@ func TestClosureTransform(t *testing.T) {
 			what: "capture match var",
 			code: "(match Some 42 with Some i -> let rec f x = x + i in f | None -> let rec f x = x * 2 in f)",
 			closures: map[string][]string{
-				"f$t6": []string{"i$t1"},
-				"f$t8": []string{},
+				"f$t2": []string{"i$t1"},
+				"f$t4": []string{},
 			},
 			toplevel: []string{},
 			entry: []string{
