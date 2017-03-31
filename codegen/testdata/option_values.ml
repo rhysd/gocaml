@@ -54,7 +54,7 @@ println_bool (is_some None);
 let t = (Some 4, None, Some (1, "one")) in
 let (a, b, c) = t in
 println_int (match a with Some i -> i | None -> -99);
-println_int (match a with Some i -> i | None -> -99);
+println_int (match b with Some i -> i | None -> -99);
 match c with
   | Some pair ->
     let (i, s) = pair in

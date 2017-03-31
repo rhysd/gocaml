@@ -213,9 +213,9 @@ func (b *blockBuilder) buildIsSome(optVal llvm.Value, tyVal llvm.Type, ty *typin
 		return b.builder.CreateICmp(llvm.IntEQ, flag, one, "issome")
 	case *typing.String, *typing.Fun, *typing.Array:
 		ptr := b.builder.CreateExtractValue(optVal, 0, "")
-		return b.builder.CreateIsNull(ptr, "issome")
+		return b.builder.CreateNot(b.builder.CreateIsNull(ptr, ""), "issome")
 	case *typing.Tuple:
-		return b.builder.CreateIsNull(optVal, "issome")
+		return b.builder.CreateNot(b.builder.CreateIsNull(optVal, ""), "issome")
 	case *typing.Option, *typing.Unit:
 		flag := b.builder.CreateExtractValue(optVal, 0, "")
 		return b.builder.CreateICmp(
