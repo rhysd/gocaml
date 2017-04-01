@@ -611,6 +611,15 @@ Built-in functions instead of bitwise operators.
 
 Returns epoch time in seconds.
 
+- `read_file : string -> string option`
+
+First argument is a file name. It returns the content of the file. If failed, it returns `None`.
+
+- `write_file : string -> string -> bool`
+
+It takes file name as first argument and its content as second argument.
+It returns wether it could write the content to the file.
+
 ## How to Work with C
 
 All symbols not defined in source are treated as external symbols. So you can define it in C source

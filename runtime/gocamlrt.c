@@ -8,6 +8,22 @@
 
 #define SNPRINTF_MAX 128
 #define LINE_MAX 1024
+#define BUF_CHUNK 1024
+
+// Note:
+// Need to guard with this 'if' statement because when the string is allocated as global
+// constant variable, we can't modify it. And we does not need to modify global constant
+// string because it is always NUL-terminated.
+#define GOCAML_STRING_ENSURE_NULL(x) \
+    char const backup_null_char_ ## x = (x).chars[(x).size]; \
+    if ((x).chars[(x).size] != '\0') { \
+        (x).chars[(x).size] = '\0'; \
+    }
+
+#define GOCAML_STRING_RESTORE_NULL(x) \
+    if ((x).chars[(x).size] != '\0') { \
+        (x).chars[(x).size] = backup_null_char_ ## x; \
+    }
 
 extern int __gocaml_main();
 
@@ -167,42 +183,22 @@ gocaml_string float_to_str(gocaml_float const f)
 
 gocaml_int str_to_int(gocaml_string const s)
 {
-    char const backup = s.chars[s.size];
-
-    // Note:
-    // Need to guard with this 'if' statement because when the string is allocated as global
-    // constant variable, we can't modify it. And we does not need to modify global constant
-    // string because it is always NUL-terminated.
-    if (s.chars[s.size] != '\0') {
-        s.chars[s.size] = '\0'; // Ensure to terminate with NUL.
-    }
+    GOCAML_STRING_ENSURE_NULL(s);
 
     int const i = atoi((char *) s.chars);
 
-    if (s.chars[s.size] != '\0') {
-        s.chars[s.size] = backup;
-    }
+    GOCAML_STRING_RESTORE_NULL(s);
 
     return (gocaml_int) i;
 }
 
 gocaml_float str_to_float(gocaml_string const s)
 {
-    char const backup = s.chars[s.size];
-
-    // Note:
-    // Need to guard with this 'if' statement because when the string is allocated as global
-    // constant variable, we can't modify it. And we does not need to modify global constant
-    // string because it is always NUL-terminated.
-    if (s.chars[s.size] != '\0') {
-        s.chars[s.size] = '\0'; // Ensure to terminate with NUL.
-    }
+    GOCAML_STRING_ENSURE_NULL(s);
 
     double const f = atof((char *) s.chars);
 
-    if (s.chars[s.size] != '\0') {
-        s.chars[s.size] = backup;
-    }
+    GOCAML_STRING_RESTORE_NULL(s);
 
     return (gocaml_float) f;
 }
@@ -210,7 +206,7 @@ gocaml_float str_to_float(gocaml_string const s)
 gocaml_string get_line(gocaml_unit _)
 {
     (void) _;
-    char *const s = fgets((char *) GC_malloc(LINE_MAX), LINE_MAX, stdin);
+    char *const s = fgets((char *) GC_malloc(sizeof(char) * LINE_MAX), LINE_MAX, stdin);
     gocaml_string ret;
 
     if (s == NULL) {
@@ -275,25 +271,92 @@ void disable_garbage_collection(gocaml_unit _)
     GC_disable();
 }
 
-gocaml_int bit_and(gocaml_int const l, gocaml_int const r) {
+gocaml_int bit_and(gocaml_int const l, gocaml_int const r)
+{
     return l & r;
 }
-gocaml_int bit_or(gocaml_int const l, gocaml_int const r) {
+gocaml_int bit_or(gocaml_int const l, gocaml_int const r)
+{
     return l | r;
 }
-gocaml_int bit_xor(gocaml_int const l, gocaml_int const r) {
+gocaml_int bit_xor(gocaml_int const l, gocaml_int const r)
+{
     return l ^ r;
 }
-gocaml_int bit_rsft(gocaml_int const l, gocaml_int const r) {
+gocaml_int bit_rsft(gocaml_int const l, gocaml_int const r)
+{
     return l >> r;
 }
-gocaml_int bit_lsft(gocaml_int const l, gocaml_int const r) {
+gocaml_int bit_lsft(gocaml_int const l, gocaml_int const r)
+{
     return l << r;
 }
-gocaml_int bit_inv(gocaml_int const i) {
+gocaml_int bit_inv(gocaml_int const i)
+{
     return ~i;
 }
-gocaml_int time_now(gocaml_unit _) {
+
+gocaml_int time_now(gocaml_unit _)
+{
     (void) _;
     return (gocaml_int) time(NULL);
+}
+
+gocaml_string read_file(gocaml_string const filename)
+{
+    GOCAML_STRING_ENSURE_NULL(filename);
+
+    FILE *file = fopen((char *) filename.chars, "r");
+    if (file == NULL) {
+        GOCAML_STRING_RESTORE_NULL(filename);
+        gocaml_string none;
+        none.chars = NULL;
+        return none;
+    }
+
+    char c;
+    int idx = 0;
+    int num_chunk = 1;
+    char *buf = (char *) GC_malloc(sizeof(char) * BUF_CHUNK * num_chunk);
+    while ((c = getc(file)) != EOF) {
+        buf[idx] = c;
+        if ((BUF_CHUNK * num_chunk - 2) <= idx) {
+            char *old = buf;
+            num_chunk++;
+            buf = (char *) GC_malloc(sizeof(char) * BUF_CHUNK * num_chunk);
+            memcpy(buf, old, sizeof(char) * (num_chunk - 1));
+            GC_free(old);
+        }
+        idx++;
+    }
+    buf[idx] = '\0';
+    fclose(file);
+
+    gocaml_string ret;
+    ret.chars = (int8_t *)buf;
+    ret.size = (gocaml_int) idx;
+    GOCAML_STRING_RESTORE_NULL(filename);
+    return ret;
+}
+
+gocaml_bool write_file(gocaml_string const filename, gocaml_string const content)
+{
+    GOCAML_STRING_ENSURE_NULL(filename);
+    GOCAML_STRING_ENSURE_NULL(content);
+
+    FILE *file = fopen((char *) filename.chars, "w");
+    if (file == NULL) {
+        GOCAML_STRING_RESTORE_NULL(filename);
+        GOCAML_STRING_RESTORE_NULL(content);
+        return (gocaml_bool) 0;
+    }
+
+    for (int i = 0; i < content.size; i++) {
+        fputc(content.chars[i], file);
+    }
+
+    fclose(file);
+    GOCAML_STRING_RESTORE_NULL(filename);
+    GOCAML_STRING_RESTORE_NULL(content);
+    return (gocaml_bool) 1;
 }
