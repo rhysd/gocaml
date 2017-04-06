@@ -174,7 +174,7 @@ func (l *Lexer) errmsg(msg string) {
 	l.Error(msg, l.current)
 }
 
-func (l *Lexer) eatIndent() bool {
+func (l *Lexer) eatIdent() bool {
 	if !isLetter(l.top) {
 		l.expected("letter for head character of identifer", l.top)
 		return false
@@ -373,7 +373,7 @@ func lexArrayCreate(l *Lexer) stateFn {
 	}
 	l.eat()
 
-	if !l.eatIndent() {
+	if !l.eatIdent() {
 		return nil
 	}
 
@@ -397,7 +397,7 @@ func lexArrayCreate(l *Lexer) stateFn {
 }
 
 func lexIdent(l *Lexer) stateFn {
-	if !l.eatIndent() {
+	if !l.eatIdent() {
 		return nil
 	}
 	i := string(l.src.Code[l.start.Offset:l.current.Offset])
