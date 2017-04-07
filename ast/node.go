@@ -53,7 +53,7 @@ type Expr interface {
 type Symbol struct {
 	DisplayName string
 	Name        string
-	// Other symbol attirbutes go here
+	// Other symbol attributes go here
 }
 
 func NewSymbol(name string) *Symbol {

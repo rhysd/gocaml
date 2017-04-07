@@ -239,7 +239,7 @@ p "hi"
 `f a b c` is an expression to apply function `f` with argument `a`, `b` and `c`.
 As long as the argument is simple, you don't need to use `()`.
 
-Note that, if you use some complecated expression (for example, binary operators), you need to use `()` like
+Note that, if you use some complicated expression (for example, binary operators), you need to use `()` like
 `f (a+b) c`. If you specify `f a + b c`, it would be parsed as `(f a) + (b c)`.
 
 ```ml
@@ -294,7 +294,7 @@ let rec circle r = r *. r *. pi in
 println_float (circle 10.0)
 ```
 
-Below is a bit more complecated example:
+Below is a bit more complicated example:
 
 ```ml
 let rec make_adder x =
@@ -413,7 +413,7 @@ some_func ();
 print_float (pow 3.0 1.0 2.0)
 ```
 
-## Prerequisities
+## Prerequisites
 
 - Go 1.2+ (Go 1.7+ is recommended)
 - GNU make

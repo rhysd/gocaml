@@ -234,7 +234,7 @@ func TestClosureTransform(t *testing.T) {
 			},
 		},
 		{
-			what: "returned function is also refered in function body",
+			what: "returned function is also referred in function body",
 			code: "let rec f x = x in let rec g x = (f 10; f) in (g ()) 42",
 			closures: map[string][]string{
 				// Need to be closure because returned value from `g ()` can't be determined function or closure.

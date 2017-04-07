@@ -78,7 +78,7 @@ func TestLexingIllegal(t *testing.T) {
 					switch tok.Kind {
 					case token.ILLEGAL:
 						if !errorOccurred {
-							t.Fatalf("Illegal token was emitted but no error occured")
+							t.Fatalf("Illegal token was emitted but no error occurred")
 						}
 						return
 					case token.EOF:

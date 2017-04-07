@@ -425,7 +425,7 @@ func TestSemanticError(t *testing.T) {
 			}
 			_, err = FromAST(root, env)
 			if err == nil {
-				t.Fatalf("Expected code '%s' to cause an error '%s' but acutally there is no error", tc.code, tc.expected)
+				t.Fatalf("Expected code '%s' to cause an error '%s' but actually there is no error", tc.code, tc.expected)
 			}
 			if !strings.Contains(err.Error(), tc.expected) {
 				t.Fatalf("Error message '%s' does not contain '%s'", err.Error(), tc.expected)
