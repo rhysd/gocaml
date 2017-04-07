@@ -181,7 +181,7 @@ func (l *Lexer) eatIdent() bool {
 	}
 	l.eat()
 
-	for isLetter(l.top) || unicode.IsDigit(l.top) {
+	for isLetter(l.top) || isDigit(l.top) {
 		l.eat()
 	}
 	return true
@@ -327,7 +327,7 @@ func lexNumber(l *Lexer) stateFn {
 
 	// Eat first digit. It's known as digit in lex()
 	l.eat()
-	for unicode.IsDigit(l.top) {
+	for isDigit(l.top) {
 		l.eat()
 	}
 
@@ -335,7 +335,7 @@ func lexNumber(l *Lexer) stateFn {
 	if l.top == '.' {
 		tok = token.FLOAT
 		l.eat()
-		for unicode.IsDigit(l.top) {
+		for isDigit(l.top) {
 			l.eat()
 		}
 	}
@@ -346,11 +346,11 @@ func lexNumber(l *Lexer) stateFn {
 		if l.top == '+' || l.top == '-' {
 			l.eat()
 		}
-		if !unicode.IsDigit(l.top) {
+		if !isDigit(l.top) {
 			l.expected("number for exponential part of float literal", l.top)
 			return nil
 		}
-		for unicode.IsDigit(l.top) {
+		for isDigit(l.top) {
 			l.eat()
 		}
 	}
@@ -364,6 +364,10 @@ func isLetter(r rune) bool {
 		'A' <= r && r <= 'Z' ||
 		r == '_' ||
 		r >= utf8.RuneSelf && unicode.IsLetter(r)
+}
+
+func isDigit(r rune) bool {
+	return '0' <= r && r <= '9'
 }
 
 func lexArrayCreate(l *Lexer) stateFn {
@@ -477,7 +481,7 @@ func lex(l *Lexer) stateFn {
 			switch {
 			case unicode.IsSpace(l.top):
 				l.consume()
-			case unicode.IsDigit(l.top):
+			case isDigit(l.top):
 				return lexNumber
 			default:
 				return lexIdent
