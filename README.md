@@ -142,10 +142,10 @@ As mentioned above, GoCaml distinguishes int and float in operators. Operators f
 1 / 2;
 
 (* float calcuration *)
-1.0 + 2.0;
-1.0 - 2.0;
-1.0 * 2.0;
-1.0 / 2.0;
+1.0 +. 2.0;
+1.0 -. 2.0;
+1.0 *. 2.0;
+1.0 /. 2.0;
 
 ()
 ```
