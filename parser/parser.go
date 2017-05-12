@@ -22,14 +22,12 @@ func (l *pseudoLexer) Lex(lval *yySymType) int {
 			lval.token = &t
 
 			switch t.Kind {
-			case token.EOF:
+			case token.EOF, token.ILLEGAL:
 				// Zero means input ends
 				// (see golang.org/x/tools/cmd/goyacc/testdata/expr/expr.y)
 				return 0
 			case token.COMMENT:
 				continue
-			case token.ILLEGAL:
-				return -1
 			}
 
 			// XXX:
