@@ -61,6 +61,7 @@ const (
 	SOME
 	NONE
 	MINUS_GREATER
+	FUN
 	EOF
 )
 
@@ -111,6 +112,7 @@ var tokenTable = [...]string{
 	SOME:           "Some",
 	NONE:           "None",
 	MINUS_GREATER:  "->",
+	FUN:            "fun",
 }
 
 // Token instance for GoCaml.

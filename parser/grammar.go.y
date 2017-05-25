@@ -68,11 +68,13 @@ import (
 %token<token> SOME
 %token<token> NONE
 %token<token> MINUS_GREATER
+%token<token> FUN
 
 %right prec_let
 %right SEMICOLON
 %right prec_if
 %right prec_match
+%right prec_fun
 %right LESS_MINUS
 %left COMMA
 %left BAR_BAR
@@ -191,6 +193,15 @@ exp:
 		{ $$ = &ast.ArraySize{$1, $2} }
 	| SOME parenless_exp
 		{ $$ = &ast.Some{$1, $2} }
+	| FUN params MINUS_GREATER exp
+		%prec prec_fun
+		{
+			t := $1
+			ident := ast.NewSymbol(fmt.Sprintf("lambda.%d.%d", t.Start.Line, t.Start.Column))
+			def := &ast.FuncDef{ident, $2, $4}
+			ref := &ast.VarRef{$1, ident}
+			$$ = &ast.LetRec{$1, def, ref}
+		}
 	| ILLEGAL error
 		{
 			yylex.Error(fmt.Sprintf("Parsing illegal token: %s", $1.String()))
@@ -283,10 +294,9 @@ match_ident:
 
 %%
 
-var genCount = 0
+var genIdCount = 0
 func genTempId() string {
-	genCount += 1
-	return fmt.Sprintf("$unused%d", genCount)
+	genIdCount++
+	return fmt.Sprintf("$unused%d", genIdCount)
 }
-
 // vim: noet
