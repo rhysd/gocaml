@@ -174,7 +174,7 @@ exp:
 		{ $$ = &ast.LetRec{$1, $3, $5} }
 	| exp args
 		%prec prec_app
-		{ $$ = &ast.Apply{$1, revExprs($2)} }
+		{ $$ = &ast.Apply{$1, $2} }
 	| elems
 		{ $$ = &ast.Tuple{$1} }
 	| LET LPAREN pat RPAREN EQUAL exp IN exp
@@ -199,17 +199,17 @@ exp:
 
 fundef:
 	IDENT params EQUAL exp
-		{ $$ = &ast.FuncDef{ast.NewSymbol($1.Value()), revSyms($2), $4} }
+		{ $$ = &ast.FuncDef{ast.NewSymbol($1.Value()), $2, $4} }
 
 params:
-	IDENT params
-		{ $$ = append($2, ast.NewSymbol($1.Value())) }
+	params IDENT
+		{ $$ = append($1, ast.NewSymbol($2.Value())) }
 	| IDENT
 		{ $$ = []*ast.Symbol{ast.NewSymbol($1.Value())} }
 
 args:
-	parenless_exp args
-		{ $$ = append($2, $1) }
+	args parenless_exp
+		{ $$ = append($1, $2) }
 	| parenless_exp
 		{ $$ = []ast.Expr{$1} }
 
@@ -282,24 +282,6 @@ match_ident:
 		{ $$ = ast.NewSymbol($1.Value()) }
 
 %%
-
-func revSyms(syms []*ast.Symbol) []*ast.Symbol {
-	l := len(syms)
-	for i := 0; i < l / 2; i++ {
-		j := l - i - 1
-		syms[i], syms[j] = syms[j], syms[i]
-	}
-	return syms
-}
-
-func revExprs(exprs []ast.Expr) []ast.Expr {
-	l := len(exprs)
-	for i := 0; i < l / 2; i++ {
-		j := l - i - 1
-		exprs[i], exprs[j] = exprs[j], exprs[i]
-	}
-	return exprs
-}
 
 var genCount = 0
 func genTempId() string {
