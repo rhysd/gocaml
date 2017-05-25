@@ -50,6 +50,7 @@ You can see [more examples][examples]. (e.g. [Brainfxxk interpreter][Brainfxxk i
 - GoCaml does not have `Array.create`, which is an alias to `Array.make`. `Array.length` is available to obtain the size of array.
 - Some useful built-in functions are added (described in below section).
 - [Option type][] is implemented in GoCaml. Please see below 'Option Type' section or [test cases][option type test cases].
+- GoCaml has `fun` syntax to make an anonymous funcion or closure like `fun x y -> x + y`.
 
 ## Language Spec
 
@@ -309,6 +310,34 @@ println_int (add 100)
 ```
 
 Here, inner function `f` captures hidden variable `special_value`. `make_special_value_adder` returns a closure which captured the variable.
+
+### Lambda
+
+Functions can be made without names using `fun` syntax.
+
+```ml
+(* Make a lambda and bind it to foo *)
+let add = fun x y -> x + y in
+
+(* Above is like below, but the function is anonymous *)
+let rec add2 x y in x + y in
+
+println_int (add 1 10);
+println_int (add2 1 10);
+```
+
+It's useful when passing a function without considering its name.
+
+```ml
+let rec quick_sort xs pred =
+    (* ...snip *)
+in
+let a = Array.make 10 0 in
+let sorted = quick_sort a (fun l r -> l < r) in
+()
+```
+
+Lambda does not have its name, so it cannot be called recursively.
 
 ### Tuples
 
