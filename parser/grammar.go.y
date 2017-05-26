@@ -197,7 +197,7 @@ exp:
 		%prec prec_fun
 		{
 			t := $1
-			ident := ast.NewSymbol(fmt.Sprintf("lambda.%d.%d", t.Start.Line, t.Start.Column))
+			ident := ast.NewSymbol(fmt.Sprintf("lambda.line%d.col%d", t.Start.Line, t.Start.Column))
 			def := &ast.FuncDef{ident, $2, $4}
 			ref := &ast.VarRef{$1, ident}
 			$$ = &ast.LetRec{$1, def, ref}

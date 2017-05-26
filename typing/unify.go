@@ -5,9 +5,6 @@ import (
 	"github.com/rhysd/gocaml/common"
 )
 
-type UnificationError struct {
-}
-
 // Check cyclic dependency. When unifying t and u where t is type variable and
 // u is a type which contains t, it results in infinite-length type.
 // It should be reported as semantic error.
@@ -79,21 +76,12 @@ func unifyFun(left, right *Fun) error {
 	return nil
 }
 
-func unifyVar(l *Var, right Type) error {
-	if l == right {
-		return nil
+func assignVar(v *Var, t Type) error {
+	// When rv.Ref == nil
+	if occur(v, t) {
+		return errors.Errorf("Cannot resolve uninstantiated type variable. Cyclic dependency found while unification with '%s'", t.String())
 	}
-
-	if l.Ref != nil {
-		return Unify(l.Ref, right)
-	}
-
-	if occur(l, right) {
-		return errors.Errorf("Cannot resolve uninstantiated type variable. Cyclic dependency found while unification with '%s'", right.String())
-	}
-
-	// Assign rhs type to type variable when lhs type variable is unknown
-	l.Ref = right
+	v.Ref = t
 	return nil
 }
 
@@ -121,12 +109,29 @@ func Unify(left, right Type) error {
 		if r, ok := right.(*Fun); ok {
 			return unifyFun(l, r)
 		}
-	case *Var:
-		return unifyVar(l, right)
 	}
 
-	if v, ok := right.(*Var); ok {
-		return unifyVar(v, left)
+	lv, lok := left.(*Var)
+	rv, rok := right.(*Var)
+
+	// Order of below 'if' statements is important! (#15)
+
+	if (lok && rok) && (lv == rv) {
+		return nil
+	}
+	if lok && lv.Ref != nil {
+		return Unify(lv.Ref, right)
+	}
+	if rok && rv.Ref != nil {
+		return Unify(left, rv.Ref)
+	}
+	if lok {
+		// When lv.Ref == nil
+		return assignVar(lv, right)
+	}
+	if rok {
+		// When rv.Ref == nil
+		return assignVar(rv, left)
 	}
 
 	return errors.Errorf("Cannot unify types. Type mismatch between '%s' and '%s'", left.String(), right.String())

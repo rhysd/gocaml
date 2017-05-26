@@ -339,6 +339,16 @@ let sorted = quick_sort a (fun l r -> l < r) in
 
 Lambda does not have its name, so it cannot be called recursively.
 
+Using lambda, above `make_adder` can be implemented as following:
+
+```ml
+let rec make_adder x =
+    let z = 1 in
+    fun x y -> x + y + z
+in
+...
+```
+
 ### Tuples
 
 N-elements tuple can be created with comma-separated expression `e1, e2, ..., en`. Element of tuple can be extracted with `let` expression.

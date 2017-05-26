@@ -170,7 +170,7 @@ func TestInvalidExpressions(t *testing.T) {
 		{
 			what:     "type mismatch in return type",
 			code:     "let rec f a b = a + b in 1.0 +. f 1 2",
-			expected: "Type mismatch between 'int' and 'float'",
+			expected: "Type mismatch between 'float' and 'int'",
 		},
 		{
 			what:     "wrong number of tuple assignment",
@@ -180,7 +180,7 @@ func TestInvalidExpressions(t *testing.T) {
 		{
 			what:     "type mismatch for tuple elements",
 			code:     "let (x, y) = (1, 2.0) in x + y",
-			expected: "Type mismatch between 'float' and 'int'",
+			expected: "Type mismatch between 'int' and 'float'",
 		},
 		{
 			what:     "index is not a number",
@@ -195,7 +195,7 @@ func TestInvalidExpressions(t *testing.T) {
 		{
 			what:     "element type mismatch in array",
 			code:     "let a = Array.make 3 1.0 in 1 + a.(0)",
-			expected: "Type mismatch between 'float' and 'int'",
+			expected: "Type mismatch between 'int' and 'float'",
 		},
 		{
 			what:     "index access to wrong value",
@@ -245,7 +245,7 @@ func TestInvalidExpressions(t *testing.T) {
 		{
 			what:     "pre-registered external functions (return type)",
 			code:     `println_bool (str_length "foo")`,
-			expected: "Type mismatch between 'int' and 'bool'",
+			expected: "Type mismatch between 'bool' and 'int'",
 		},
 		{
 			what:     "'argv' special global variable",
@@ -265,7 +265,7 @@ func TestInvalidExpressions(t *testing.T) {
 		{
 			what:     "matched symbol type and matching expression",
 			code:     "match Some 42 with Some i -> not i | None -> false",
-			expected: "Type mismatch between 'int' and 'bool'",
+			expected: "Type mismatch between 'bool' and 'int'",
 		},
 		{
 			what:     "match expression arms",

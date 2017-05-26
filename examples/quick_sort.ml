@@ -8,7 +8,7 @@ let rec show_array a =
     show_elems 0;
     println_str "]"
 in
-let rec quick_sort xs =
+let rec quick_sort xs less =
     let rec swap i j =
         let tmp = xs.(i) in
         xs.(i) <- xs.(j);
@@ -19,11 +19,13 @@ let rec quick_sort xs =
         let pivot = xs.((left + right) / 2) in
         let rec partition l r =
             let rec next_left i =
-                if pivot <= xs.(i) then i else
+                (* pivot <= xs.(i) *)
+                if not (less xs.(i) pivot) then i else
                 next_left (i+1)
             in
             let rec next_right i =
-                if pivot >= xs.(i) then i else
+                (* pivot >= xs.(i) *)
+                if not (less pivot xs.(i)) then i else
                 next_right (i-1)
             in
             let l = next_left l in
@@ -49,4 +51,5 @@ a.(6) <- 5;
 a.(7) <- 6;
 a.(8) <- 3;
 a.(9) <- 0;
-show_array (quick_sort a)
+let sorted = quick_sort a (fun x y -> x < y) in
+show_array sorted
