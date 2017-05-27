@@ -2,6 +2,8 @@
 
 set -e
 
+GOPATH="$(go env GOPATH)"
+
 if [[ "$GOPATH" == "" ]]; then
     echo '$GOPATH is empty' 1>&2
     exit 4
@@ -39,7 +41,7 @@ if [[ "$USE_SYSTEM_LLVM" == "" ]]; then
     # -DCMAKE_BUILD_TYPE=Debug makes `go build` too slow because clang's linker is very slow with dwarf.
     ./build.sh -DCMAKE_BUILD_TYPE=Release
 
-    go install -a -v ./llvm
+    go install -v ./llvm
     exit
 fi
 
@@ -82,4 +84,4 @@ cat ${LLVM_GO_LLVM_DIR}/llvm_config.go.in | \
     sed "s#@LLVM_LDFLAGS@#${CGO_LDFLAGS}#" > \
     ${LLVM_GO_LLVM_DIR}/llvm_config.go
 
-go install -v -a -tags byollvm
+go install -v -tags byollvm
