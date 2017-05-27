@@ -6,8 +6,7 @@ export USE_SYSTEM_LLVM=true
 
 if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
     brew update
-    brew install bdw-gc
-    brew install llvm --with-libffi
+    brew install bdw-gc llvm
     make build
     go test -v ./...
 else
