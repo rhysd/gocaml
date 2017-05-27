@@ -454,7 +454,7 @@ print_float (pow 3.0 1.0 2.0)
 
 ## Prerequisites
 
-- Go 1.2+ (Go 1.7+ is recommended)
+- Go 1.7+
 - GNU make
 - Clang
 - cmake (for building LLVM)
@@ -464,29 +464,41 @@ print_float (pow 3.0 1.0 2.0)
 
 ### Linux or macOS
 
-For Linux or macOS, below commands build `gocam` binary at root of the repository.
+For Linux or macOS, below commands build `gocaml` binary at root of the repository.
+[libgc][] is needed as dependency.
 
-```sh
-$ go get -d github.com/rhysd/gocaml
-$ cd $GOPATH/src/github.com/rhysd/gocaml
+```console
+# On Debian-family Linux
+$ sudo apt-get install libgc-dev
+
+# On macOS
+$ brew install bdw-gc
+
+$ mkdir $GOPATH/src/github.com/rhysd && cd $GOPATH/src/github.com/rhysd
+$ git clone https://github.com/rhysd/gocaml.git
+$ cd gocaml
 
 # Full-installation with building LLVM locally
 $ make
 ```
 
-Using `USE_SYSTEM_LLVM=true`, it will build `gocaml` binary with system-installed LLVM libraries.
-Note that it still clones LLVM repository to obtain Go bindings of llvm-c.
+The `make` command will do all. First, it clones LLVM into `$GOPATH/src/llvm.org/llvm/` and builds
+it for LLVM Go binding. Second, it builds `gocaml` binary and `gocamlrt.a` runtime. Finally, it
+runs all tests for validation.
+Note that `go get -d` is not available because `llvm.org/*` dependency is not go-gettable for now.
 
-```
-# Use system-installed LLVM. You need to install LLVM in advance (see below)
-$ USE_SYSTEM_LLVM=true make
-```
+Above is the easiest way to install gocaml, but if you want to use system-installed LLVM instead of
+building `$GOPATH/src/llvm.org/llvm`, please follow build instruction.
+
+`USE_SYSTEM_LLVM=true` will build `gocaml` binary with system-installed LLVM libraries.
+Note that it still clones LLVM repository because `$GOPATH/src/llvm.org/llvm/bindings/go/*` is
+necessary for building gocaml.
 
 To use `USE_SYSTEM_LLVM`, you need to install LLVM 4.0.0 with system's package manager in advance.
 
 If you use Debian-family Linux, use [LLVM apt repository][] or download [LLVM official binary][].
 
-```sh
+```console
 $ sudo apt-get install libllvm4.0 llvm-4.0-dev
 $ export LLVM_CONFIG=llvm-config-4.0
 ```
@@ -494,18 +506,14 @@ $ export LLVM_CONFIG=llvm-config-4.0
 If you use macOS, use [Homebrew][]. GoCaml's installation script will automatically detect LLVM
 installed with Homebrew.
 
-```sh
+```console
 $ brew install llvm
 ```
 
-And you need to install [libgc][] as dependency.
+Now you can build gocaml with `USE_SYSTEM_LLVM` flag.
 
-```sh
-# On Debian-family Linux
-$ sudo apt-get install libgc-dev
-
-# On macOS
-$ brew install bdw-gc
+```console
+$ USE_SYSTEM_LLVM=true make
 ```
 
 ### Windows
