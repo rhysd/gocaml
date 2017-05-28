@@ -20,7 +20,7 @@ func gopaths() []string {
 		// So we need to look $GOPATH here.
 		s = build.Default.GOPATH
 	}
-	return strings.Split(s, ":")
+	return filepath.SplitList(s)
 }
 
 func detectRuntimePath() (string, error) {
