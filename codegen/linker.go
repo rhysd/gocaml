@@ -2,12 +2,26 @@ package codegen
 
 import (
 	"fmt"
+	"go/build"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 )
+
+func gopaths() []string {
+	s := os.Getenv("GOPATH")
+	if s == "" {
+		// Note:
+		// build.Default.GOPATH considers $GOPATH environment variable, but it's not sufficient in
+		// this case. It makes build.Default.GOPATH variable before running main() function.
+		// However, we want to change $GOPATH for testing after main() function starts.
+		// So we need to look $GOPATH here.
+		s = build.Default.GOPATH
+	}
+	return strings.Split(s, ":")
+}
 
 func detectRuntimePath() (string, error) {
 	// XXX:
@@ -23,8 +37,7 @@ func detectRuntimePath() (string, error) {
 
 	candidates := []string{fromBuildDir}
 
-	gopaths := strings.Split(os.Getenv("GOPATH"), ":")
-	for _, gopath := range gopaths {
+	for _, gopath := range gopaths() {
 		fromGopath := filepath.Join(gopath, "src/github.com/rhysd/gocaml/runtime/gocamlrt.a")
 		if _, err := os.Stat(fromGopath); err == nil {
 			return fromGopath, nil

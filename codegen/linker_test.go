@@ -33,7 +33,7 @@ func TestMultiGOPATH(t *testing.T) {
 func TestRuntimeNotFound(t *testing.T) {
 	gopath := os.Getenv("GOPATH")
 	defer os.Setenv("GOPATH", gopath)
-	os.Setenv("GOPATH", "")
+	os.Setenv("GOPATH", "/unknown/path/to/somewhere")
 
 	l := newDefaultLinker("")
 	err := l.link("dummy", []string{"not-exist.o"})
