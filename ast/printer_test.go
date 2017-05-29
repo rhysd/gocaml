@@ -157,6 +157,52 @@ func TestPrintAST(t *testing.T) {
 					},
 				},
 			},
+			&TupleType{
+				[]Expr{
+					&CtorType{
+						nil,
+						tok,
+						[]Expr{
+							&CtorType{
+								nil,
+								tok,
+								nil,
+								"unit",
+							},
+						},
+						"foo",
+					},
+				},
+			},
+		},
+		&FuncType{
+			[]Expr{
+				&CtorType{
+					nil,
+					tok,
+					nil,
+					"int",
+				},
+			},
+			&CtorType{
+				tok,
+				tok,
+				[]Expr{
+					&CtorType{
+						nil,
+						tok,
+						nil,
+						"bool",
+					},
+					&CtorType{
+						nil,
+						tok,
+						nil,
+						"float",
+					},
+				},
+				"foo",
+			},
 		},
 	}
 
@@ -256,6 +302,14 @@ func TestPrintAST(t *testing.T) {
 -   -   -   -   -   -   -   Int (0:0-0:0)
 -   -   -   -   -   -   None (0:0-0:0)
 -   -   -   -   -   -   None (0:0-0:0)
+-   -   -   TupleType (1) (0:0-0:0)
+-   -   -   -   CtorType (foo (1)) (0:0-0:0)
+-   -   -   -   -   CtorType (unit) (0:0-0:0)
+-   -   FuncType (0:0-0:0)
+-   -   -   CtorType (int) (0:0-0:0)
+-   -   -   CtorType (foo (2)) (0:0-0:0)
+-   -   -   -   CtorType (bool) (0:0-0:0)
+-   -   -   -   CtorType (float) (0:0-0:0)
 `
 	actual := <-ch
 	if expected != actual {

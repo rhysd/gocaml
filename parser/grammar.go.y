@@ -170,7 +170,7 @@ exp:
 		{ $$ = &ast.FDiv{$1, $3} }
 	| LET IDENT EQUAL exp IN exp
 		%prec prec_let
-		{ $$ = &ast.Let{$1, ast.NewSymbol($2.Value()), $4, $6} }
+		{ $$ = &ast.Let{$1, ast.NewSymbol($2.Value()), $4, $6, nil} }
 	| LET REC fundef IN exp
 		%prec prec_let
 		{ $$ = &ast.LetRec{$1, $3, $5} }
@@ -180,11 +180,11 @@ exp:
 	| elems
 		{ $$ = &ast.Tuple{$1} }
 	| LET LPAREN pat RPAREN EQUAL exp IN exp
-		{ $$ = &ast.LetTuple{$1, $3, $6, $8} }
+		{ $$ = &ast.LetTuple{$1, $3, $6, $8, nil} }
 	| parenless_exp DOT LPAREN exp RPAREN LESS_MINUS exp
 		{ $$ = &ast.Put{$1, $4, $7} }
 	| exp SEMICOLON exp
-		{ $$ = &ast.Let{$2, ast.NewSymbol(genTempId()), $1, $3} }
+		{ $$ = &ast.Let{$2, ast.NewSymbol(genTempId()), $1, $3, nil} }
 	| ARRAY_MAKE parenless_exp parenless_exp
 		%prec prec_app
 		{ $$ = &ast.ArrayCreate{$1, $2, $3} }

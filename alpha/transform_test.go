@@ -16,6 +16,7 @@ func TestFlatScope(t *testing.T) {
 		ast.NewSymbol("test"),
 		&ast.Int{nil, 42},
 		ref,
+		nil,
 	}
 	if err := Transform(root); err != nil {
 		t.Fatal(err)
@@ -38,12 +39,14 @@ func TestNested(t *testing.T) {
 		ast.NewSymbol("test"),
 		&ast.Int{nil, 42},
 		ref,
+		nil,
 	}
 	root := &ast.Let{
 		nil,
 		ast.NewSymbol("test"),
 		&ast.Int{nil, 42},
 		child,
+		nil,
 	}
 
 	if err := Transform(root); err != nil {
@@ -83,6 +86,7 @@ func TestMatch(t *testing.T) {
 		tok, ast.NewSymbol("a"),
 		&ast.Int{tok, 42},
 		match,
+		nil,
 	}
 
 	if err := Transform(root); err != nil {
@@ -114,6 +118,7 @@ func TestLetTuple(t *testing.T) {
 		},
 		&ast.Int{nil, 42},
 		ref,
+		nil,
 	}
 
 	if err := Transform(root); err != nil {
@@ -144,6 +149,7 @@ func TestLetTupleHasDuplicateName(t *testing.T) {
 		},
 		&ast.Int{nil, 42},
 		&ast.Int{nil, 42},
+		nil,
 	}
 
 	if err := Transform(root); err == nil {

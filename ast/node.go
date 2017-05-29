@@ -185,6 +185,7 @@ type (
 		LetToken    *token.Token
 		Symbol      *Symbol
 		Bound, Body Expr
+		Type        Expr // Maybe nil
 	}
 
 	VarRef struct {
@@ -211,6 +212,7 @@ type (
 		LetToken    *token.Token
 		Symbols     []*Symbol
 		Bound, Body Expr
+		Type        Expr // Maybe nil
 	}
 
 	ArrayCreate struct {
@@ -246,6 +248,23 @@ type (
 
 	None struct {
 		Token *token.Token
+	}
+
+	FuncType struct {
+		ParamTypes []Expr
+		RetType    Expr
+	}
+
+	TupleType struct {
+		ElemTypes []Expr
+	}
+
+	// Note: `int` has no param
+	CtorType struct {
+		StartToken *token.Token // Maybe nil
+		EndToken   *token.Token
+		ParamTypes []Expr
+		Ctor       string // TODO: It should be identifier after types namespace added
 	}
 )
 
@@ -525,6 +544,37 @@ func (e *None) End() token.Position {
 	return e.Token.End
 }
 
+func (e *FuncType) Pos() token.Position {
+	return e.ParamTypes[0].Pos()
+}
+func (e *FuncType) End() token.Position {
+	return e.RetType.End()
+}
+
+func (e *TupleType) Pos() token.Position {
+	return e.ElemTypes[0].Pos()
+}
+func (e *TupleType) End() token.Position {
+	return e.ElemTypes[len(e.ElemTypes)-1].End()
+}
+
+func (e *CtorType) Pos() token.Position {
+	switch len(e.ParamTypes) {
+	case 0:
+		// foo
+		return e.EndToken.Start
+	case 1:
+		// a foo
+		return e.ParamTypes[0].Pos()
+	default:
+		// (a, b) foo
+		return e.StartToken.Start
+	}
+}
+func (e *CtorType) End() token.Position {
+	return e.EndToken.End
+}
+
 func (e *Unit) Name() string      { return "Unit" }
 func (e *Bool) Name() string      { return "Bool" }
 func (e *Int) Name() string       { return "Int" }
@@ -582,3 +632,13 @@ func (e *Put) Name() string         { return "Put" }
 func (e *Match) Name() string       { return fmt.Sprintf("Match (%s)", e.SomeIdent.DisplayName) }
 func (e *Some) Name() string        { return "Some" }
 func (e *None) Name() string        { return "None" }
+func (e *FuncType) Name() string    { return "FuncType" }
+func (e *TupleType) Name() string   { return fmt.Sprintf("TupleType (%d)", len(e.ElemTypes)) }
+func (e *CtorType) Name() string {
+	len := len(e.ParamTypes)
+	if len == 0 {
+		return fmt.Sprintf("CtorType (%s)", e.Ctor)
+	} else {
+		return fmt.Sprintf("CtorType (%s (%d))", e.Ctor, len)
+	}
+}
