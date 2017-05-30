@@ -164,7 +164,17 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 			return env.infer(n.Body)
 		}
 
-		t := &Var{}
+		var t Type
+		if n.Type != nil {
+			// When let x: type = ...
+			t, err = nodeToType(n.Type)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			t = &Var{}
+		}
+
 		if err = Unify(t, bound); err != nil {
 			return nil, typeError(err, fmt.Sprintf("type of variable '%s'", n.Symbol.DisplayName), n.Body.Pos())
 		}
@@ -254,16 +264,39 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		}
 		return &Tuple{Elems: elems}, nil
 	case *ast.LetTuple:
-		elems := make([]Type, len(n.Symbols))
-		for i, sym := range n.Symbols {
-			// Bound elements' types are unknown in this point
-			t := &Var{}
-			env.Table[sym.Name] = t
-			elems[i] = t
+		var t Type
+
+		if n.Type != nil {
+			var err error
+			t, err = nodeToType(n.Type)
+			if err != nil {
+				return nil, err
+			}
+			tpl, ok := t.(*Tuple)
+			if !ok {
+				p := n.Type.Pos()
+				return nil, errors.Errorf("Type error: Bound value of 'let (...) =' mustbe tuple. but found '%s' (line:%d, column:%d)", t.String(), p.Line, p.Column)
+			}
+			if len(tpl.Elems) != len(n.Symbols) {
+				p := n.Type.Pos()
+				return nil, errors.Errorf("Type error: Mismatch numbers of elements of specified tuple type and symbols in 'let (...)' expression: %d v.s. %d (line:%d, column:%d)", len(tpl.Elems), len(n.Symbols), p.Line, p.Column)
+			}
+			for i, sym := range n.Symbols {
+				env.Table[sym.Name] = tpl.Elems[i]
+			}
+		} else {
+			elems := make([]Type, len(n.Symbols))
+			for i, sym := range n.Symbols {
+				// Bound elements' types are unknown in this point
+				v := &Var{}
+				env.Table[sym.Name] = v
+				elems[i] = v
+			}
+			t = &Tuple{Elems: elems}
 		}
 
 		// Bound value must be tuple
-		if err := env.checkNodeType("bound tuple value at 'let'", n.Bound, &Tuple{Elems: elems}); err != nil {
+		if err := env.checkNodeType("bound tuple value at 'let'", n.Bound, t); err != nil {
 			return nil, err
 		}
 

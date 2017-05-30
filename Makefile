@@ -15,6 +15,7 @@ SRCS := \
 	typing/infer.go \
 	typing/type.go \
 	typing/builtins.go \
+	typing/node_to_type.go \
 	alpha/transform.go \
 	alpha/mapping.go \
 	gcil/val.go \
