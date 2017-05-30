@@ -9,6 +9,7 @@ import (
 )
 
 type pseudoLexer struct {
+	lastToken    *token.Token
 	tokens       chan token.Token
 	errorCount   int
 	errorMessage bytes.Buffer
@@ -30,6 +31,8 @@ func (l *pseudoLexer) Lex(lval *yySymType) int {
 				continue
 			}
 
+			l.lastToken = &t
+
 			// XXX:
 			// Converting token value into yacc's token.
 			// This conversion requires that token order must the same as
@@ -46,7 +49,12 @@ func (l *pseudoLexer) Error(msg string) {
 }
 
 func (l *pseudoLexer) getError() error {
-	return fmt.Errorf("%d error(s) while parsing\n%s", l.errorCount, l.errorMessage.String())
+	loc := ""
+	if l.lastToken != nil {
+		pos := l.lastToken.Start
+		loc = fmt.Sprintf(" around line:%d, col:%d", pos.Line, pos.Column)
+	}
+	return fmt.Errorf("%d error(s) while parsing%s\n%s", l.errorCount, loc, l.errorMessage.String())
 }
 
 // Parse parses given tokens and returns parsed AST.
