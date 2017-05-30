@@ -275,11 +275,11 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 			tpl, ok := t.(*Tuple)
 			if !ok {
 				p := n.Type.Pos()
-				return nil, errors.Errorf("Type error: Bound value of 'let (...) =' mustbe tuple. but found '%s' (line:%d, column:%d)", t.String(), p.Line, p.Column)
+				return nil, errors.Errorf("Type error: Bound value of 'let (...) =' must be tuple, but found '%s' (line:%d, column:%d)", t.String(), p.Line, p.Column)
 			}
 			if len(tpl.Elems) != len(n.Symbols) {
 				p := n.Type.Pos()
-				return nil, errors.Errorf("Type error: Mismatch numbers of elements of specified tuple type and symbols in 'let (...)' expression: %d v.s. %d (line:%d, column:%d)", len(tpl.Elems), len(n.Symbols), p.Line, p.Column)
+				return nil, errors.Errorf("Type error: Mismatch numbers of elements of specified tuple type and symbols in 'let (...)' expression: %d vs %d (line:%d, column:%d)", len(tpl.Elems), len(n.Symbols), p.Line, p.Column)
 			}
 			for i, sym := range n.Symbols {
 				env.Table[sym.Name] = tpl.Elems[i]

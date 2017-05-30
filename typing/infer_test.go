@@ -5,6 +5,7 @@ import (
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/token"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -277,6 +278,31 @@ func TestInvalidExpressions(t *testing.T) {
 			code:     "let o = None in o = 42",
 			expected: "} option' and 'int'",
 		},
+		{
+			what:     "Invalid type specified",
+			code:     "let foo: fooooooo = 42 in foo",
+			expected: "Unknown type 'fooooooo'",
+		},
+		{
+			what:     "Type mismatch at type annotation",
+			code:     "let foo: bool = 42 in foo",
+			expected: "Type mismatch between 'bool' and 'int'",
+		},
+		{
+			what:     "Type mismatch at type annotation (let tuple)",
+			code:     "let (x, y): int * bool = 42, 3.14 in x",
+			expected: "Type mismatch between 'bool' and 'float'",
+		},
+		{
+			what:     "'let tuple' must annotated as tuple",
+			code:     "let (x, y): bool option = 42, 3.14 in x",
+			expected: "must be tuple, but found 'bool option'",
+		},
+		{
+			what:     "Number of tuple elements mismatch at 'let tuple'",
+			code:     "let (x, y): int * bool * float = 42, false in x",
+			expected: "3 vs 2",
+		},
 	}
 
 	for _, testcase := range testcases {
@@ -321,5 +347,34 @@ func TestRegisterNoneTypes(t *testing.T) {
 	}
 	if len(env.NoneTypes) != 2 {
 		t.Errorf("2 None node should be detected but actually %d", len(env.NoneTypes))
+	}
+}
+
+func TestInferSuccess(t *testing.T) {
+	files, err := filepath.Glob("testdata/*.ml")
+	if err != nil {
+		panic(err)
+	}
+	for _, file := range files {
+		t.Run(file, func(t *testing.T) {
+			s, err := token.NewSourceFromFile(file)
+			if err != nil {
+				panic(err)
+			}
+			l := lexer.NewLexer(s)
+			go l.Lex()
+			root, err := parser.Parse(l.Tokens)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err = alpha.Transform(root); err != nil {
+				t.Fatal(err)
+			}
+			env := NewEnv()
+			_, err = env.infer(root)
+			if err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }
