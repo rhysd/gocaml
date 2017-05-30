@@ -69,6 +69,7 @@ import (
 %token<token> NONE
 %token<token> MINUS_GREATER
 %token<token> FUN
+%token<token> COLON
 
 %right prec_let
 %right SEMICOLON
@@ -95,6 +96,11 @@ import (
 %type<funcdef> fundef
 %type<token> match_arm_start
 %type<decl> match_ident
+%type<node> type simple_type
+%type<node> simple_type_or_tuple
+%type<nodes> arrow_types
+%type<nodes> simple_type_star_list
+%type<nodes> type_comma_list
 %type<> program
 
 %start program
@@ -171,6 +177,9 @@ exp:
 	| LET IDENT EQUAL exp IN exp
 		%prec prec_let
 		{ $$ = &ast.Let{$1, ast.NewSymbol($2.Value()), $4, $6, nil} }
+	| LET IDENT COLON type EQUAL exp IN exp
+		%prec prec_let
+		{ $$ = &ast.Let{$1, ast.NewSymbol($2.Value()), $6, $8, $4} }
 	| LET REC fundef IN exp
 		%prec prec_let
 		{ $$ = &ast.LetRec{$1, $3, $5} }
@@ -181,6 +190,8 @@ exp:
 		{ $$ = &ast.Tuple{$1} }
 	| LET LPAREN pat RPAREN EQUAL exp IN exp
 		{ $$ = &ast.LetTuple{$1, $3, $6, $8, nil} }
+	| LET LPAREN pat RPAREN COLON type EQUAL exp IN exp
+		{ $$ = &ast.LetTuple{$1, $3, $8, $10, $6} }
 	| parenless_exp DOT LPAREN exp RPAREN LESS_MINUS exp
 		{ $$ = &ast.Put{$1, $4, $7} }
 	| exp SEMICOLON exp
@@ -291,6 +302,59 @@ match_ident:
 		{ $$ = ast.NewSymbol($2.Value()) }
 	| IDENT
 		{ $$ = ast.NewSymbol($1.Value()) }
+
+type:
+	simple_type_or_tuple
+		{ $$ = $1 }
+	| simple_type_or_tuple MINUS_GREATER arrow_types
+		{
+			ts := $3
+			i := len(ts)-1
+			ret := ts[i]
+			params := append([]ast.Expr{$1}, ts[:i]...)
+			$$ = &ast.FuncType{params, ret}
+		}
+
+arrow_types:
+	simple_type_or_tuple
+		{ $$ = []ast.Expr{$1} }
+	| arrow_types MINUS_GREATER simple_type_or_tuple
+		{ $$ = append($1, $3) }
+
+simple_type_or_tuple:
+	simple_type
+		{ $$ = $1 }
+	| simple_type STAR simple_type_star_list
+		{ $$ = &ast.TupleType{append([]ast.Expr{$1}, $3...)} }
+
+simple_type_star_list:
+	simple_type
+		{ $$ = []ast.Expr{$1} }
+	| simple_type_star_list STAR simple_type
+		{ $$ = append($1, $3) }
+
+simple_type:
+	IDENT
+		{
+			t := $1
+			$$ = &ast.CtorType{nil, t, nil, t.Value()}
+		}
+	| simple_type IDENT
+		{
+			t := $2
+			$$ = &ast.CtorType{nil, t, []ast.Expr{$1}, t.Value()}
+		}
+	| LPAREN type_comma_list RPAREN IDENT
+		{
+			t := $4
+			$$ = &ast.CtorType{$1, t, $2, t.Value()}
+		}
+
+type_comma_list:
+	type
+		{ $$ = []ast.Expr{$1} }
+	| type_comma_list COMMA type
+		{ $$ = append($1, $3) }
 
 %%
 

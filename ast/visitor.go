@@ -77,11 +77,11 @@ func Visit(v Visitor, e Expr) {
 		Visit(v, n.Then)
 		Visit(v, n.Else)
 	case *Let:
-		Visit(v, n.Bound)
-		Visit(v, n.Body)
 		if n.Type != nil {
 			Visit(v, n.Type)
 		}
+		Visit(v, n.Bound)
+		Visit(v, n.Body)
 	case *LetRec:
 		Visit(v, n.Func.Body)
 		Visit(v, n.Body)
@@ -95,11 +95,11 @@ func Visit(v Visitor, e Expr) {
 			Visit(v, e)
 		}
 	case *LetTuple:
-		Visit(v, n.Bound)
-		Visit(v, n.Body)
 		if n.Type != nil {
 			Visit(v, n.Type)
 		}
+		Visit(v, n.Bound)
+		Visit(v, n.Body)
 	case *ArrayCreate:
 		Visit(v, n.Size)
 		Visit(v, n.Elem)

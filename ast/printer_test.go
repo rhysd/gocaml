@@ -228,6 +228,11 @@ func TestPrintAST(t *testing.T) {
 
 	expected := `AST for dummy:
 -   Let (foo) (0:0-0:0)
+-   -   FuncType (0:0-0:0)
+-   -   -   CtorType (int) (0:0-0:0)
+-   -   -   CtorType (foo (2)) (0:0-0:0)
+-   -   -   -   CtorType (bool) (0:0-0:0)
+-   -   -   -   CtorType (float) (0:0-0:0)
 -   -   Add (0:0-0:0)
 -   -   -   Sub (0:0-0:0)
 -   -   -   -   FSub (0:0-0:0)
@@ -269,6 +274,9 @@ func TestPrintAST(t *testing.T) {
 -   -   -   -   -   -   Int (0:0-0:0)
 -   -   -   -   -   -   Bool (0:0-0:0)
 -   -   LetTuple (a, b) (0:0-0:0)
+-   -   -   TupleType (1) (0:0-0:0)
+-   -   -   -   CtorType (foo (1)) (0:0-0:0)
+-   -   -   -   -   CtorType (unit) (0:0-0:0)
 -   -   -   Tuple (0:0-0:0)
 -   -   -   -   Greater (0:0-0:0)
 -   -   -   -   -   Int (0:0-0:0)
@@ -302,14 +310,6 @@ func TestPrintAST(t *testing.T) {
 -   -   -   -   -   -   -   Int (0:0-0:0)
 -   -   -   -   -   -   None (0:0-0:0)
 -   -   -   -   -   -   None (0:0-0:0)
--   -   -   TupleType (1) (0:0-0:0)
--   -   -   -   CtorType (foo (1)) (0:0-0:0)
--   -   -   -   -   CtorType (unit) (0:0-0:0)
--   -   FuncType (0:0-0:0)
--   -   -   CtorType (int) (0:0-0:0)
--   -   -   CtorType (foo (2)) (0:0-0:0)
--   -   -   -   CtorType (bool) (0:0-0:0)
--   -   -   -   CtorType (float) (0:0-0:0)
 `
 	actual := <-ch
 	if expected != actual {
