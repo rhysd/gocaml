@@ -96,7 +96,9 @@ import (
 %type<funcdef> fundef
 %type<token> match_arm_start
 %type<decl> match_ident
-%type<node> type simple_type
+%type<node> type_annotation
+%type<node> type
+%type<node> simple_type
 %type<node> simple_type_or_tuple
 %type<nodes> arrow_types
 %type<nodes> simple_type_star_list
@@ -174,12 +176,9 @@ exp:
 		{ $$ = &ast.FMul{$1, $3} }
 	| exp SLASH_DOT exp
 		{ $$ = &ast.FDiv{$1, $3} }
-	| LET IDENT EQUAL exp IN exp
+	| LET IDENT type_annotation EQUAL exp IN exp
 		%prec prec_let
-		{ $$ = &ast.Let{$1, ast.NewSymbol($2.Value()), $4, $6, nil} }
-	| LET IDENT COLON type EQUAL exp IN exp
-		%prec prec_let
-		{ $$ = &ast.Let{$1, ast.NewSymbol($2.Value()), $6, $8, $4} }
+		{ $$ = &ast.Let{$1, ast.NewSymbol($2.Value()), $5, $7, $3} }
 	| LET REC fundef IN exp
 		%prec prec_let
 		{ $$ = &ast.LetRec{$1, $3, $5} }
@@ -188,10 +187,8 @@ exp:
 		{ $$ = &ast.Apply{$1, $2} }
 	| elems
 		{ $$ = &ast.Tuple{$1} }
-	| LET LPAREN pat RPAREN EQUAL exp IN exp
-		{ $$ = &ast.LetTuple{$1, $3, $6, $8, nil} }
-	| LET LPAREN pat RPAREN COLON type EQUAL exp IN exp
-		{ $$ = &ast.LetTuple{$1, $3, $8, $10, $6} }
+	| LET LPAREN pat RPAREN type_annotation EQUAL exp IN exp
+		{ $$ = &ast.LetTuple{$1, $3, $7, $9, $5} }
 	| parenless_exp DOT LPAREN exp RPAREN LESS_MINUS exp
 		{ $$ = &ast.Put{$1, $4, $7} }
 	| exp SEMICOLON exp
@@ -302,6 +299,11 @@ match_ident:
 		{ $$ = ast.NewSymbol($2.Value()) }
 	| IDENT
 		{ $$ = ast.NewSymbol($1.Value()) }
+
+type_annotation:
+		{ $$ = nil }
+	| COLON type
+		{ $$ = $2 }
 
 type:
 	simple_type_or_tuple
