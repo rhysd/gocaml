@@ -138,10 +138,24 @@ func TestPrintAST(t *testing.T) {
 				tok,
 				&FuncDef{
 					NewSymbol("f"),
-					[]*Symbol{
-						NewSymbol("a"),
+					[]Param{
+						{
+							NewSymbol("a"),
+							&CtorType{
+								nil,
+								tok,
+								nil,
+								"unit",
+							},
+						},
 					},
 					&VarRef{tok, NewSymbol("a")},
+					&CtorType{
+						nil,
+						tok,
+						nil,
+						"int",
+					},
 				},
 				&If{
 					tok,
@@ -307,6 +321,8 @@ func TestPrintAST(t *testing.T) {
 -   -   -   -   -   Bool (0:0-0:0)
 -   -   -   -   -   Bool (0:0-0:0)
 -   -   -   LetRec (fun f a) (0:0-0:0)
+-   -   -   -   CtorType (unit) (0:0-0:0)
+-   -   -   -   CtorType (int) (0:0-0:0)
 -   -   -   -   VarRef (a) (0:0-0:0)
 -   -   -   -   If (0:0-0:0)
 -   -   -   -   -   LessEq (0:0-0:0)

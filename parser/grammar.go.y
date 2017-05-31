@@ -21,6 +21,7 @@ import (
 	funcdef *ast.FuncDef
 	decls []*ast.Symbol
 	decl *ast.Symbol
+	params []ast.Param
 }
 
 %token<token> ILLEGAL
@@ -91,12 +92,13 @@ import (
 %type<node> parenless_exp
 %type<nodes> elems
 %type<nodes> args
-%type<decls> params
+%type<params> params
 %type<decls> pat
 %type<funcdef> fundef
 %type<token> match_arm_start
 %type<decl> match_ident
 %type<node> type_annotation
+%type<node> simple_type_annotation
 %type<node> type
 %type<node> simple_type
 %type<node> simple_type_or_tuple
@@ -201,12 +203,12 @@ exp:
 		{ $$ = &ast.ArraySize{$1, $2} }
 	| SOME parenless_exp
 		{ $$ = &ast.Some{$1, $2} }
-	| FUN params MINUS_GREATER exp
+	| FUN params simple_type_annotation MINUS_GREATER exp
 		%prec prec_fun
 		{
 			t := $1
 			ident := ast.NewSymbol(fmt.Sprintf("lambda.line%d.col%d", t.Start.Line, t.Start.Column))
-			def := &ast.FuncDef{ident, $2, $4}
+			def := &ast.FuncDef{ident, $2, $5, $3}
 			ref := &ast.VarRef{$1, ident}
 			$$ = &ast.LetRec{$1, def, ref}
 		}
@@ -217,14 +219,18 @@ exp:
 		}
 
 fundef:
-	IDENT params EQUAL exp
-		{ $$ = &ast.FuncDef{ast.NewSymbol($1.Value()), $2, $4} }
+	IDENT params type_annotation EQUAL exp
+		{ $$ = &ast.FuncDef{ast.NewSymbol($1.Value()), $2, $5, $3} }
 
 params:
-	params IDENT
-		{ $$ = append($1, ast.NewSymbol($2.Value())) }
-	| IDENT
-		{ $$ = []*ast.Symbol{ast.NewSymbol($1.Value())} }
+	IDENT
+		{ $$ = []ast.Param{{ast.NewSymbol($1.Value()), nil}} }
+	| LPAREN IDENT COLON type RPAREN
+		{ $$ = []ast.Param{{ast.NewSymbol($2.Value()), $4}} }
+	| params IDENT
+		{ $$ = append($1, ast.Param{ast.NewSymbol($2.Value()), nil}) }
+	| params LPAREN IDENT COLON type RPAREN
+		{ $$ = append($1, ast.Param{ast.NewSymbol($3.Value()), $5}) }
 
 args:
 	args parenless_exp
@@ -312,6 +318,11 @@ type_annotation:
 	| COLON type
 		{ $$ = $2 }
 
+simple_type_annotation:
+		{ $$ = nil }
+	| COLON simple_type
+		{ $$ = $2 }
+
 type:
 	simple_type_or_tuple
 		{ $$ = $1 }
@@ -357,6 +368,10 @@ simple_type:
 		{
 			t := $4
 			$$ = &ast.CtorType{$1, t, $2, t.Value()}
+		}
+	| LPAREN type RPAREN
+		{
+			$$ = $2
 		}
 
 type_comma_list:

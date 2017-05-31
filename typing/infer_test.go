@@ -306,7 +306,7 @@ func TestInvalidExpressions(t *testing.T) {
 		{
 			what:     "Type mismatch at (e: ty) expression",
 			code:     "let i = 42 in (i: bool)",
-			expected: "Mismatch between inferred type and specified type",
+			expected: "mismatch between inferred type and specified type",
 		},
 	}
 

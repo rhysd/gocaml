@@ -83,6 +83,14 @@ func Visit(v Visitor, e Expr) {
 		Visit(v, n.Bound)
 		Visit(v, n.Body)
 	case *LetRec:
+		for _, p := range n.Func.Params {
+			if p.Type != nil {
+				Visit(v, p.Type)
+			}
+		}
+		if n.Func.RetType != nil {
+			Visit(v, n.Func.RetType)
+		}
 		Visit(v, n.Func.Body)
 		Visit(v, n.Body)
 	case *Apply:

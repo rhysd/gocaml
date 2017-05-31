@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/rhysd/gocaml/ast"
+	"github.com/rhysd/gocaml/common"
 	"github.com/rhysd/gocaml/token"
 	"strings"
 )
@@ -201,9 +202,17 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		// Register parameters of function as variables to table
 		params := make([]Type, len(n.Func.Params))
 		for i, p := range n.Func.Params {
-			// Types of parameters are unknown at definition
-			t := &Var{}
-			env.Table[p.Name] = t
+			var t Type
+			var err error
+			if p.Type != nil {
+				t, err = nodeToType(p.Type)
+				if err != nil {
+					return nil, typeError(err, fmt.Sprintf("type of %d parameter of function", common.Ordinal(i+1)), p.Type.Pos())
+				}
+			} else {
+				t = &Var{}
+			}
+			env.Table[p.Ident.Name] = t
 			params[i] = t
 		}
 
@@ -211,6 +220,16 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		ret, err := env.infer(n.Func.Body)
 		if err != nil {
 			return nil, err
+		}
+
+		if n.Func.RetType != nil {
+			t, err := nodeToType(n.Func.RetType)
+			if err != nil {
+				return nil, typeError(err, "return type of function", n.Func.RetType.Pos())
+			}
+			if err = Unify(t, ret); err != nil {
+				return nil, typeError(err, "return type of function", n.Func.RetType.Pos())
+			}
 		}
 
 		fun := &Fun{
@@ -389,7 +408,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		}
 
 		if err = Unify(t, child); err != nil {
-			return nil, typeError(err, "Mismatch between inferred type and specified type", n.Pos())
+			return nil, typeError(err, "mismatch between inferred type and specified type", n.Pos())
 		}
 
 		return child, nil

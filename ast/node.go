@@ -60,10 +60,24 @@ func NewSymbol(name string) *Symbol {
 	return &Symbol{name, name}
 }
 
+type Param struct {
+	Ident *Symbol
+	Type  Expr
+}
+
 type FuncDef struct {
-	Symbol *Symbol
-	Params []*Symbol
-	Body   Expr
+	Symbol  *Symbol
+	Params  []Param
+	Body    Expr
+	RetType Expr
+}
+
+func (d *FuncDef) ParamSymbols() []*Symbol {
+	syms := make([]*Symbol, 0, len(d.Params))
+	for _, p := range d.Params {
+		syms = append(syms, p.Ident)
+	}
+	return syms
 }
 
 // AST node which meets Expr interface
@@ -616,21 +630,15 @@ func (e *If) Name() string        { return "If" }
 func (e *Let) Name() string       { return fmt.Sprintf("Let (%s)", e.Symbol.DisplayName) }
 func (e *VarRef) Name() string    { return fmt.Sprintf("VarRef (%s)", e.Symbol.DisplayName) }
 func (e *LetRec) Name() string {
-	if len(e.Func.Params) == 0 {
-		panic("LetTuple's symbols field must not be empty")
-	}
-	params := e.Func.Params[0].DisplayName
-	for _, s := range e.Func.Params[1:] {
-		params = fmt.Sprintf("%s, %s", params, s.DisplayName)
+	params := e.Func.Params[0].Ident.DisplayName
+	for _, p := range e.Func.Params[1:] {
+		params = fmt.Sprintf("%s, %s", params, p.Ident.DisplayName)
 	}
 	return fmt.Sprintf("LetRec (fun %s %s)", e.Func.Symbol.DisplayName, params)
 }
 func (e *Apply) Name() string { return "Apply" }
 func (e *Tuple) Name() string { return "Tuple" }
 func (e *LetTuple) Name() string {
-	if len(e.Symbols) == 0 {
-		panic("LetTuple's symbols field must not be empty")
-	}
 	vars := e.Symbols[0].DisplayName
 	for _, s := range e.Symbols[1:] {
 		vars = fmt.Sprintf("%s, %s", vars, s.DisplayName)
