@@ -49,12 +49,9 @@ func nodeToType(node ast.Expr) (Type, error) {
 				// '_' accepts any type.
 				return &Var{}, nil
 			}
-			prim, ok := Primitives[n.Ctor]
-			if !ok {
-				pos := n.Pos()
-				return nil, fmt.Errorf("Unknown type '%s' at line:%d, col:%d. Expected primitive types or '_'", n.Ctor, pos.Line, pos.Column)
+			if prim, ok := Primitives[n.Ctor]; ok {
+				return prim, nil
 			}
-			return prim, nil
 		}
 
 		// TODO: Currently only built-in array and option types are supported
@@ -62,20 +59,20 @@ func nodeToType(node ast.Expr) (Type, error) {
 		case "array":
 			if len != 1 {
 				p := n.Pos()
-				return nil, fmt.Errorf("Invalid array type at line:%d, col:%d. 'array' only has 1 type parameter.", p.Line, p.Column)
+				return nil, fmt.Errorf("Invalid array type at (line:%d,column:%d). 'array' only has 1 type parameter.", p.Line, p.Column)
 			}
 			elem, err := nodeToType(n.ParamTypes[0])
 			return &Array{elem}, err
 		case "option":
 			if len != 1 {
 				p := n.Pos()
-				return nil, fmt.Errorf("Invalid option type at line:%d, col:%d. 'option' only has 1 type parameter.", p.Line, p.Column)
+				return nil, fmt.Errorf("Invalid option type at (line:%d,column:%d). 'option' only has 1 type parameter.", p.Line, p.Column)
 			}
 			elem, err := nodeToType(n.ParamTypes[0])
 			return &Option{elem}, err
 		default:
 			p := n.Pos()
-			return nil, fmt.Errorf("Unknown type constructor '%s' at line:%d, col:%d. Currently only 'array' and 'option' are supported as built-in.", n.Ctor, p.Line, p.Column)
+			return nil, fmt.Errorf("Unknown type constructor '%s' at (line:%d,column:%d). Currently only primitive types, 'array', 'option' and '_' are supported as built-in.", n.Ctor, p.Line, p.Column)
 		}
 	default:
 		panic("FATAL: Cannot convert non-type AST node into type values: " + node.Name())

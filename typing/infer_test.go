@@ -281,7 +281,7 @@ func TestInvalidExpressions(t *testing.T) {
 		{
 			what:     "Invalid type specified",
 			code:     "let foo: fooooooo = 42 in foo",
-			expected: "Unknown type 'fooooooo'",
+			expected: "Unknown type constructor 'fooooooo'",
 		},
 		{
 			what:     "Type mismatch at type annotation",

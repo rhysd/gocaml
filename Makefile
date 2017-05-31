@@ -56,6 +56,7 @@ TESTS := \
 	typing/example_test.go \
 	typing/infer_test.go \
 	typing/deref_test.go \
+	typing/node_to_type_test.go \
 	gcil/example_test.go \
 	gcil/block_test.go \
 	gcil/from_ast_test.go \
