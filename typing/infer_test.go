@@ -139,6 +139,11 @@ func TestInvalidExpressions(t *testing.T) {
 			expected: "Type mismatch between 'int' and 'bool'",
 		},
 		{
+			what:     "unary -. with non-float",
+			code:     "-.42",
+			expected: "operand of unary operator '-.' must be 'float'",
+		},
+		{
 			what:     "not a bool condition in if",
 			code:     "if 42 then true else false",
 			expected: "Type mismatch between 'bool' and 'int'",
@@ -307,6 +312,31 @@ func TestInvalidExpressions(t *testing.T) {
 			what:     "Type mismatch at (e: ty) expression",
 			code:     "let i = 42 in (i: bool)",
 			expected: "mismatch between inferred type and specified type",
+		},
+		{
+			what:     "Invalid type at (e: ty) expression",
+			code:     "(i: foooo)",
+			expected: "Unknown type constructor 'foooo'",
+		},
+		{
+			what:     "Type mismatch at param type",
+			code:     "let rec f (x:float) = -x in f",
+			expected: "Type mismatch between 'int' and 'float'",
+		},
+		{
+			what:     "Type mismatch at return type",
+			code:     "let rec f (x:int): float = x in f",
+			expected: "return type of function",
+		},
+		{
+			what:     "Invalid parameter type",
+			code:     "let rec f (x:(int, int) array) = x in f",
+			expected: "1st parameter of function",
+		},
+		{
+			what:     "Invalid return type",
+			code:     "let rec f x: foo = x in f",
+			expected: "return type of function",
 		},
 	}
 

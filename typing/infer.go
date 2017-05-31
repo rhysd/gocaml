@@ -207,7 +207,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 			if p.Type != nil {
 				t, err = nodeToType(p.Type)
 				if err != nil {
-					return nil, typeError(err, fmt.Sprintf("type of %d parameter of function", common.Ordinal(i+1)), p.Type.Pos())
+					return nil, typeError(err, fmt.Sprintf("%s parameter of function", common.Ordinal(i+1)), p.Type.Pos())
 				}
 			} else {
 				t = &Var{}
