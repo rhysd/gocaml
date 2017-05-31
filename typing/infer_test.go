@@ -303,6 +303,11 @@ func TestInvalidExpressions(t *testing.T) {
 			code:     "let (x, y): int * bool * float = 42, false in x",
 			expected: "3 vs 2",
 		},
+		{
+			what:     "Type mismatch at (e: ty) expression",
+			code:     "let i = 42 in (i: bool)",
+			expected: "Mismatch between inferred type and specified type",
+		},
 	}
 
 	for _, testcase := range testcases {

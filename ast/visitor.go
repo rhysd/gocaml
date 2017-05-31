@@ -131,6 +131,9 @@ func Visit(v Visitor, e Expr) {
 		for _, e := range n.ParamTypes {
 			Visit(v, e)
 		}
+	case *Typed:
+		Visit(v, n.Child)
+		Visit(v, n.Type)
 	}
 }
 

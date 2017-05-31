@@ -377,6 +377,23 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 			return nil, typeError(err, "mismatch of types between 'Some' arm and 'None' arm in 'match' expression", n.Pos())
 		}
 		return some, nil
+	case *ast.Typed:
+		child, err := env.infer(n.Child)
+		if err != nil {
+			return nil, err
+		}
+
+		t, err := nodeToType(n.Type)
+		if err != nil {
+			return nil, err
+		}
+
+		if err = Unify(t, child); err != nil {
+			return nil, typeError(err, "Mismatch between inferred type and specified type", n.Pos())
+		}
+
+		return child, nil
+	default:
+		panic(fmt.Sprintf("FATAL: Unreachable: %s %v %v", e.Name(), e.Pos(), e.End()))
 	}
-	panic(fmt.Sprintf("Unreachable: %s %v %v", e.Name(), e.Pos(), e.End()))
 }

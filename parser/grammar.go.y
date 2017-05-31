@@ -250,8 +250,15 @@ pat:
 		}
 
 parenless_exp:
-	LPAREN exp RPAREN
-		{ $$ = $2 }
+	LPAREN exp type_annotation RPAREN
+		{
+			t := $3
+			if t == nil {
+				$$ = $2
+			} else {
+				$$ = &ast.Typed{$2, $3}
+			}
+		}
 	| LPAREN RPAREN
 		{ $$ = &ast.Unit{$1, $2} }
 	| BOOL

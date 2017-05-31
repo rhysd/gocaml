@@ -266,6 +266,11 @@ type (
 		ParamTypes []Expr
 		Ctor       string // TODO: It should be identifier after types namespace added
 	}
+
+	Typed struct {
+		Child Expr
+		Type  Expr
+	}
 )
 
 func (e *Unit) Pos() token.Position {
@@ -575,6 +580,13 @@ func (e *CtorType) End() token.Position {
 	return e.EndToken.End
 }
 
+func (e *Typed) Pos() token.Position {
+	return e.Child.Pos()
+}
+func (e *Typed) End() token.Position {
+	return e.Type.End()
+}
+
 func (e *Unit) Name() string      { return "Unit" }
 func (e *Bool) Name() string      { return "Bool" }
 func (e *Int) Name() string       { return "Int" }
@@ -642,3 +654,4 @@ func (e *CtorType) Name() string {
 		return fmt.Sprintf("CtorType (%s (%d))", e.Ctor, len)
 	}
 }
+func (e *Typed) Name() string { return "Typed" }

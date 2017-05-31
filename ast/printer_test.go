@@ -68,7 +68,15 @@ func TestPrintAST(t *testing.T) {
 					&ArrayCreate{
 						tok,
 						&Int{tok, 42},
-						&Bool{tok, false},
+						&Typed{
+							&Bool{tok, false},
+							&CtorType{
+								nil,
+								tok,
+								nil,
+								"bool",
+							},
+						},
 					},
 				},
 				&FMul{
@@ -260,7 +268,9 @@ func TestPrintAST(t *testing.T) {
 -   -   -   -   -   -   String () (0:0-0:0)
 -   -   -   -   -   ArrayCreate (0:0-0:0)
 -   -   -   -   -   -   Int (0:0-0:0)
--   -   -   -   -   -   Bool (0:0-0:0)
+-   -   -   -   -   -   Typed (0:0-0:0)
+-   -   -   -   -   -   -   Bool (0:0-0:0)
+-   -   -   -   -   -   -   CtorType (bool) (0:0-0:0)
 -   -   -   -   FMul (0:0-0:0)
 -   -   -   -   -   Get (0:0-0:0)
 -   -   -   -   -   -   ArrayCreate (0:0-0:0)

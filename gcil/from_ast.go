@@ -352,6 +352,8 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		val = NoneVal
 	case *ast.Match:
 		ty, val, prev = e.emitMatchInsn(n)
+	case *ast.Typed:
+		return e.emitInsn(n.Child)
 	}
 
 	// Note:
