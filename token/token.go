@@ -63,6 +63,7 @@ const (
 	MINUS_GREATER
 	FUN
 	COLON
+	TYPE
 	EOF
 )
 
@@ -115,6 +116,7 @@ var tokenTable = [...]string{
 	MINUS_GREATER:  "->",
 	FUN:            "fun",
 	COLON:          ":",
+	TYPE:           "type",
 }
 
 // Token instance for GoCaml.

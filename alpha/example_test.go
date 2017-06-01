@@ -19,14 +19,14 @@ func Example() {
 	lex := lexer.NewLexer(src)
 	go lex.Lex()
 
-	root, err := parser.Parse(lex.Tokens)
+	ast, err := parser.Parse(lex.Tokens)
 	if err != nil {
 		// When parse failed
 		panic(err)
 	}
 
 	// Run alpha transform against the root of AST
-	if err = Transform(root); err != nil {
+	if err = Transform(ast.Root); err != nil {
 		// When some some duplicates found
 		panic(err)
 	}
@@ -36,5 +36,5 @@ func Example() {
 	// And now all variable references (VarRef) point a symbol instance of the definition node.
 	// By checking the pointer of symbol, we can know where the variable reference are defined
 	// in source.
-	fmt.Printf("%v\n", root)
+	fmt.Printf("%v\n", ast.Root)
 }

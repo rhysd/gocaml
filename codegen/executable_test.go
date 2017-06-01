@@ -58,21 +58,21 @@ func TestExecutable(t *testing.T) {
 			l := lexer.NewLexer(s)
 			go l.Lex()
 
-			root, err := parser.Parse(l.Tokens)
+			ast, err := parser.Parse(l.Tokens)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if err = alpha.Transform(root); err != nil {
+			if err = alpha.Transform(ast.Root); err != nil {
 				t.Fatal(err)
 			}
 
 			env := typing.NewEnv()
-			if err := env.ApplyTypeAnalysis(root); err != nil {
+			if err := env.ApplyTypeAnalysis(ast.Root); err != nil {
 				t.Fatal(err)
 			}
 
-			ir, err := gcil.FromAST(root, env)
+			ir, err := gcil.FromAST(ast.Root, env)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -137,21 +137,21 @@ func BenchmarkExecutableCreation(b *testing.B) {
 		l := lexer.NewLexer(source)
 		go l.Lex()
 
-		root, err := parser.Parse(l.Tokens)
+		ast, err := parser.Parse(l.Tokens)
 		if err != nil {
 			b.Fatal(err)
 		}
 
-		if err = alpha.Transform(root); err != nil {
+		if err = alpha.Transform(ast.Root); err != nil {
 			b.Fatal(err)
 		}
 
 		env := typing.NewEnv()
-		if err := env.ApplyTypeAnalysis(root); err != nil {
+		if err := env.ApplyTypeAnalysis(ast.Root); err != nil {
 			b.Fatal(err)
 		}
 
-		ir, err := gcil.FromAST(root, env)
+		ir, err := gcil.FromAST(ast.Root, env)
 		if err != nil {
 			b.Fatal(err)
 		}

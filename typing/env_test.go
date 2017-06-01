@@ -19,13 +19,13 @@ func TestResolvedSymbols(t *testing.T) {
 	s := token.NewDummySource("let x = 1 in x + y; ()")
 	l := lexer.NewLexer(s)
 	go l.Lex()
-	root, err := parser.Parse(l.Tokens)
+	ast, err := parser.Parse(l.Tokens)
 	if err != nil {
-		panic(root)
+		panic(ast.Root)
 	}
 
 	env := NewEnv()
-	if err := env.ApplyTypeAnalysis(root); err != nil {
+	if err := env.ApplyTypeAnalysis(ast.Root); err != nil {
 		t.Fatal(err)
 	}
 	if _, ok := env.Table["x"]; !ok {
@@ -58,17 +58,17 @@ func TestTypeCheckOK(t *testing.T) {
 			l := lexer.NewLexer(s)
 			go l.Lex()
 
-			root, err := parser.Parse(l.Tokens)
+			ast, err := parser.Parse(l.Tokens)
 			if err != nil {
-				panic(root)
+				panic(ast.Root)
 			}
 
-			if err = alpha.Transform(root); err != nil {
+			if err = alpha.Transform(ast.Root); err != nil {
 				panic(err)
 			}
 
 			env := NewEnv()
-			if err := env.ApplyTypeAnalysis(root); err != nil {
+			if err := env.ApplyTypeAnalysis(ast.Root); err != nil {
 				t.Fatal(err)
 			}
 		})
@@ -79,13 +79,13 @@ func TestProgramRootTypeIsUnit(t *testing.T) {
 	s := token.NewDummySource("42")
 	l := lexer.NewLexer(s)
 	go l.Lex()
-	root, err := parser.Parse(l.Tokens)
+	ast, err := parser.Parse(l.Tokens)
 	if err != nil {
-		panic(root)
+		panic(ast.Root)
 	}
 
 	env := NewEnv()
-	err = env.ApplyTypeAnalysis(root)
+	err = env.ApplyTypeAnalysis(ast.Root)
 	if err == nil {
 		t.Fatalf("Type check must raise an error when root type of program is not ()")
 	}
@@ -99,13 +99,13 @@ func TestTypeCheckFail(t *testing.T) {
 	s := token.NewDummySource("let x = 42 in x +. 3.14")
 	l := lexer.NewLexer(s)
 	go l.Lex()
-	root, err := parser.Parse(l.Tokens)
+	ast, err := parser.Parse(l.Tokens)
 	if err != nil {
-		panic(root)
+		panic(ast.Root)
 	}
 
 	env := NewEnv()
-	err = env.ApplyTypeAnalysis(root)
+	err = env.ApplyTypeAnalysis(ast.Root)
 	if err == nil {
 		t.Fatalf("Type check must raise a type error")
 	}
@@ -115,13 +115,13 @@ func TestDumpResult(t *testing.T) {
 	s := token.NewDummySource("let x = 42 in x + y; ()")
 	l := lexer.NewLexer(s)
 	go l.Lex()
-	root, err := parser.Parse(l.Tokens)
+	ast, err := parser.Parse(l.Tokens)
 	if err != nil {
-		panic(root)
+		panic(ast.Root)
 	}
 
 	env := NewEnv()
-	if err = env.ApplyTypeAnalysis(root); err != nil {
+	if err = env.ApplyTypeAnalysis(ast.Root); err != nil {
 		t.Fatal(err)
 	}
 
@@ -153,13 +153,13 @@ func TestDerefNoneTypes(t *testing.T) {
 	s := token.NewDummySource("let rec f x = () in f (Some 42); f None; let a = None in f a")
 	l := lexer.NewLexer(s)
 	go l.Lex()
-	root, err := parser.Parse(l.Tokens)
+	ast, err := parser.Parse(l.Tokens)
 	if err != nil {
-		panic(root)
+		panic(ast.Root)
 	}
 
 	env := NewEnv()
-	if err := env.ApplyTypeAnalysis(root); err != nil {
+	if err := env.ApplyTypeAnalysis(ast.Root); err != nil {
 		t.Fatal(err)
 	}
 

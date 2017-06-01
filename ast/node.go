@@ -36,8 +36,9 @@ import (
 // and fundef = { name : Id.t * Type.t; args : (Id.t * Type.t) list; body : t }
 
 type AST struct {
-	Root Expr
-	File *token.Source
+	Root      Expr
+	File      *token.Source
+	TypeDecls []Expr
 }
 
 // Expr is an interface for node of GoCaml AST.
@@ -296,6 +297,12 @@ type (
 
 	Typed struct {
 		Child Expr
+		Type  Expr
+	}
+
+	TypeDecl struct {
+		Token *token.Token
+		Ident *Symbol
 		Type  Expr
 	}
 )
@@ -614,6 +621,13 @@ func (e *Typed) End() token.Position {
 	return e.Type.End()
 }
 
+func (e *TypeDecl) Pos() token.Position {
+	return e.Token.Start
+}
+func (e *TypeDecl) End() token.Position {
+	return e.Type.End()
+}
+
 func (e *Unit) Name() string      { return "Unit" }
 func (e *Bool) Name() string      { return "Bool" }
 func (e *Int) Name() string       { return "Int" }
@@ -675,4 +689,5 @@ func (e *CtorType) Name() string {
 		return fmt.Sprintf("CtorType (%s (%d))", e.Ctor, len)
 	}
 }
-func (e *Typed) Name() string { return "Typed" }
+func (e *Typed) Name() string    { return "Typed" }
+func (e *TypeDecl) Name() string { return fmt.Sprintf("TypeDecl (%s)", e.Ident.DisplayName) }

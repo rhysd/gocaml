@@ -19,13 +19,13 @@ func Example() {
 	lex := lexer.NewLexer(src)
 	go lex.Lex()
 
-	root, err := parser.Parse(lex.Tokens)
+	ast, err := parser.Parse(lex.Tokens)
 	if err != nil {
 		// When parse failed
 		panic(err)
 	}
 
-	if err = alpha.Transform(root); err != nil {
+	if err = alpha.Transform(ast.Root); err != nil {
 		// When some some duplicates found
 		panic(err)
 	}
@@ -37,7 +37,7 @@ func Example() {
 	// Apply type inference. After this, all symbols in AST should have exact
 	// types. It also checks types are valid and all types are determined by
 	// inference
-	if err := env.ApplyTypeAnalysis(root); err != nil {
+	if err := env.ApplyTypeAnalysis(ast.Root); err != nil {
 		// Type error detected
 		panic(err)
 	}

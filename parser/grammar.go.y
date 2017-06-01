@@ -71,6 +71,7 @@ import (
 %token<token> MINUS_GREATER
 %token<token> FUN
 %token<token> COLON
+%token<token> TYPE
 
 %right prec_let
 %right SEMICOLON
@@ -105,6 +106,9 @@ import (
 %type<nodes> arrow_types
 %type<nodes> simple_type_star_list
 %type<nodes> type_comma_list
+%type<node> type_decl
+%type<nodes> type_decls
+%type<> sep
 %type<> program
 
 %start program
@@ -112,10 +116,23 @@ import (
 %%
 
 program:
-	exp
+	type_decls exp
 		{
-			yylex.(*pseudoLexer).result = $1
+			yylex.(*pseudoLexer).result = &ast.AST{Root: $2, TypeDecls: $1}
 		}
+
+type_decls:
+	/* empty */
+		{ $$ = []ast.Expr{} }
+	| type_decls type_decl
+		{ $$ = append($1, $2) }
+
+type_decl:
+	TYPE IDENT EQUAL type sep
+		{ $$ = &ast.TypeDecl{$1, ast.NewSymbol($2.Value()), $4} }
+
+sep:
+   SEMICOLON {} | sep SEMICOLON {}
 
 exp:
 	parenless_exp

@@ -142,6 +142,8 @@ func Visit(v Visitor, e Expr) {
 	case *Typed:
 		Visit(v, n.Child)
 		Visit(v, n.Type)
+	case *TypeDecl:
+		Visit(v, n.Type)
 	}
 }
 

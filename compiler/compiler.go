@@ -63,16 +63,13 @@ func (c *Compiler) PrintTokens(src *token.Source) {
 // Parse parses the source and returns the parsed AST.
 func (c *Compiler) Parse(src *token.Source) (*ast.AST, error) {
 	tokens := c.Lex(src)
-	root, err := parser.Parse(tokens)
+	ast, err := parser.Parse(tokens)
 
 	if err != nil {
 		return nil, err
 	}
 
-	ast := &ast.AST{
-		File: src,
-		Root: root,
-	}
+	ast.File = src // TODO
 
 	return ast, nil
 }

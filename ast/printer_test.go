@@ -231,6 +231,18 @@ func TestPrintAST(t *testing.T) {
 	ast := &AST{
 		Root: root,
 		File: s,
+		TypeDecls: []Expr{
+			&TypeDecl{
+				tok,
+				NewSymbol("mytype"),
+				&CtorType{
+					nil,
+					tok,
+					nil,
+					"bool",
+				},
+			},
+		},
 	}
 
 	old := os.Stdout
@@ -249,6 +261,8 @@ func TestPrintAST(t *testing.T) {
 	os.Stdout = old
 
 	expected := `AST for dummy:
+-   TypeDecl (mytype) (0:0-0:0)
+-   -   CtorType (bool) (0:0-0:0)
 -   Let (foo) (0:0-0:0)
 -   -   FuncType (0:0-0:0)
 -   -   -   CtorType (int) (0:0-0:0)

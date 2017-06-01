@@ -18,18 +18,18 @@ func testCreateEmitter(code string, optimize OptLevel, debug bool) (e *Emitter, 
 	s := token.NewDummySource(code)
 	l := lexer.NewLexer(s)
 	go l.Lex()
-	root, err := parser.Parse(l.Tokens)
+	ast, err := parser.Parse(l.Tokens)
 	if err != nil {
 		return
 	}
-	if err = alpha.Transform(root); err != nil {
+	if err = alpha.Transform(ast.Root); err != nil {
 		return
 	}
 	env := typing.NewEnv()
-	if err = env.ApplyTypeAnalysis(root); err != nil {
+	if err = env.ApplyTypeAnalysis(ast.Root); err != nil {
 		return
 	}
-	ir, err := gcil.FromAST(root, env)
+	ir, err := gcil.FromAST(ast.Root, env)
 	if err != nil {
 		return
 	}
