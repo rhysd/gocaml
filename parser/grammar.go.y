@@ -180,7 +180,7 @@ exp:
 		{ $$ = &ast.FDiv{$1, $3} }
 	| LET IDENT type_annotation EQUAL exp IN exp
 		%prec prec_let
-		{ $$ = &ast.Let{$1, ast.NewSymbol($2.Value()), $5, $7, $3} }
+		{ $$ = &ast.Let{$1, sym($2), $5, $7, $3} }
 	| LET REC fundef IN exp
 		%prec prec_let
 		{ $$ = &ast.LetRec{$1, $3, $5} }
@@ -224,13 +224,13 @@ fundef:
 
 params:
 	IDENT
-		{ $$ = []ast.Param{{ast.NewSymbol($1.Value()), nil}} }
+		{ $$ = []ast.Param{{sym($1), nil}} }
 	| LPAREN IDENT COLON type RPAREN
-		{ $$ = []ast.Param{{ast.NewSymbol($2.Value()), $4}} }
+		{ $$ = []ast.Param{{sym($2), $4}} }
 	| params IDENT
-		{ $$ = append($1, ast.Param{ast.NewSymbol($2.Value()), nil}) }
+		{ $$ = append($1, ast.Param{sym($2), nil}) }
 	| params LPAREN IDENT COLON type RPAREN
-		{ $$ = append($1, ast.Param{ast.NewSymbol($3.Value()), $5}) }
+		{ $$ = append($1, ast.Param{sym($3), $5}) }
 
 args:
 	args parenless_exp
@@ -246,14 +246,9 @@ elems:
 
 pat:
 	pat COMMA IDENT
-		{ $$ = append($1, ast.NewSymbol($3.Value())) }
+		{ $$ = append($1, sym($3)) }
 	| IDENT COMMA IDENT
-		{
-			$$ = []*ast.Symbol{
-				ast.NewSymbol($1.Value()),
-				ast.NewSymbol($3.Value()), 
-			}
-		}
+		{ $$ = []*ast.Symbol{sym($1), sym($3)} }
 
 parenless_exp:
 	LPAREN exp type_annotation RPAREN
@@ -386,5 +381,13 @@ var genIdCount = 0
 func genTempId() string {
 	genIdCount++
 	return fmt.Sprintf("$unused%d", genIdCount)
+}
+
+func sym(tok *token.Token) *ast.Symbol {
+	s := tok.Value()
+	if s == "_" {
+		s = genTempId()
+	}
+	return ast.NewSymbol(s)
 }
 // vim: noet

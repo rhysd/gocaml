@@ -110,6 +110,13 @@ func (t *transformer) Visit(node ast.Expr) ast.Visitor {
 		ast.Visit(t, n.IfNone)
 		return nil
 	case *ast.VarRef:
+		if n.Symbol.DisplayName == "_" {
+			// Note: Check '_'. Without this check, compiler will consdier it as
+			// external variable wrongly.
+			p := n.Pos()
+			t.err = fmt.Errorf("Cannot refer '_' variable at (line:%d, column:%d) because creating '_' variable is not permitted", p.Line, p.Column)
+			return nil
+		}
 		mapped, ok := t.current.resolve(n.Symbol.DisplayName)
 		if !ok {
 			// External symbol is ignored because name should be identical.

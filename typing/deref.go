@@ -70,13 +70,21 @@ type typeVarDereferencer struct {
 
 func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
 	symType, ok := d.env.Table[sym.Name]
-	if !ok {
-		if !strings.HasPrefix(sym.DisplayName, "$unused") {
-			// Parser expands `foo; bar` to `let $unused = foo in bar`. In this situation,
-			// type of the variable will never be determined because it's unused.
-			// So skipping it in order to avoid unknown type error for the unused variable.
-			panic(fmt.Sprintf("Cannot dereference unknown symbol '%s'", sym.Name))
+
+	if strings.HasPrefix(sym.Name, "$unused") {
+		// Parser expands `foo; bar` to `let $unused = foo in bar`. In this situation, type of the
+		// variable will never be determined because it's unused.
+		// So skipping it in order to avoid unknown type error for the unused variable.
+		if v, ok := symType.(*Var); ok {
+			// $unused variables are never be used. So its type may not be determined. In the case,
+			// it's type should be fixed to unit type.
+			v.Ref = UnitType
 		}
+		return
+	}
+
+	if !ok {
+		panic(fmt.Sprintf("Cannot dereference unknown symbol '%s'", sym.Name))
 		return
 	}
 
@@ -156,10 +164,14 @@ func (d *typeVarDereferencer) Visit(node ast.Expr) ast.Visitor {
 	case *ast.Let:
 		d.derefSym(n, n.Symbol)
 	case *ast.LetRec:
-		d.derefSym(n, n.Func.Symbol)
+		// Note:
+		// Need to dereference parameters at first because type of the function depends on type
+		// of its parameters and parameters may be specified as '_'.
+		// '_' is unused. So its type may not be detemined and need to be fixed as unit type.
 		for _, p := range n.Func.Params {
 			d.derefSym(n, p.Ident)
 		}
+		d.derefSym(n, n.Func.Symbol)
 	case *ast.LetTuple:
 		for _, sym := range n.Symbols {
 			d.derefSym(n, sym)

@@ -3,6 +3,7 @@ package alpha
 import (
 	"github.com/rhysd/gocaml/ast"
 	"github.com/rhysd/gocaml/token"
+	"strings"
 	"testing"
 )
 
@@ -314,5 +315,19 @@ func TestExternalSymbol(t *testing.T) {
 
 	if ref.Symbol.Name != ref.Symbol.DisplayName {
 		t.Fatalf("External symbol's name should not be changed but actually %s was changed to %s", ref.Symbol.DisplayName, ref.Symbol.Name)
+	}
+}
+
+func TestUnderscoreName(t *testing.T) {
+	ref := &ast.VarRef{
+		&token.Token{},
+		ast.NewSymbol("_"),
+	}
+	err := Transform(ref)
+	if err == nil {
+		t.Fatal("Error was expected")
+	}
+	if !strings.Contains(err.Error(), "Cannot refer '_' variable") {
+		t.Fatal("Unexpected error for '_' variable reference:", err)
 	}
 }
