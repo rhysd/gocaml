@@ -4,9 +4,11 @@ GoCaml :camel:
 [![Windows Build Status][]][Appveyor]
 [![Coverage Status][]][Coveralls]
 
-GoCaml is a [MinCaml][] implementation in Go using [LLVM][]. MinCaml is a minimal subset of OCaml for educational purpose. It is statically-typed and compiled into a binary. ([spec][MinCaml spec])
+GoCaml is subset of OCaml in Go based on [MinCaml][] using [LLVM][]. MinCaml is a minimal subset of
+OCaml for educational purpose. It is statically-typed and compiled into a binary.
 
-This project aims my practices for understanding type inference, closure transform and introducing own intermediate language (IL) to own language.
+This project aims my practices for understanding type inference, closure transform and introducing
+own intermediate language (IL) to own language.
 
 [Japanese presentation](https://speakerdeck.com/rhysd/go-detukurufan-yong-yan-yu-chu-li-xi-shi-zhuang-zhan-lue)
 
@@ -51,12 +53,14 @@ You can see [more examples][examples]. (e.g. [Brainfxxk interpreter][Brainfxxk i
 - Some useful built-in functions are added (described in below section).
 - [Option type][] is implemented in GoCaml. Please see below 'Option Type' section or [test cases][option type test cases].
 - GoCaml has `fun` syntax to make an anonymous funcion or closure like `fun x y -> x + y`.
+- GoCaml has type annotations syntax. Users can specify types explicitly.
 
 ## Language Spec
 
 ### Program
 
-Program is represented as one expression which MUST be evaluated as unit type. So `()` is the smallest program for GoCaml.
+Program is represented as one expression which MUST be evaluated as unit type. So `()` is the
+smallest program for GoCaml.
 
 ### Sequence Expression
 
@@ -66,12 +70,14 @@ Sequenced program can be represented by joining multiple expressons with `;`.
 e1; e2; e3; e4
 ```
 
-In above program, expressions are evaluated in order of `e1 -> e2 -> e3 -> e4` and the sequenced expression is evaluated to the value of `e4`.
+In above program, expressions are evaluated in order of `e1 -> e2 -> e3 -> e4` and the sequenced
+expression is evaluated to the value of `e4`.
 Program must be evaluated to unit type, so the `e4` expression must be evaluated to `()` (unit value).
 
 ### Comments
 
-There is a block comment syntax. It starts with `(*` and ends with `*)`. Any comment must be closed with `*)`, otherwise it falls into syntax error.
+There is a block comment syntax. It starts with `(*` and ends with `*)`. Any comment must be closed
+with `*)`, otherwise it falls into syntax error.
 
 ```ml
 (*
@@ -133,7 +139,8 @@ not true;
 
 ### Arithmetic binary operators
 
-As mentioned above, GoCaml distinguishes int and float in operators. Operators for float values are suffixed by `.` (dot).
+As mentioned above, GoCaml distinguishes int and float in operators. Operators for float values are
+suffixed by `.` (dot).
 
 ```ml
 (* integer calcuration *)
@@ -151,15 +158,17 @@ As mentioned above, GoCaml distinguishes int and float in operators. Operators f
 ()
 ```
 
-Integer operators must have integer values as their operands. And float operators must have float values as their operands.
-There is no implicit conversion. You need to convert explicitly by using built-in functions (e.g. `3.14 +. (int_to_float 42)`).
+Integer operators must have integer values as their operands. And float operators must have float
+values as their operands. There is no implicit conversion. You need to convert explicitly by using
+built-in functions (e.g. `3.14 +. (int_to_float 42)`).
 
-Note that strings don't have any operators for concatenating two strings or slicing sub string. They can be done with
-`str_concat` and `str_sub` built-in functions (See 'Built-in Functions' section).
+Note that strings don't have any operators for concatenating two strings or slicing sub string.
+They can be done with `str_concat` and `str_sub` built-in functions (See 'Built-in Functions' section).
 
 ### Relational operators
 
-Equal operator is `=` (NOT `==`), Not-equal operator is `<>`. Compare operators are the same as C (`<`, `<=`, `>` and `>=`).
+Equal operator is `=` (NOT `==`), Not-equal operator is `<>`. Compare operators are the same as C
+(`<`, `<=`, `>` and `>=`).
 
 ```ml
 42 = 42; (* => true *)
@@ -173,8 +182,9 @@ Equal operator is `=` (NOT `==`), Not-equal operator is `<>`. Compare operators 
 ()
 ```
 
-Tuples (described below) and strings can be compared with `=` or `<>`, but cannot be compared with `<`, `<=`, `>` and `>=`.
-Arrays (described below) cannot be compared directly with any compare operators. You need to compare each element explicitly.
+Tuples (described below) and strings can be compared with `=` or `<>`, but cannot be compared with
+`<`, `<=`, `>` and `>=`. Arrays (described below) cannot be compared directly with any compare
+operators. You need to compare each element explicitly.
 
 ### Logical operators
 
@@ -197,7 +207,8 @@ a + 4;
 ()
 ```
 
-The syntax is `let {name} = {e1} in {e2}`. `e2` will be evaluated where `e1` is bound to `name`. By chain `let`, you can define multiple variables.
+The syntax is `let {name} = {e1} in {e2}`. `e2` will be evaluated where `e1` is bound to `name`.
+By chain `let`, you can define multiple variables.
 
 ```ml
 let pi = 3.141592 in
@@ -236,12 +247,13 @@ p "hi"
 
 ### Functions
 
-`let rec` is a keyword to define a function. Syntax is `let rec name params... = e1 in e2` where function `name` is defined as `e1` and then `e2` will be evaluated.
+`let rec` is a keyword to define a function. Syntax is `let rec name params... = e1 in e2` where
+function `name` is defined as `e1` and then `e2` will be evaluated.
 `f a b c` is an expression to apply function `f` with argument `a`, `b` and `c`.
 As long as the argument is simple, you don't need to use `()`.
 
-Note that, if you use some complicated expression (for example, binary operators), you need to use `()` like
-`f (a+b) c`. If you specify `f a + b c`, it would be parsed as `(f a) + (b c)`.
+Note that, if you use some complicated expression (for example, binary operators), you need to use
+`()` like `f (a+b) c`. If you specify `f a + b c`, it would be parsed as `(f a) + (b c)`.
 
 ```ml
 let rec f a b c = a + b + c in
@@ -278,7 +290,8 @@ println_float (sqrt 10.0)
 (* Error because of out of scope: go 10.0 0.0 *)
 ```
 
-In above example, `abs` and `go` is nested in `sqrt`. Nested function is a hidden implementation of the outer function because inner scope is not visible from outside.
+In above example, `abs` and `go` is nested in `sqrt`. Nested function is a hidden implementation of
+the outer function because inner scope is not visible from outside.
 
 Functions can capture any outer variables (=environment). Functions which captured outer
 environment are called 'closure'.  As many functional languages or modern languages,
@@ -309,7 +322,8 @@ let add = make_adder 3 in
 println_int (add 100)
 ```
 
-Here, inner function `f` captures hidden variable `special_value`. `make_special_value_adder` returns a closure which captured the variable.
+Here, inner function `f` captures hidden variable `special_value`. `make_special_value_adder`
+returns a closure which captured the variable.
 
 ### Lambda
 
@@ -349,9 +363,60 @@ in
 ...
 ```
 
+### Type Annotation
+
+Type can be specified explicitly at any expression, parameter and return type of function with `:`
+
+Types can be written in the same syntax as other ML languages.
+
+- Primitive: `int`, `float`, `bool`, `string`
+- Any type: `_`
+- Tuple: `t1 * t2 * ... * tn` (e.g. `int * bool`)
+- Function: `a -> b -> ... -> r` (e.g. if `f` takes `int` and `bool` and returns `string`, then `f: int -> bool -> string`)
+- Array: `t array` (e.g. `int array`, `int array array`)
+- Option: `t option` (e.g. `int option` `(int -> bool) option`)
+
+Types can be specified in code as following. Compiler will look and check them in type inference.
+
+```ml
+(* Type of variable *)
+let v: int = 42 in
+
+(* Type of parameters *)
+let rec f (x:int) = x + 10 in
+let f = fun (x:int) -> x + 10 in
+
+(* Type of return value *)
+let rec f x: string = int_to_str x in
+let f = fun x: string -> int_to_str x in
+
+(* Type of parameter and return value *)
+let rec f (x:int): string = int_to_str x in
+let f = fun (x:int): string -> int_to_str x in
+
+(* Type of tuple at `let` *)
+let (a, b): int * bool = 42, bool in
+
+(* Array type *)
+let a: bool array = Array.make 3 true in
+let a: int array array = Array.make 3 (Array.make 3 42) in
+
+(* Option type *)
+let o: int option = None in
+let o: (int array * (int -> bool)) option = None in
+
+(* '_' means 'any'. Specify type partially *)
+let (a, b): _ * _ = 42, bool in
+let f: _ -> _ = fun x -> x in
+let a: _ array = Array.make 3 true in
+
+()
+```
+
 ### Tuples
 
-N-elements tuple can be created with comma-separated expression `e1, e2, ..., en`. Element of tuple can be extracted with `let` expression.
+N-elements tuple can be created with comma-separated expression `e1, e2, ..., en`. Element of tuple
+can be extracted with `let` expression.
 
 ```ml
 (* (int, bool, string) is bound to t *)
@@ -436,7 +501,8 @@ External symbol means `extern` names in C. So you have responsibility to define 
 in other object which will be linked to executable. Please see below 'How to Work with C'
 section to know how to do that.
 
-Note that all external symbols' types MUST be determined by type inference. Unknown type symbol causes compilation error.
+Note that all external symbols' types MUST be determined by type inference. Unknown type symbol
+causes compilation error.
 
 ```ml
 (* This causes compile error because type of 'x' is unknown *)
@@ -518,8 +584,8 @@ $ USE_SYSTEM_LLVM=true make
 
 ### Windows
 
-Currently Windows is not well-supported. You need to clone LLVM repository to `$GOPATH/src/llvm.org/` and
-build Go bindings of llvm-c following [the instruction][Go binding building instruction].
+Currently Windows is not well-supported. You need to clone LLVM repository to `$GOPATH/src/llvm.org/`
+and build Go bindings of llvm-c following [the instruction][Go binding building instruction].
 It needs `cmake` command and C++ toolchain.
 
 It also needs to build [libgc][] static library and put it to library path.
@@ -571,15 +637,16 @@ Flags:
     	Show tokens for input
 ```
 
-Compiled code will be linked to [small runtime][]. In runtime, some functions are defined to print values and it includes
-`<stdlib.h>` and `<stdio.h>`. So you can use them from GoCaml codes.
+Compiled code will be linked to [small runtime][]. In runtime, some functions are defined to print
+values and it includes `<stdlib.h>` and `<stdio.h>`. So you can use them from GoCaml codes.
 
-`gocaml` uses `clang` for linking objects by default. If you want to use other linker, set `$GOCAML_LINKER_CMD` environment
-variable to your favorite linker command.
+`gocaml` uses `clang` for linking objects by default. If you want to use other linker, set
+`$GOCAML_LINKER_CMD` environment variable to your favorite linker command.
 
 ## Program Arguments
 
-You can access to program arguments via special global variable `argv`. `argv` is always defined before program starts.
+You can access to program arguments via special global variable `argv`. `argv` is always defined
+before program starts.
 
 ```ml
 print_str "argc: "; println_int (Array.length argv);
@@ -623,7 +690,8 @@ Concat two strings as a new allocated string because strings are immutable in Go
 
 - `str_sub : string -> int -> int -> string`
 
-Returns substring of first argument. Second argument is an index to start and Third argument is an index to end.
+Returns substring of first argument. Second argument is an index to start and Third argument is an
+index to end.
 Returns string slice `[start, end)` so it does not cause any allocation.
 
 - `get_line : () -> string`
@@ -698,8 +766,9 @@ println_int (plus100 10)
 
 `println_int` is a function defined in runtime. So you don't need to care about it.
 
-Finally comile the GoCaml code and the object file together with `gocaml` compiler. You need to link `.o` file after compiling
-GoCaml code by passing the object file to `-ldflags`.
+Finally comile the GoCaml code and the object file together with `gocaml` compiler. You need to link
+`.o` file after compiling GoCaml code by passing the object file to `-ldflags`.
+
 ```
 $ gocaml -ldflags plus100.o test.ml
 ```
@@ -754,7 +823,6 @@ $ gcc -m32 -lgc source.o ./runtime/gocamlrt.a
 [gcil doc]: https://godoc.org/github.com/rhysd/gocaml/gcil
 [closure doc]: https://godoc.org/github.com/rhysd/gocaml/closure
 [codegen doc]: https://godoc.org/github.com/rhysd/gocaml/codegen
-[MinCaml spec]: http://esumii.github.io/min-caml/paper.pdf
 [Boehm GC]: https://github.com/ivmai/bdwgc
 [Coverage Status]: https://coveralls.io/repos/github/rhysd/gocaml/badge.svg
 [Coveralls]: https://coveralls.io/github/rhysd/gocaml

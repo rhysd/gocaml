@@ -5,6 +5,7 @@ import (
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/token"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -136,6 +137,11 @@ func TestInvalidExpressions(t *testing.T) {
 			what:     "unary - without number",
 			code:     "-true",
 			expected: "Type mismatch between 'int' and 'bool'",
+		},
+		{
+			what:     "unary -. with non-float",
+			code:     "-.42",
+			expected: "operand of unary operator '-.' must be 'float'",
 		},
 		{
 			what:     "not a bool condition in if",
@@ -277,6 +283,61 @@ func TestInvalidExpressions(t *testing.T) {
 			code:     "let o = None in o = 42",
 			expected: "} option' and 'int'",
 		},
+		{
+			what:     "Invalid type specified",
+			code:     "let foo: fooooooo = 42 in foo",
+			expected: "Unknown type constructor 'fooooooo'",
+		},
+		{
+			what:     "Type mismatch at type annotation",
+			code:     "let foo: bool = 42 in foo",
+			expected: "Type mismatch between 'bool' and 'int'",
+		},
+		{
+			what:     "Type mismatch at type annotation (let tuple)",
+			code:     "let (x, y): int * bool = 42, 3.14 in x",
+			expected: "Type mismatch between 'bool' and 'float'",
+		},
+		{
+			what:     "'let tuple' must annotated as tuple",
+			code:     "let (x, y): bool option = 42, 3.14 in x",
+			expected: "must be tuple, but found 'bool option'",
+		},
+		{
+			what:     "Number of tuple elements mismatch at 'let tuple'",
+			code:     "let (x, y): int * bool * float = 42, false in x",
+			expected: "3 vs 2",
+		},
+		{
+			what:     "Type mismatch at (e: ty) expression",
+			code:     "let i = 42 in (i: bool)",
+			expected: "mismatch between inferred type and specified type",
+		},
+		{
+			what:     "Invalid type at (e: ty) expression",
+			code:     "(i: foooo)",
+			expected: "Unknown type constructor 'foooo'",
+		},
+		{
+			what:     "Type mismatch at param type",
+			code:     "let rec f (x:float) = -x in f",
+			expected: "Type mismatch between 'int' and 'float'",
+		},
+		{
+			what:     "Type mismatch at return type",
+			code:     "let rec f (x:int): float = x in f",
+			expected: "return type of function",
+		},
+		{
+			what:     "Invalid parameter type",
+			code:     "let rec f (x:(int, int) array) = x in f",
+			expected: "1st parameter of function",
+		},
+		{
+			what:     "Invalid return type",
+			code:     "let rec f x: foo = x in f",
+			expected: "return type of function",
+		},
 	}
 
 	for _, testcase := range testcases {
@@ -321,5 +382,34 @@ func TestRegisterNoneTypes(t *testing.T) {
 	}
 	if len(env.NoneTypes) != 2 {
 		t.Errorf("2 None node should be detected but actually %d", len(env.NoneTypes))
+	}
+}
+
+func TestInferSuccess(t *testing.T) {
+	files, err := filepath.Glob("testdata/*.ml")
+	if err != nil {
+		panic(err)
+	}
+	for _, file := range files {
+		t.Run(file, func(t *testing.T) {
+			s, err := token.NewSourceFromFile(file)
+			if err != nil {
+				panic(err)
+			}
+			l := lexer.NewLexer(s)
+			go l.Lex()
+			root, err := parser.Parse(l.Tokens)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err = alpha.Transform(root); err != nil {
+				t.Fatal(err)
+			}
+			env := NewEnv()
+			_, err = env.infer(root)
+			if err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }

@@ -16,6 +16,7 @@ func TestFlatScope(t *testing.T) {
 		ast.NewSymbol("test"),
 		&ast.Int{nil, 42},
 		ref,
+		nil,
 	}
 	if err := Transform(root); err != nil {
 		t.Fatal(err)
@@ -38,12 +39,14 @@ func TestNested(t *testing.T) {
 		ast.NewSymbol("test"),
 		&ast.Int{nil, 42},
 		ref,
+		nil,
 	}
 	root := &ast.Let{
 		nil,
 		ast.NewSymbol("test"),
 		&ast.Int{nil, 42},
 		child,
+		nil,
 	}
 
 	if err := Transform(root); err != nil {
@@ -83,6 +86,7 @@ func TestMatch(t *testing.T) {
 		tok, ast.NewSymbol("a"),
 		&ast.Int{tok, 42},
 		match,
+		nil,
 	}
 
 	if err := Transform(root); err != nil {
@@ -114,6 +118,7 @@ func TestLetTuple(t *testing.T) {
 		},
 		&ast.Int{nil, 42},
 		ref,
+		nil,
 	}
 
 	if err := Transform(root); err != nil {
@@ -144,6 +149,7 @@ func TestLetTupleHasDuplicateName(t *testing.T) {
 		},
 		&ast.Int{nil, 42},
 		&ast.Int{nil, 42},
+		nil,
 	}
 
 	if err := Transform(root); err == nil {
@@ -164,12 +170,13 @@ func TestLetRec(t *testing.T) {
 		&token.Token{},
 		&ast.FuncDef{
 			ast.NewSymbol("f"),
-			[]*ast.Symbol{
-				ast.NewSymbol("a"),
-				ast.NewSymbol("b"),
-				ast.NewSymbol("c"),
+			[]ast.Param{
+				{ast.NewSymbol("a"), nil},
+				{ast.NewSymbol("b"), nil},
+				{ast.NewSymbol("c"), nil},
 			},
 			ref2,
+			nil,
 		},
 		ref,
 	}
@@ -179,9 +186,9 @@ func TestLetRec(t *testing.T) {
 	}
 
 	expects := []string{"a$t2", "b$t3", "c$t4"}
-	for i, s := range root.Func.Params {
-		if s.Name != expects[i] {
-			t.Errorf("Parameter should be transformed to %s but actually %s", expects[i], s.Name)
+	for i, p := range root.Func.Params {
+		if p.Ident.Name != expects[i] {
+			t.Errorf("Parameter should be transformed to %s but actually %s", expects[i], p.Ident.Name)
 		}
 	}
 	if root.Func.Symbol.Name != "f$t1" {
@@ -196,7 +203,7 @@ func TestLetRec(t *testing.T) {
 	if ref2.Symbol.Name != "b$t3" {
 		t.Fatalf("Ref should be resolved to transformed parameter for 'b' but actually '%s'", ref2.Symbol.Name)
 	}
-	if root.Func.Params[1] != ref2.Symbol {
+	if root.Func.Params[1].Ident != ref2.Symbol {
 		t.Fatalf("Ref symbol should be resolved to parameter symbol")
 	}
 }
@@ -210,12 +217,13 @@ func TestRecursiveFunc(t *testing.T) {
 		&token.Token{},
 		&ast.FuncDef{
 			ast.NewSymbol("f"),
-			[]*ast.Symbol{
-				ast.NewSymbol("a"),
-				ast.NewSymbol("b"),
-				ast.NewSymbol("c"),
+			[]ast.Param{
+				{ast.NewSymbol("a"), nil},
+				{ast.NewSymbol("b"), nil},
+				{ast.NewSymbol("c"), nil},
 			},
 			ref,
+			nil,
 		},
 		&ast.Int{&token.Token{}, 42},
 	}
@@ -245,10 +253,11 @@ func TestFuncAndParamHaveSameName(t *testing.T) {
 		&token.Token{},
 		&ast.FuncDef{
 			ast.NewSymbol("f"),
-			[]*ast.Symbol{
-				ast.NewSymbol("f"),
+			[]ast.Param{
+				{ast.NewSymbol("f"), nil},
 			},
 			ref,
+			nil,
 		},
 		ref2,
 	}
@@ -260,7 +269,7 @@ func TestFuncAndParamHaveSameName(t *testing.T) {
 	if ref.Symbol.Name != "f$t2" {
 		t.Fatalf("Ref should be resolved to parameter but actually %s", ref.Symbol.Name)
 	}
-	if root.Func.Params[0] != ref.Symbol {
+	if root.Func.Params[0].Ident != ref.Symbol {
 		t.Fatalf("Ref symbol should be resolved to parameter symbol")
 	}
 
@@ -277,12 +286,13 @@ func TestParamDuplicate(t *testing.T) {
 		&token.Token{},
 		&ast.FuncDef{
 			ast.NewSymbol("f"),
-			[]*ast.Symbol{
-				ast.NewSymbol("a"),
-				ast.NewSymbol("b"),
-				ast.NewSymbol("b"),
+			[]ast.Param{
+				{ast.NewSymbol("a"), nil},
+				{ast.NewSymbol("b"), nil},
+				{ast.NewSymbol("b"), nil},
 			},
 			&ast.Int{&token.Token{}, 42},
+			nil,
 		},
 		&ast.Int{&token.Token{}, 42},
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/rhysd/gocaml/ast"
+	"github.com/rhysd/gocaml/common"
 	"github.com/rhysd/gocaml/token"
 	"strings"
 )
@@ -164,7 +165,17 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 			return env.infer(n.Body)
 		}
 
-		t := &Var{}
+		var t Type
+		if n.Type != nil {
+			// When let x: type = ...
+			t, err = nodeToType(n.Type)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			t = &Var{}
+		}
+
 		if err = Unify(t, bound); err != nil {
 			return nil, typeError(err, fmt.Sprintf("type of variable '%s'", n.Symbol.DisplayName), n.Body.Pos())
 		}
@@ -191,9 +202,17 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		// Register parameters of function as variables to table
 		params := make([]Type, len(n.Func.Params))
 		for i, p := range n.Func.Params {
-			// Types of parameters are unknown at definition
-			t := &Var{}
-			env.Table[p.Name] = t
+			var t Type
+			var err error
+			if p.Type != nil {
+				t, err = nodeToType(p.Type)
+				if err != nil {
+					return nil, typeError(err, fmt.Sprintf("%s parameter of function", common.Ordinal(i+1)), p.Type.Pos())
+				}
+			} else {
+				t = &Var{}
+			}
+			env.Table[p.Ident.Name] = t
 			params[i] = t
 		}
 
@@ -201,6 +220,16 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		ret, err := env.infer(n.Func.Body)
 		if err != nil {
 			return nil, err
+		}
+
+		if n.Func.RetType != nil {
+			t, err := nodeToType(n.Func.RetType)
+			if err != nil {
+				return nil, typeError(err, "return type of function", n.Func.RetType.Pos())
+			}
+			if err = Unify(t, ret); err != nil {
+				return nil, typeError(err, "return type of function", n.Func.RetType.Pos())
+			}
 		}
 
 		fun := &Fun{
@@ -254,16 +283,39 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		}
 		return &Tuple{Elems: elems}, nil
 	case *ast.LetTuple:
-		elems := make([]Type, len(n.Symbols))
-		for i, sym := range n.Symbols {
-			// Bound elements' types are unknown in this point
-			t := &Var{}
-			env.Table[sym.Name] = t
-			elems[i] = t
+		var t Type
+
+		if n.Type != nil {
+			var err error
+			t, err = nodeToType(n.Type)
+			if err != nil {
+				return nil, err
+			}
+			tpl, ok := t.(*Tuple)
+			if !ok {
+				p := n.Type.Pos()
+				return nil, errors.Errorf("Type error: Bound value of 'let (...) =' must be tuple, but found '%s' (line:%d, column:%d)", t.String(), p.Line, p.Column)
+			}
+			if len(tpl.Elems) != len(n.Symbols) {
+				p := n.Type.Pos()
+				return nil, errors.Errorf("Type error: Mismatch numbers of elements of specified tuple type and symbols in 'let (...)' expression: %d vs %d (line:%d, column:%d)", len(tpl.Elems), len(n.Symbols), p.Line, p.Column)
+			}
+			for i, sym := range n.Symbols {
+				env.Table[sym.Name] = tpl.Elems[i]
+			}
+		} else {
+			elems := make([]Type, len(n.Symbols))
+			for i, sym := range n.Symbols {
+				// Bound elements' types are unknown in this point
+				v := &Var{}
+				env.Table[sym.Name] = v
+				elems[i] = v
+			}
+			t = &Tuple{Elems: elems}
 		}
 
 		// Bound value must be tuple
-		if err := env.checkNodeType("bound tuple value at 'let'", n.Bound, &Tuple{Elems: elems}); err != nil {
+		if err := env.checkNodeType("bound tuple value at 'let'", n.Bound, t); err != nil {
 			return nil, err
 		}
 
@@ -344,6 +396,23 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 			return nil, typeError(err, "mismatch of types between 'Some' arm and 'None' arm in 'match' expression", n.Pos())
 		}
 		return some, nil
+	case *ast.Typed:
+		child, err := env.infer(n.Child)
+		if err != nil {
+			return nil, err
+		}
+
+		t, err := nodeToType(n.Type)
+		if err != nil {
+			return nil, err
+		}
+
+		if err = Unify(t, child); err != nil {
+			return nil, typeError(err, "mismatch between inferred type and specified type", n.Pos())
+		}
+
+		return child, nil
+	default:
+		panic(fmt.Sprintf("FATAL: Unreachable: %s %v %v", e.Name(), e.Pos(), e.End()))
 	}
-	panic(fmt.Sprintf("Unreachable: %s %v %v", e.Name(), e.Pos(), e.End()))
 }

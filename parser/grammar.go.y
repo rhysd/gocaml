@@ -21,6 +21,7 @@ import (
 	funcdef *ast.FuncDef
 	decls []*ast.Symbol
 	decl *ast.Symbol
+	params []ast.Param
 }
 
 %token<token> ILLEGAL
@@ -69,6 +70,7 @@ import (
 %token<token> NONE
 %token<token> MINUS_GREATER
 %token<token> FUN
+%token<token> COLON
 
 %right prec_let
 %right SEMICOLON
@@ -90,11 +92,19 @@ import (
 %type<node> parenless_exp
 %type<nodes> elems
 %type<nodes> args
-%type<decls> params
+%type<params> params
 %type<decls> pat
 %type<funcdef> fundef
 %type<token> match_arm_start
 %type<decl> match_ident
+%type<node> type_annotation
+%type<node> simple_type_annotation
+%type<node> type
+%type<node> simple_type
+%type<node> simple_type_or_tuple
+%type<nodes> arrow_types
+%type<nodes> simple_type_star_list
+%type<nodes> type_comma_list
 %type<> program
 
 %start program
@@ -168,9 +178,9 @@ exp:
 		{ $$ = &ast.FMul{$1, $3} }
 	| exp SLASH_DOT exp
 		{ $$ = &ast.FDiv{$1, $3} }
-	| LET IDENT EQUAL exp IN exp
+	| LET IDENT type_annotation EQUAL exp IN exp
 		%prec prec_let
-		{ $$ = &ast.Let{$1, ast.NewSymbol($2.Value()), $4, $6} }
+		{ $$ = &ast.Let{$1, ast.NewSymbol($2.Value()), $5, $7, $3} }
 	| LET REC fundef IN exp
 		%prec prec_let
 		{ $$ = &ast.LetRec{$1, $3, $5} }
@@ -179,12 +189,12 @@ exp:
 		{ $$ = &ast.Apply{$1, $2} }
 	| elems
 		{ $$ = &ast.Tuple{$1} }
-	| LET LPAREN pat RPAREN EQUAL exp IN exp
-		{ $$ = &ast.LetTuple{$1, $3, $6, $8} }
+	| LET LPAREN pat RPAREN type_annotation EQUAL exp IN exp
+		{ $$ = &ast.LetTuple{$1, $3, $7, $9, $5} }
 	| parenless_exp DOT LPAREN exp RPAREN LESS_MINUS exp
 		{ $$ = &ast.Put{$1, $4, $7} }
 	| exp SEMICOLON exp
-		{ $$ = &ast.Let{$2, ast.NewSymbol(genTempId()), $1, $3} }
+		{ $$ = &ast.Let{$2, ast.NewSymbol(genTempId()), $1, $3, nil} }
 	| ARRAY_MAKE parenless_exp parenless_exp
 		%prec prec_app
 		{ $$ = &ast.ArrayCreate{$1, $2, $3} }
@@ -193,12 +203,12 @@ exp:
 		{ $$ = &ast.ArraySize{$1, $2} }
 	| SOME parenless_exp
 		{ $$ = &ast.Some{$1, $2} }
-	| FUN params MINUS_GREATER exp
+	| FUN params simple_type_annotation MINUS_GREATER exp
 		%prec prec_fun
 		{
 			t := $1
 			ident := ast.NewSymbol(fmt.Sprintf("lambda.line%d.col%d", t.Start.Line, t.Start.Column))
-			def := &ast.FuncDef{ident, $2, $4}
+			def := &ast.FuncDef{ident, $2, $5, $3}
 			ref := &ast.VarRef{$1, ident}
 			$$ = &ast.LetRec{$1, def, ref}
 		}
@@ -209,14 +219,18 @@ exp:
 		}
 
 fundef:
-	IDENT params EQUAL exp
-		{ $$ = &ast.FuncDef{ast.NewSymbol($1.Value()), $2, $4} }
+	IDENT params type_annotation EQUAL exp
+		{ $$ = &ast.FuncDef{ast.NewSymbol($1.Value()), $2, $5, $3} }
 
 params:
-	params IDENT
-		{ $$ = append($1, ast.NewSymbol($2.Value())) }
-	| IDENT
-		{ $$ = []*ast.Symbol{ast.NewSymbol($1.Value())} }
+	IDENT
+		{ $$ = []ast.Param{{ast.NewSymbol($1.Value()), nil}} }
+	| LPAREN IDENT COLON type RPAREN
+		{ $$ = []ast.Param{{ast.NewSymbol($2.Value()), $4}} }
+	| params IDENT
+		{ $$ = append($1, ast.Param{ast.NewSymbol($2.Value()), nil}) }
+	| params LPAREN IDENT COLON type RPAREN
+		{ $$ = append($1, ast.Param{ast.NewSymbol($3.Value()), $5}) }
 
 args:
 	args parenless_exp
@@ -242,8 +256,15 @@ pat:
 		}
 
 parenless_exp:
-	LPAREN exp RPAREN
-		{ $$ = $2 }
+	LPAREN exp type_annotation RPAREN
+		{
+			t := $3
+			if t == nil {
+				$$ = $2
+			} else {
+				$$ = &ast.Typed{$2, $3}
+			}
+		}
 	| LPAREN RPAREN
 		{ $$ = &ast.Unit{$1, $2} }
 	| BOOL
@@ -291,6 +312,73 @@ match_ident:
 		{ $$ = ast.NewSymbol($2.Value()) }
 	| IDENT
 		{ $$ = ast.NewSymbol($1.Value()) }
+
+type_annotation:
+		{ $$ = nil }
+	| COLON type
+		{ $$ = $2 }
+
+simple_type_annotation:
+		{ $$ = nil }
+	| COLON simple_type
+		{ $$ = $2 }
+
+type:
+	simple_type_or_tuple
+		{ $$ = $1 }
+	| simple_type_or_tuple MINUS_GREATER arrow_types
+		{
+			ts := $3
+			i := len(ts)-1
+			ret := ts[i]
+			params := append([]ast.Expr{$1}, ts[:i]...)
+			$$ = &ast.FuncType{params, ret}
+		}
+
+arrow_types:
+	simple_type_or_tuple
+		{ $$ = []ast.Expr{$1} }
+	| arrow_types MINUS_GREATER simple_type_or_tuple
+		{ $$ = append($1, $3) }
+
+simple_type_or_tuple:
+	simple_type
+		{ $$ = $1 }
+	| simple_type STAR simple_type_star_list
+		{ $$ = &ast.TupleType{append([]ast.Expr{$1}, $3...)} }
+
+simple_type_star_list:
+	simple_type
+		{ $$ = []ast.Expr{$1} }
+	| simple_type_star_list STAR simple_type
+		{ $$ = append($1, $3) }
+
+simple_type:
+	IDENT
+		{
+			t := $1
+			$$ = &ast.CtorType{nil, t, nil, t.Value()}
+		}
+	| simple_type IDENT
+		{
+			t := $2
+			$$ = &ast.CtorType{nil, t, []ast.Expr{$1}, t.Value()}
+		}
+	| LPAREN type_comma_list RPAREN IDENT
+		{
+			t := $4
+			$$ = &ast.CtorType{$1, t, $2, t.Value()}
+		}
+	| LPAREN type RPAREN
+		{
+			$$ = $2
+		}
+
+type_comma_list:
+	type
+		{ $$ = []ast.Expr{$1} }
+	| type_comma_list COMMA type
+		{ $$ = append($1, $3) }
 
 %%
 

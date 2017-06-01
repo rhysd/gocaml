@@ -78,7 +78,7 @@ func (e *emitter) emitFunInsn(node *ast.LetRec) *Insn {
 
 	params := make([]string, 0, len(node.Func.Params))
 	for _, s := range node.Func.Params {
-		params = append(params, s.Name)
+		params = append(params, s.Ident.Name)
 	}
 
 	blk, _ := e.emitBlock(fmt.Sprintf("body (%s)", name), node.Func.Body)
@@ -352,6 +352,8 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		val = NoneVal
 	case *ast.Match:
 		ty, val, prev = e.emitMatchInsn(n)
+	case *ast.Typed:
+		return e.emitInsn(n.Child)
 	}
 
 	// Note:

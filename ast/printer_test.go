@@ -68,7 +68,15 @@ func TestPrintAST(t *testing.T) {
 					&ArrayCreate{
 						tok,
 						&Int{tok, 42},
-						&Bool{tok, false},
+						&Typed{
+							&Bool{tok, false},
+							&CtorType{
+								nil,
+								tok,
+								nil,
+								"bool",
+							},
+						},
 					},
 				},
 				&FMul{
@@ -130,10 +138,24 @@ func TestPrintAST(t *testing.T) {
 				tok,
 				&FuncDef{
 					NewSymbol("f"),
-					[]*Symbol{
-						NewSymbol("a"),
+					[]Param{
+						{
+							NewSymbol("a"),
+							&CtorType{
+								nil,
+								tok,
+								nil,
+								"unit",
+							},
+						},
 					},
 					&VarRef{tok, NewSymbol("a")},
+					&CtorType{
+						nil,
+						tok,
+						nil,
+						"int",
+					},
 				},
 				&If{
 					tok,
@@ -156,6 +178,52 @@ func TestPrintAST(t *testing.T) {
 						tok.End,
 					},
 				},
+			},
+			&TupleType{
+				[]Expr{
+					&CtorType{
+						nil,
+						tok,
+						[]Expr{
+							&CtorType{
+								nil,
+								tok,
+								nil,
+								"unit",
+							},
+						},
+						"foo",
+					},
+				},
+			},
+		},
+		&FuncType{
+			[]Expr{
+				&CtorType{
+					nil,
+					tok,
+					nil,
+					"int",
+				},
+			},
+			&CtorType{
+				tok,
+				tok,
+				[]Expr{
+					&CtorType{
+						nil,
+						tok,
+						nil,
+						"bool",
+					},
+					&CtorType{
+						nil,
+						tok,
+						nil,
+						"float",
+					},
+				},
+				"foo",
 			},
 		},
 	}
@@ -182,6 +250,11 @@ func TestPrintAST(t *testing.T) {
 
 	expected := `AST for dummy:
 -   Let (foo) (0:0-0:0)
+-   -   FuncType (0:0-0:0)
+-   -   -   CtorType (int) (0:0-0:0)
+-   -   -   CtorType (foo (2)) (0:0-0:0)
+-   -   -   -   CtorType (bool) (0:0-0:0)
+-   -   -   -   CtorType (float) (0:0-0:0)
 -   -   Add (0:0-0:0)
 -   -   -   Sub (0:0-0:0)
 -   -   -   -   FSub (0:0-0:0)
@@ -209,7 +282,9 @@ func TestPrintAST(t *testing.T) {
 -   -   -   -   -   -   String () (0:0-0:0)
 -   -   -   -   -   ArrayCreate (0:0-0:0)
 -   -   -   -   -   -   Int (0:0-0:0)
--   -   -   -   -   -   Bool (0:0-0:0)
+-   -   -   -   -   -   Typed (0:0-0:0)
+-   -   -   -   -   -   -   Bool (0:0-0:0)
+-   -   -   -   -   -   -   CtorType (bool) (0:0-0:0)
 -   -   -   -   FMul (0:0-0:0)
 -   -   -   -   -   Get (0:0-0:0)
 -   -   -   -   -   -   ArrayCreate (0:0-0:0)
@@ -223,6 +298,9 @@ func TestPrintAST(t *testing.T) {
 -   -   -   -   -   -   Int (0:0-0:0)
 -   -   -   -   -   -   Bool (0:0-0:0)
 -   -   LetTuple (a, b) (0:0-0:0)
+-   -   -   TupleType (1) (0:0-0:0)
+-   -   -   -   CtorType (foo (1)) (0:0-0:0)
+-   -   -   -   -   CtorType (unit) (0:0-0:0)
 -   -   -   Tuple (0:0-0:0)
 -   -   -   -   Greater (0:0-0:0)
 -   -   -   -   -   Int (0:0-0:0)
@@ -243,6 +321,8 @@ func TestPrintAST(t *testing.T) {
 -   -   -   -   -   Bool (0:0-0:0)
 -   -   -   -   -   Bool (0:0-0:0)
 -   -   -   LetRec (fun f a) (0:0-0:0)
+-   -   -   -   CtorType (unit) (0:0-0:0)
+-   -   -   -   CtorType (int) (0:0-0:0)
 -   -   -   -   VarRef (a) (0:0-0:0)
 -   -   -   -   If (0:0-0:0)
 -   -   -   -   -   LessEq (0:0-0:0)

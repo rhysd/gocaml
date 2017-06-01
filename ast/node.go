@@ -60,10 +60,24 @@ func NewSymbol(name string) *Symbol {
 	return &Symbol{name, name}
 }
 
+type Param struct {
+	Ident *Symbol
+	Type  Expr
+}
+
 type FuncDef struct {
-	Symbol *Symbol
-	Params []*Symbol
-	Body   Expr
+	Symbol  *Symbol
+	Params  []Param
+	Body    Expr
+	RetType Expr
+}
+
+func (d *FuncDef) ParamSymbols() []*Symbol {
+	syms := make([]*Symbol, 0, len(d.Params))
+	for _, p := range d.Params {
+		syms = append(syms, p.Ident)
+	}
+	return syms
 }
 
 // AST node which meets Expr interface
@@ -185,6 +199,7 @@ type (
 		LetToken    *token.Token
 		Symbol      *Symbol
 		Bound, Body Expr
+		Type        Expr // Maybe nil
 	}
 
 	VarRef struct {
@@ -211,6 +226,7 @@ type (
 		LetToken    *token.Token
 		Symbols     []*Symbol
 		Bound, Body Expr
+		Type        Expr // Maybe nil
 	}
 
 	ArrayCreate struct {
@@ -246,6 +262,28 @@ type (
 
 	None struct {
 		Token *token.Token
+	}
+
+	FuncType struct {
+		ParamTypes []Expr
+		RetType    Expr
+	}
+
+	TupleType struct {
+		ElemTypes []Expr
+	}
+
+	// Note: `int` has no param
+	CtorType struct {
+		StartToken *token.Token // Maybe nil
+		EndToken   *token.Token
+		ParamTypes []Expr
+		Ctor       string // TODO: It should be identifier after types namespace added
+	}
+
+	Typed struct {
+		Child Expr
+		Type  Expr
 	}
 )
 
@@ -525,6 +563,44 @@ func (e *None) End() token.Position {
 	return e.Token.End
 }
 
+func (e *FuncType) Pos() token.Position {
+	return e.ParamTypes[0].Pos()
+}
+func (e *FuncType) End() token.Position {
+	return e.RetType.End()
+}
+
+func (e *TupleType) Pos() token.Position {
+	return e.ElemTypes[0].Pos()
+}
+func (e *TupleType) End() token.Position {
+	return e.ElemTypes[len(e.ElemTypes)-1].End()
+}
+
+func (e *CtorType) Pos() token.Position {
+	switch len(e.ParamTypes) {
+	case 0:
+		// foo
+		return e.EndToken.Start
+	case 1:
+		// a foo
+		return e.ParamTypes[0].Pos()
+	default:
+		// (a, b) foo
+		return e.StartToken.Start
+	}
+}
+func (e *CtorType) End() token.Position {
+	return e.EndToken.End
+}
+
+func (e *Typed) Pos() token.Position {
+	return e.Child.Pos()
+}
+func (e *Typed) End() token.Position {
+	return e.Type.End()
+}
+
 func (e *Unit) Name() string      { return "Unit" }
 func (e *Bool) Name() string      { return "Bool" }
 func (e *Int) Name() string       { return "Int" }
@@ -554,21 +630,15 @@ func (e *If) Name() string        { return "If" }
 func (e *Let) Name() string       { return fmt.Sprintf("Let (%s)", e.Symbol.DisplayName) }
 func (e *VarRef) Name() string    { return fmt.Sprintf("VarRef (%s)", e.Symbol.DisplayName) }
 func (e *LetRec) Name() string {
-	if len(e.Func.Params) == 0 {
-		panic("LetTuple's symbols field must not be empty")
-	}
-	params := e.Func.Params[0].DisplayName
-	for _, s := range e.Func.Params[1:] {
-		params = fmt.Sprintf("%s, %s", params, s.DisplayName)
+	params := e.Func.Params[0].Ident.DisplayName
+	for _, p := range e.Func.Params[1:] {
+		params = fmt.Sprintf("%s, %s", params, p.Ident.DisplayName)
 	}
 	return fmt.Sprintf("LetRec (fun %s %s)", e.Func.Symbol.DisplayName, params)
 }
 func (e *Apply) Name() string { return "Apply" }
 func (e *Tuple) Name() string { return "Tuple" }
 func (e *LetTuple) Name() string {
-	if len(e.Symbols) == 0 {
-		panic("LetTuple's symbols field must not be empty")
-	}
 	vars := e.Symbols[0].DisplayName
 	for _, s := range e.Symbols[1:] {
 		vars = fmt.Sprintf("%s, %s", vars, s.DisplayName)
@@ -582,3 +652,14 @@ func (e *Put) Name() string         { return "Put" }
 func (e *Match) Name() string       { return fmt.Sprintf("Match (%s)", e.SomeIdent.DisplayName) }
 func (e *Some) Name() string        { return "Some" }
 func (e *None) Name() string        { return "None" }
+func (e *FuncType) Name() string    { return "FuncType" }
+func (e *TupleType) Name() string   { return fmt.Sprintf("TupleType (%d)", len(e.ElemTypes)) }
+func (e *CtorType) Name() string {
+	len := len(e.ParamTypes)
+	if len == 0 {
+		return fmt.Sprintf("CtorType (%s)", e.Ctor)
+	} else {
+		return fmt.Sprintf("CtorType (%s (%d))", e.Ctor, len)
+	}
+}
+func (e *Typed) Name() string { return "Typed" }

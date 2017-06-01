@@ -73,7 +73,7 @@ func (t *transformer) Visit(node ast.Expr) ast.Visitor {
 		t.pop()
 		return nil
 	case *ast.LetRec:
-		if s := duplicateSymbol(n.Func.Params); s != nil {
+		if s := duplicateSymbol(n.Func.ParamSymbols()); s != nil {
 			t.setDuplicateError(n, s.DisplayName)
 			return nil
 		}
@@ -81,7 +81,7 @@ func (t *transformer) Visit(node ast.Expr) ast.Visitor {
 		t.register(n.Func.Symbol)
 		t.nest()
 		for _, p := range n.Func.Params {
-			t.register(p)
+			t.register(p.Ident)
 		}
 		ast.Visit(t, n.Func.Body)
 		t.pop() // Pop parameters scope

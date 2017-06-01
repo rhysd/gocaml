@@ -7,7 +7,7 @@ import (
 
 func testTypeEquals(l, r Type) bool {
 	switch l := l.(type) {
-	case *Unit, *Int, *Float, *Bool:
+	case *Unit, *Int, *Float, *Bool, *String:
 		return l == r
 	case *Tuple:
 		r, ok := r.(*Tuple)

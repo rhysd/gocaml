@@ -83,7 +83,7 @@ func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
 	t, ok := unwrap(symType)
 	if !ok {
 		pos := node.Pos()
-		d.errors = append(d.errors, fmt.Sprintf("Cannot infer type of variable '%s' in node %s (line:%d, column:%d). Inferred type was '%s'", sym.Name, node.Name(), pos.Line, pos.Column, symType.String()))
+		d.errors = append(d.errors, fmt.Sprintf("Cannot infer type of variable '%s' in node %s (line:%d, column:%d). Inferred type was '%s'", sym.DisplayName, node.Name(), pos.Line, pos.Column, symType.String()))
 		return
 	}
 
@@ -157,8 +157,8 @@ func (d *typeVarDereferencer) Visit(node ast.Expr) ast.Visitor {
 		d.derefSym(n, n.Symbol)
 	case *ast.LetRec:
 		d.derefSym(n, n.Func.Symbol)
-		for _, sym := range n.Func.Params {
-			d.derefSym(n, sym)
+		for _, p := range n.Func.Params {
+			d.derefSym(n, p.Ident)
 		}
 	case *ast.LetTuple:
 		for _, sym := range n.Symbols {

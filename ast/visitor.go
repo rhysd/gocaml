@@ -77,9 +77,20 @@ func Visit(v Visitor, e Expr) {
 		Visit(v, n.Then)
 		Visit(v, n.Else)
 	case *Let:
+		if n.Type != nil {
+			Visit(v, n.Type)
+		}
 		Visit(v, n.Bound)
 		Visit(v, n.Body)
 	case *LetRec:
+		for _, p := range n.Func.Params {
+			if p.Type != nil {
+				Visit(v, p.Type)
+			}
+		}
+		if n.Func.RetType != nil {
+			Visit(v, n.Func.RetType)
+		}
 		Visit(v, n.Func.Body)
 		Visit(v, n.Body)
 	case *Apply:
@@ -92,6 +103,9 @@ func Visit(v Visitor, e Expr) {
 			Visit(v, e)
 		}
 	case *LetTuple:
+		if n.Type != nil {
+			Visit(v, n.Type)
+		}
 		Visit(v, n.Bound)
 		Visit(v, n.Body)
 	case *ArrayCreate:
@@ -112,6 +126,22 @@ func Visit(v Visitor, e Expr) {
 		Visit(v, n.IfNone)
 	case *Some:
 		Visit(v, n.Child)
+	case *FuncType:
+		for _, e := range n.ParamTypes {
+			Visit(v, e)
+		}
+		Visit(v, n.RetType)
+	case *TupleType:
+		for _, e := range n.ElemTypes {
+			Visit(v, e)
+		}
+	case *CtorType:
+		for _, e := range n.ParamTypes {
+			Visit(v, e)
+		}
+	case *Typed:
+		Visit(v, n.Child)
+		Visit(v, n.Type)
 	}
 }
 
