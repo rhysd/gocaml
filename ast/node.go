@@ -4,6 +4,7 @@ package ast
 import (
 	"fmt"
 	"github.com/rhysd/gocaml/token"
+	"strings"
 )
 
 // Type t =
@@ -58,6 +59,18 @@ type Symbol struct {
 
 func NewSymbol(name string) *Symbol {
 	return &Symbol{name, name}
+}
+
+var unusedSymCount = 0
+
+func IgnoredSymbol() *Symbol {
+	unusedSymCount++
+	s := fmt.Sprintf("$unused%d", unusedSymCount)
+	return &Symbol{"_", s}
+}
+
+func (s *Symbol) IsIgnored() bool {
+	return strings.HasPrefix(s.Name, "$unused")
 }
 
 type Param struct {

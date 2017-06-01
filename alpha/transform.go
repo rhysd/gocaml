@@ -16,6 +16,9 @@ import (
 func duplicateSymbol(symbols []*ast.Symbol) *ast.Symbol {
 	len := len(symbols)
 	for i, left := range symbols {
+		if left.IsIgnored() {
+			continue
+		}
 		for _, right := range symbols[i+1 : len] {
 			if left.DisplayName == right.DisplayName {
 				return left
@@ -50,6 +53,9 @@ func (t *transformer) newID(n string) string {
 }
 
 func (t *transformer) register(s *ast.Symbol) {
+	if s.IsIgnored() {
+		return
+	}
 	s.Name = t.newID(s.DisplayName)
 	t.current.add(s.DisplayName, s)
 }

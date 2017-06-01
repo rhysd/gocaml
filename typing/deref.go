@@ -71,7 +71,7 @@ type typeVarDereferencer struct {
 func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
 	symType, ok := d.env.Table[sym.Name]
 
-	if strings.HasPrefix(sym.Name, "$unused") {
+	if sym.IsIgnored() {
 		// Parser expands `foo; bar` to `let $unused = foo in bar`. In this situation, type of the
 		// variable will never be determined because it's unused.
 		// So skipping it in order to avoid unknown type error for the unused variable.

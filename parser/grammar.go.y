@@ -194,7 +194,7 @@ exp:
 	| parenless_exp DOT LPAREN exp RPAREN LESS_MINUS exp
 		{ $$ = &ast.Put{$1, $4, $7} }
 	| exp SEMICOLON exp
-		{ $$ = &ast.Let{$2, ast.NewSymbol(genTempId()), $1, $3, nil} }
+		{ $$ = &ast.Let{$2, ast.IgnoredSymbol(), $1, $3, nil} }
 	| ARRAY_MAKE parenless_exp parenless_exp
 		%prec prec_app
 		{ $$ = &ast.ArrayCreate{$1, $2, $3} }
@@ -377,17 +377,12 @@ type_comma_list:
 
 %%
 
-var genIdCount = 0
-func genTempId() string {
-	genIdCount++
-	return fmt.Sprintf("$unused%d", genIdCount)
-}
-
 func sym(tok *token.Token) *ast.Symbol {
 	s := tok.Value()
 	if s == "_" {
-		s = genTempId()
+		return ast.IgnoredSymbol()
+	} else {
+		return ast.NewSymbol(s)
 	}
-	return ast.NewSymbol(s)
 }
 // vim: noet
