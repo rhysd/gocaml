@@ -54,6 +54,7 @@ You can see [more examples][examples]. (e.g. [Brainfxxk interpreter][Brainfxxk i
 - [Option type][] is implemented in GoCaml. Please see below 'Option Type' section or [test cases][option type test cases].
 - GoCaml has `fun` syntax to make an anonymous funcion or closure like `fun x y -> x + y`.
 - GoCaml has type annotations syntax. Users can specify types explicitly.
+- Symbols named `_` are ignored.
 
 ## Language Spec
 
@@ -494,7 +495,36 @@ println_bool (is_none None)
 
 Currently `match with` expression is only for option type because GoCaml doesn't have variant types.
 
-### External symbols
+### Ignored Symbol `_`
+
+Variables named `_` are ignored. It's useful if the variable is never used.
+
+```ml
+(* Ignored variable *)
+let _ = 42 in
+
+(* Ignored parameter *)
+let rec first x _ _ = x in
+
+(* Ignored element of tuple *)
+let (_, second, _) = 1, "foo", true in
+
+(* Error! Cannot refer ignored variable *)
+print_int _
+```
+
+If a type of an ignored variable is never determined, compiler regards its type as `()` and
+compilation will pass.
+
+```
+let f _ = 42 in
+println_int 42
+```
+
+In above program, the type of ignored variable `_` will never be determined because function `f` is
+never used. In this case, compiler regards type of `f` as `unit -> int` and compilation will continue.
+
+### External Symbols
 
 All symbols which are not defined but used are treated as external symbols.
 External symbol means `extern` names in C. So you have responsibility to define the symbols
