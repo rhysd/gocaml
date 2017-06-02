@@ -14,12 +14,13 @@ func typeError(err error, where string, pos token.Position) error {
 
 // Inferer is a visitor to infer types in the AST
 type Inferer struct {
-	env *Env
+	env  *Env
+	conv *nodeTypeConv
 }
 
 // NewInferer creates a new Inferer instance
 func NewInferer() *Inferer {
-	return &Inferer{NewEnv()}
+	return &Inferer{NewEnv(), nil}
 }
 
 func (inf *Inferer) checkNodeType(where string, node ast.Expr, expected Type) error {
@@ -170,7 +171,7 @@ func (inf *Inferer) infer(e ast.Expr) (Type, error) {
 		var t Type
 		if n.Type != nil {
 			// When let x: type = ...
-			t, err = nodeToType(n.Type)
+			t, err = inf.conv.nodeToType(n.Type)
 			if err != nil {
 				return nil, err
 			}
@@ -207,7 +208,7 @@ func (inf *Inferer) infer(e ast.Expr) (Type, error) {
 			var t Type
 			var err error
 			if p.Type != nil {
-				t, err = nodeToType(p.Type)
+				t, err = inf.conv.nodeToType(p.Type)
 				if err != nil {
 					return nil, typeError(err, fmt.Sprintf("%s parameter of function", common.Ordinal(i+1)), p.Type.Pos())
 				}
@@ -225,7 +226,7 @@ func (inf *Inferer) infer(e ast.Expr) (Type, error) {
 		}
 
 		if n.Func.RetType != nil {
-			t, err := nodeToType(n.Func.RetType)
+			t, err := inf.conv.nodeToType(n.Func.RetType)
 			if err != nil {
 				return nil, typeError(err, "return type of function", n.Func.RetType.Pos())
 			}
@@ -289,7 +290,7 @@ func (inf *Inferer) infer(e ast.Expr) (Type, error) {
 
 		if n.Type != nil {
 			var err error
-			t, err = nodeToType(n.Type)
+			t, err = inf.conv.nodeToType(n.Type)
 			if err != nil {
 				return nil, err
 			}
@@ -404,7 +405,7 @@ func (inf *Inferer) infer(e ast.Expr) (Type, error) {
 			return nil, err
 		}
 
-		t, err := nodeToType(n.Type)
+		t, err := inf.conv.nodeToType(n.Type)
 		if err != nil {
 			return nil, err
 		}
@@ -421,8 +422,11 @@ func (inf *Inferer) infer(e ast.Expr) (Type, error) {
 
 // Infer infers types in given AST and returns error when detecting type errors
 func (inferer *Inferer) Infer(parsed *ast.AST) error {
-	// TODO:
-	// Make type alias table from type decl nodes
+	var err error
+	inferer.conv, err = newNodeTypeConv(parsed.TypeDecls)
+	if err != nil {
+		return err
+	}
 
 	root, err := inferer.infer(parsed.Root)
 	if err != nil {

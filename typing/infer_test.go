@@ -34,6 +34,10 @@ func TestEdgeCases(t *testing.T) {
 				panic(err)
 			}
 			i := NewInferer()
+			i.conv, err = newNodeTypeConv(ast.TypeDecls)
+			if err != nil {
+				t.Fatal(err)
+			}
 			_, err = i.infer(ast.Root)
 			if err != nil {
 				t.Fatalf("Type check raised an error for code '%s': %s", tc.code, err.Error())
@@ -353,6 +357,10 @@ func TestInvalidExpressions(t *testing.T) {
 				panic(err)
 			}
 			i := NewInferer()
+			i.conv, err = newNodeTypeConv(ast.TypeDecls)
+			if err != nil {
+				t.Fatal(err)
+			}
 			_, err = i.infer(ast.Root)
 			if err == nil {
 				t.Fatalf("Type check did not raise an error for code '%s'", testcase.code)
@@ -376,6 +384,10 @@ func TestRegisterNoneTypes(t *testing.T) {
 		panic(err)
 	}
 	i := NewInferer()
+	i.conv, err = newNodeTypeConv(ast.TypeDecls)
+	if err != nil {
+		t.Fatal(err)
+	}
 	_, err = i.infer(ast.Root)
 	if err != nil {
 		t.Fatal(err)
@@ -406,6 +418,10 @@ func TestInferSuccess(t *testing.T) {
 				t.Fatal(err)
 			}
 			i := NewInferer()
+			i.conv, err = newNodeTypeConv(ast.TypeDecls)
+			if err != nil {
+				t.Fatal(err)
+			}
 			_, err = i.infer(ast.Root)
 			if err != nil {
 				t.Fatal(err)
