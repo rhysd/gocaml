@@ -2,6 +2,7 @@ package typing
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"github.com/rhysd/gocaml/ast"
 )
 
@@ -18,6 +19,14 @@ func newNodeTypeConv(decls []*ast.TypeDecl) (*nodeTypeConv, error) {
 	conv.aliases["string"] = StringType
 
 	for _, decl := range decls {
+		if decl.Ident == "_" {
+			pos := decl.Pos()
+			return nil, errors.Errorf("Cannot declare '_' type name at (line:%d, column:%d)", pos.Line, pos.Column)
+		}
+		if t, ok := conv.aliases[decl.Ident]; ok {
+			pos := decl.Pos()
+			return nil, errors.Errorf("Type name '%s' was already declared as type '%s' at (line:%d, column:%d)", decl.Ident, t.String(), pos.Line, pos.Column)
+		}
 		t, err := conv.nodeToType(decl.Type)
 		if err != nil {
 			return nil, typeError(err, fmt.Sprintf("Type declaration '%s'", decl.Ident), decl.Pos())
@@ -74,20 +83,20 @@ func (conv *nodeTypeConv) nodeToType(node ast.Expr) (Type, error) {
 		case "array":
 			if len != 1 {
 				p := n.Pos()
-				return nil, fmt.Errorf("Invalid array type at (line:%d,column:%d). 'array' only has 1 type parameter.", p.Line, p.Column)
+				return nil, errors.Errorf("Invalid array type at (line:%d,column:%d). 'array' only has 1 type parameter.", p.Line, p.Column)
 			}
 			elem, err := conv.nodeToType(n.ParamTypes[0])
 			return &Array{elem}, err
 		case "option":
 			if len != 1 {
 				p := n.Pos()
-				return nil, fmt.Errorf("Invalid option type at (line:%d,column:%d). 'option' only has 1 type parameter.", p.Line, p.Column)
+				return nil, errors.Errorf("Invalid option type at (line:%d,column:%d). 'option' only has 1 type parameter.", p.Line, p.Column)
 			}
 			elem, err := conv.nodeToType(n.ParamTypes[0])
 			return &Option{elem}, err
 		default:
 			p := n.Pos()
-			return nil, fmt.Errorf("Unknown type constructor '%s' at (line:%d,column:%d). Primitive types, aliased types, 'array', 'option' and '_' are supported", n.Ctor, p.Line, p.Column)
+			return nil, errors.Errorf("Unknown type constructor '%s' at (line:%d,column:%d). Primitive types, aliased types, 'array', 'option' and '_' are supported", n.Ctor, p.Line, p.Column)
 		}
 	default:
 		panic("FATAL: Cannot convert non-type AST node into type values: " + node.Name())
