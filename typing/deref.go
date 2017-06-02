@@ -182,7 +182,7 @@ func (d *typeVarDereferencer) Visit(node ast.Expr) ast.Visitor {
 	return d
 }
 
-func (env *Env) DerefTypeVars(root ast.Expr) error {
+func derefTypeVars(env *Env, root ast.Expr) error {
 	v := &typeVarDereferencer{[]string{}, env}
 	for n, t := range env.Externals {
 		env.Externals[n] = v.derefExternalSym(n, t)

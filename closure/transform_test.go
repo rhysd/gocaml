@@ -347,8 +347,8 @@ func TestClosureTransform(t *testing.T) {
 			if err = alpha.Transform(ast.Root); err != nil {
 				t.Fatal(err)
 			}
-			env := typing.NewEnv()
-			if err := env.ApplyTypeAnalysis(ast.Root); err != nil {
+			env, err := typing.TypeInferernce(ast)
+			if err != nil {
 				t.Fatal(err)
 			}
 			ir, err := gcil.FromAST(ast.Root, env)
@@ -492,8 +492,8 @@ func TestClosureCaptureInInsn(t *testing.T) {
 	if err = alpha.Transform(ast.Root); err != nil {
 		t.Fatal(err)
 	}
-	env := typing.NewEnv()
-	if err := env.ApplyTypeAnalysis(ast.Root); err != nil {
+	env, err := typing.TypeInferernce(ast)
+	if err != nil {
 		t.Fatal(err)
 	}
 	ir, err := gcil.FromAST(ast.Root, env)

@@ -25,8 +25,8 @@ func testCreateEmitter(code string, optimize OptLevel, debug bool) (e *Emitter, 
 	if err = alpha.Transform(ast.Root); err != nil {
 		return
 	}
-	env := typing.NewEnv()
-	if err = env.ApplyTypeAnalysis(ast.Root); err != nil {
+	env, err := typing.TypeInferernce(ast)
+	if err != nil {
 		return
 	}
 	ir, err := gcil.FromAST(ast.Root, env)

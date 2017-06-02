@@ -33,8 +33,8 @@ func TestEdgeCases(t *testing.T) {
 			if err = alpha.Transform(ast.Root); err != nil {
 				panic(err)
 			}
-			env := NewEnv()
-			_, err = env.infer(ast.Root)
+			i := NewInferer()
+			_, err = i.infer(ast.Root)
 			if err != nil {
 				t.Fatalf("Type check raised an error for code '%s': %s", tc.code, err.Error())
 			}
@@ -352,8 +352,8 @@ func TestInvalidExpressions(t *testing.T) {
 			if err = alpha.Transform(ast.Root); err != nil {
 				panic(err)
 			}
-			env := NewEnv()
-			_, err = env.infer(ast.Root)
+			i := NewInferer()
+			_, err = i.infer(ast.Root)
 			if err == nil {
 				t.Fatalf("Type check did not raise an error for code '%s'", testcase.code)
 			}
@@ -375,13 +375,13 @@ func TestRegisterNoneTypes(t *testing.T) {
 	if err = alpha.Transform(ast.Root); err != nil {
 		panic(err)
 	}
-	env := NewEnv()
-	_, err = env.infer(ast.Root)
+	i := NewInferer()
+	_, err = i.infer(ast.Root)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(env.NoneTypes) != 2 {
-		t.Errorf("2 None node should be detected but actually %d", len(env.NoneTypes))
+	if len(i.env.NoneTypes) != 2 {
+		t.Errorf("2 None node should be detected but actually %d", len(i.env.NoneTypes))
 	}
 }
 
@@ -405,8 +405,8 @@ func TestInferSuccess(t *testing.T) {
 			if err = alpha.Transform(ast.Root); err != nil {
 				t.Fatal(err)
 			}
-			env := NewEnv()
-			_, err = env.infer(ast.Root)
+			i := NewInferer()
+			_, err = i.infer(ast.Root)
 			if err != nil {
 				t.Fatal(err)
 			}

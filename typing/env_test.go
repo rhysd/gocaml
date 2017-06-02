@@ -24,8 +24,8 @@ func TestResolvedSymbols(t *testing.T) {
 		panic(ast.Root)
 	}
 
-	env := NewEnv()
-	if err := env.ApplyTypeAnalysis(ast.Root); err != nil {
+	env, err := TypeInferernce(ast)
+	if err != nil {
 		t.Fatal(err)
 	}
 	if _, ok := env.Table["x"]; !ok {
@@ -67,8 +67,8 @@ func TestTypeCheckOK(t *testing.T) {
 				panic(err)
 			}
 
-			env := NewEnv()
-			if err := env.ApplyTypeAnalysis(ast.Root); err != nil {
+			_, err = TypeInferernce(ast)
+			if err != nil {
 				t.Fatal(err)
 			}
 		})
@@ -84,8 +84,7 @@ func TestProgramRootTypeIsUnit(t *testing.T) {
 		panic(ast.Root)
 	}
 
-	env := NewEnv()
-	err = env.ApplyTypeAnalysis(ast.Root)
+	_, err = TypeInferernce(ast)
 	if err == nil {
 		t.Fatalf("Type check must raise an error when root type of program is not ()")
 	}
@@ -104,8 +103,7 @@ func TestTypeCheckFail(t *testing.T) {
 		panic(ast.Root)
 	}
 
-	env := NewEnv()
-	err = env.ApplyTypeAnalysis(ast.Root)
+	_, err = TypeInferernce(ast)
 	if err == nil {
 		t.Fatalf("Type check must raise a type error")
 	}
@@ -120,8 +118,8 @@ func TestDumpResult(t *testing.T) {
 		panic(ast.Root)
 	}
 
-	env := NewEnv()
-	if err = env.ApplyTypeAnalysis(ast.Root); err != nil {
+	env, err := TypeInferernce(ast)
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -158,8 +156,8 @@ func TestDerefNoneTypes(t *testing.T) {
 		panic(ast.Root)
 	}
 
-	env := NewEnv()
-	if err := env.ApplyTypeAnalysis(ast.Root); err != nil {
+	env, err := TypeInferernce(ast)
+	if err != nil {
 		t.Fatal(err)
 	}
 

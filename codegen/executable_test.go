@@ -67,8 +67,8 @@ func TestExecutable(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			env := typing.NewEnv()
-			if err := env.ApplyTypeAnalysis(ast.Root); err != nil {
+			env, err := typing.TypeInferernce(ast)
+			if err != nil {
 				t.Fatal(err)
 			}
 
@@ -146,8 +146,8 @@ func BenchmarkExecutableCreation(b *testing.B) {
 			b.Fatal(err)
 		}
 
-		env := typing.NewEnv()
-		if err := env.ApplyTypeAnalysis(ast.Root); err != nil {
+		env, err := typing.TypeInferernce(ast)
+		if err != nil {
 			b.Fatal(err)
 		}
 

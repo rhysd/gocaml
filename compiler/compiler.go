@@ -90,8 +90,8 @@ func (c *Compiler) SemanticAnalysis(a *ast.AST) (*typing.Env, error) {
 	if err := alpha.Transform(a.Root); err != nil {
 		return nil, errors.Wrapf(err, "While semantic analysis (alpha transform) for %s\n", a.File.Name)
 	}
-	env := typing.NewEnv()
-	if err := env.ApplyTypeAnalysis(a.Root); err != nil {
+	env, err := typing.TypeInferernce(a)
+	if err != nil {
 		return nil, errors.Wrapf(err, "While semantic analysis (type infererence) for %s\n", a.File.Name)
 	}
 	return env, nil
