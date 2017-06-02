@@ -231,10 +231,10 @@ func TestPrintAST(t *testing.T) {
 	ast := &AST{
 		Root: root,
 		File: s,
-		TypeDecls: []Expr{
-			&TypeDecl{
+		TypeDecls: []*TypeDecl{
+			{
 				tok,
-				NewSymbol("mytype"),
+				"mytype",
 				&CtorType{
 					nil,
 					tok,

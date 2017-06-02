@@ -22,6 +22,7 @@ import (
 	decls []*ast.Symbol
 	decl *ast.Symbol
 	params []ast.Param
+	type_decls []*ast.TypeDecl
 }
 
 %token<token> ILLEGAL
@@ -106,8 +107,7 @@ import (
 %type<nodes> arrow_types
 %type<nodes> simple_type_star_list
 %type<nodes> type_comma_list
-%type<node> type_decl
-%type<nodes> type_decls
+%type<type_decls> type_decls
 %type<> sep
 %type<> program
 
@@ -123,13 +123,12 @@ program:
 
 type_decls:
 	/* empty */
-		{ $$ = []ast.Expr{} }
-	| type_decls type_decl
-		{ $$ = append($1, $2) }
-
-type_decl:
-	TYPE IDENT EQUAL type sep
-		{ $$ = &ast.TypeDecl{$1, ast.NewSymbol($2.Value()), $4} }
+		{ $$ = []*ast.TypeDecl{} }
+	| type_decls TYPE IDENT EQUAL type sep
+		{
+			decl := &ast.TypeDecl{$2, $3.Value(), $5}
+			$$ = append($1, decl)
+		}
 
 sep:
    SEMICOLON {} | sep SEMICOLON {}

@@ -38,7 +38,7 @@ import (
 type AST struct {
 	Root      Expr
 	File      *token.Source
-	TypeDecls []Expr
+	TypeDecls []*TypeDecl
 }
 
 // Expr is an interface for node of GoCaml AST.
@@ -302,7 +302,7 @@ type (
 
 	TypeDecl struct {
 		Token *token.Token
-		Ident *Symbol
+		Ident string
 		Type  Expr
 	}
 )
@@ -690,4 +690,4 @@ func (e *CtorType) Name() string {
 	}
 }
 func (e *Typed) Name() string    { return "Typed" }
-func (e *TypeDecl) Name() string { return fmt.Sprintf("TypeDecl (%s)", e.Ident.DisplayName) }
+func (e *TypeDecl) Name() string { return fmt.Sprintf("TypeDecl (%s)", e.Ident) }
