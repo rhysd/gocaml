@@ -2,10 +2,9 @@ package codegen
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"github.com/rhysd/gocaml/gcil"
-	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/loc"
 	"llvm.org/llvm/bindings/go/llvm"
 )
 
@@ -53,7 +52,7 @@ func createAttributeTable(ctx llvm.Context) map[string]llvm.Attribute {
 	return attrs
 }
 
-func newModuleBuilder(env *typing.Env, file *token.Source, opts EmitOptions) (*moduleBuilder, error) {
+func newModuleBuilder(env *typing.Env, file *loc.Source, opts EmitOptions) (*moduleBuilder, error) {
 	triple := opts.Triple
 	if triple == "" {
 		triple = llvm.DefaultTargetTriple()
@@ -89,7 +88,7 @@ func newModuleBuilder(env *typing.Env, file *token.Source, opts EmitOptions) (*m
 	// XXX: Should make a new instance
 	ctx := llvm.GlobalContext()
 
-	module := ctx.NewModule(file.Name)
+	module := ctx.NewModule(file.Path)
 	module.SetTarget(triple)
 	module.SetDataLayout(dataLayout)
 
@@ -391,7 +390,7 @@ func (b *moduleBuilder) build(prog *gcil.Program) error {
 	}
 
 	if err := llvm.VerifyModule(b.module, llvm.ReturnStatusAction); err != nil {
-		return errors.Wrapf(err, "Error while emitting IR:\n\n%s\n", b.module.String())
+		return loc.Notef(err, "Error while emitting IR:\n\n%s\n", b.module.String())
 	}
 
 	return nil

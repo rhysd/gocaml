@@ -1,7 +1,7 @@
 package codegen
 
 import (
-	"fmt"
+	"github.com/rhysd/loc"
 	"go/build"
 	"os"
 	"os/exec"
@@ -45,7 +45,7 @@ func detectRuntimePath() (string, error) {
 		candidates = append(candidates, fromGopath)
 	}
 
-	return "", fmt.Errorf("Runtime library (gocamlrt.a) was not found\nCandidates:\n%s", strings.Join(candidates, "\n"))
+	return "", loc.Errorf("Runtime library (gocamlrt.a) was not found. Candidates: %s", strings.Join(candidates, ", "))
 }
 
 func detectLibgcPath() string {
@@ -72,8 +72,8 @@ func newDefaultLinker(ldflags string) *linker {
 	return &linker{cmd, ldflags}
 }
 
-func (lnk *linker) makeError(args []string, msg string) error {
-	return fmt.Errorf("Linker command failed: %s %s:\n%s", lnk.linkerCmd, strings.Join(args, " "), msg)
+func (lnk *linker) cmdFailed(args []string, msg string) error {
+	return loc.Errorf("Linker command failed: %s %s:\n%s", lnk.linkerCmd, strings.Join(args, " "), msg)
 }
 
 func (lnk *linker) link(executable string, objFiles []string) error {
@@ -92,9 +92,9 @@ func (lnk *linker) link(executable string, objFiles []string) error {
 
 	if _, err := exec.Command(lnk.linkerCmd, args...).Output(); err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {
-			return lnk.makeError(args, string(exiterr.Stderr))
+			return lnk.cmdFailed(args, string(exiterr.Stderr))
 		}
-		return lnk.makeError(args, err.Error())
+		return lnk.cmdFailed(args, err.Error())
 	}
 
 	return nil

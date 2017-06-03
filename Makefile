@@ -7,7 +7,6 @@ SRCS := \
 	lexer/lexer.go \
 	parser/grammar.go \
 	parser/parser.go \
-	token/source.go \
 	token/token.go \
 	typing/env.go \
 	typing/unify.go \
@@ -50,7 +49,6 @@ TESTS := \
 	lexer/lexer_test.go \
 	parser/example_test.go \
 	parser/parser_test.go \
-	token/source_test.go \
 	token/token_test.go \
 	typing/env_test.go \
 	typing/example_test.go \

@@ -1,8 +1,8 @@
 package typing
 
 import (
-	"github.com/pkg/errors"
 	"github.com/rhysd/gocaml/common"
+	"github.com/rhysd/loc"
 )
 
 // Check cyclic dependency. When unifying t and u where t is type variable and
@@ -43,14 +43,14 @@ func occur(v *Var, rhs Type) bool {
 func unifyTuple(left, right *Tuple) error {
 	length := len(left.Elems)
 	if length != len(right.Elems) {
-		return errors.Errorf("Number of elements of tuple does not match: %d vs %d (between '%s' and '%s')", length, len(right.Elems), left.String(), right.String())
+		return loc.Errorf("Number of elements of tuple does not match: %d vs %d (between '%s' and '%s')", length, len(right.Elems), left.String(), right.String())
 	}
 
 	for i := 0; i < length; i++ {
 		l := left.Elems[i]
 		r := right.Elems[i]
 		if err := Unify(l, r); err != nil {
-			return errors.Wrapf(err, "On unifying tuples' %s elements of '%s' and '%s'\n", common.Ordinal(i+1), left.String(), right.String())
+			return loc.Notef(err, "On unifying tuples' %s elements of '%s' and '%s'\n", common.Ordinal(i+1), left.String(), right.String())
 		}
 	}
 
@@ -59,17 +59,17 @@ func unifyTuple(left, right *Tuple) error {
 
 func unifyFun(left, right *Fun) error {
 	if err := Unify(left.Ret, right.Ret); err != nil {
-		return errors.Wrapf(err, "On unifying functions' return types of '%s' and '%s'\n", left.String(), right.String())
+		return loc.Notef(err, "On unifying functions' return types of '%s' and '%s'\n", left.String(), right.String())
 	}
 
 	if len(left.Params) != len(right.Params) {
-		return errors.Errorf("Number of parameters of function does not match: %d vs %d (between '%s' and '%s')", len(left.Params), len(right.Params), left.String(), right.String())
+		return loc.Errorf("Number of parameters of function does not match: %d vs %d (between '%s' and '%s')", len(left.Params), len(right.Params), left.String(), right.String())
 	}
 
 	for i, l := range left.Params {
 		r := right.Params[i]
 		if err := Unify(l, r); err != nil {
-			return errors.Wrapf(err, "On unifying %s parameter of function '%s' and '%s'\n", common.Ordinal(i+1), left.String(), right.String())
+			return loc.Notef(err, "On unifying %s parameter of function '%s' and '%s'\n", common.Ordinal(i+1), left.String(), right.String())
 		}
 	}
 
@@ -79,7 +79,7 @@ func unifyFun(left, right *Fun) error {
 func assignVar(v *Var, t Type) error {
 	// When rv.Ref == nil
 	if occur(v, t) {
-		return errors.Errorf("Cannot resolve uninstantiated type variable. Cyclic dependency found while unification with '%s'", t.String())
+		return loc.Errorf("Cannot resolve uninstantiated type variable. Cyclic dependency found while unification with '%s'", t.String())
 	}
 	v.Ref = t
 	return nil
@@ -134,5 +134,5 @@ func Unify(left, right Type) error {
 		return assignVar(rv, left)
 	}
 
-	return errors.Errorf("Cannot unify types. Type mismatch between '%s' and '%s'", left.String(), right.String())
+	return loc.Errorf("Cannot unify types. Type mismatch between '%s' and '%s'", left.String(), right.String())
 }

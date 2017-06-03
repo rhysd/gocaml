@@ -3,17 +3,22 @@ package alpha
 import (
 	"github.com/rhysd/gocaml/ast"
 	"github.com/rhysd/gocaml/token"
+	"github.com/rhysd/loc"
 	"strings"
 	"testing"
 )
 
 func TestFlatScope(t *testing.T) {
+	tok := &token.Token{
+		Start: loc.Pos{},
+		End:   loc.Pos{},
+	}
 	ref := &ast.VarRef{
-		nil,
+		tok,
 		ast.NewSymbol("test"),
 	}
 	root := &ast.Let{
-		nil,
+		tok,
 		ast.NewSymbol("test"),
 		&ast.Int{nil, 42},
 		ref,
@@ -31,19 +36,23 @@ func TestFlatScope(t *testing.T) {
 }
 
 func TestNested(t *testing.T) {
+	tok := &token.Token{
+		Start: loc.Pos{},
+		End:   loc.Pos{},
+	}
 	ref := &ast.VarRef{
-		nil,
+		tok,
 		ast.NewSymbol("test"),
 	}
 	child := &ast.Let{
-		nil,
+		tok,
 		ast.NewSymbol("test"),
 		&ast.Int{nil, 42},
 		ref,
 		nil,
 	}
 	root := &ast.Let{
-		nil,
+		tok,
 		ast.NewSymbol("test"),
 		&ast.Int{nil, 42},
 		child,
@@ -66,7 +75,10 @@ func TestNested(t *testing.T) {
 }
 
 func TestMatch(t *testing.T) {
-	tok := &token.Token{}
+	tok := &token.Token{
+		Start: loc.Pos{},
+		End:   loc.Pos{},
+	}
 	someRef := &ast.VarRef{
 		tok,
 		ast.NewSymbol("a"),
@@ -81,7 +93,7 @@ func TestMatch(t *testing.T) {
 		someRef,
 		noneRef,
 		ast.NewSymbol("a"),
-		token.Position{},
+		loc.Pos{},
 	}
 	root := &ast.Let{
 		tok, ast.NewSymbol("a"),
@@ -141,15 +153,19 @@ func TestLetTuple(t *testing.T) {
 }
 
 func TestLetTupleHasDuplicateName(t *testing.T) {
+	tok := &token.Token{
+		Start: loc.Pos{},
+		End:   loc.Pos{},
+	}
 	root := &ast.LetTuple{
-		&token.Token{},
+		tok,
 		[]*ast.Symbol{
 			ast.NewSymbol("a"),
 			ast.NewSymbol("b"),
 			ast.NewSymbol("b"),
 		},
-		&ast.Int{nil, 42},
-		&ast.Int{nil, 42},
+		&ast.Int{tok, 42},
+		&ast.Int{tok, 42},
 		nil,
 	}
 
@@ -159,16 +175,20 @@ func TestLetTupleHasDuplicateName(t *testing.T) {
 }
 
 func TestLetRec(t *testing.T) {
+	tok := &token.Token{
+		Start: loc.Pos{},
+		End:   loc.Pos{},
+	}
 	ref := &ast.VarRef{
-		&token.Token{},
+		tok,
 		ast.NewSymbol("f"),
 	}
 	ref2 := &ast.VarRef{
-		&token.Token{},
+		tok,
 		ast.NewSymbol("b"),
 	}
 	root := &ast.LetRec{
-		&token.Token{},
+		tok,
 		&ast.FuncDef{
 			ast.NewSymbol("f"),
 			[]ast.Param{
@@ -210,12 +230,16 @@ func TestLetRec(t *testing.T) {
 }
 
 func TestRecursiveFunc(t *testing.T) {
+	tok := &token.Token{
+		Start: loc.Pos{},
+		End:   loc.Pos{},
+	}
 	ref := &ast.VarRef{
-		&token.Token{},
+		tok,
 		ast.NewSymbol("f"),
 	}
 	root := &ast.LetRec{
-		&token.Token{},
+		tok,
 		&ast.FuncDef{
 			ast.NewSymbol("f"),
 			[]ast.Param{
@@ -226,7 +250,7 @@ func TestRecursiveFunc(t *testing.T) {
 			ref,
 			nil,
 		},
-		&ast.Int{&token.Token{}, 42},
+		&ast.Int{tok, 42},
 	}
 
 	if err := Transform(root); err != nil {
@@ -242,16 +266,20 @@ func TestRecursiveFunc(t *testing.T) {
 }
 
 func TestFuncAndParamHaveSameName(t *testing.T) {
+	tok := &token.Token{
+		Start: loc.Pos{},
+		End:   loc.Pos{},
+	}
 	ref := &ast.VarRef{
-		&token.Token{},
+		tok,
 		ast.NewSymbol("f"),
 	}
 	ref2 := &ast.VarRef{
-		&token.Token{},
+		tok,
 		ast.NewSymbol("f"),
 	}
 	root := &ast.LetRec{
-		&token.Token{},
+		tok,
 		&ast.FuncDef{
 			ast.NewSymbol("f"),
 			[]ast.Param{
@@ -283,8 +311,12 @@ func TestFuncAndParamHaveSameName(t *testing.T) {
 }
 
 func TestParamDuplicate(t *testing.T) {
+	tok := &token.Token{
+		Start: loc.Pos{},
+		End:   loc.Pos{},
+	}
 	root := &ast.LetRec{
-		&token.Token{},
+		tok,
 		&ast.FuncDef{
 			ast.NewSymbol("f"),
 			[]ast.Param{
@@ -292,10 +324,10 @@ func TestParamDuplicate(t *testing.T) {
 				{ast.NewSymbol("b"), nil},
 				{ast.NewSymbol("b"), nil},
 			},
-			&ast.Int{&token.Token{}, 42},
+			&ast.Int{tok, 42},
 			nil,
 		},
-		&ast.Int{&token.Token{}, 42},
+		&ast.Int{tok, 42},
 	}
 
 	if err := Transform(root); err == nil {
@@ -304,8 +336,12 @@ func TestParamDuplicate(t *testing.T) {
 }
 
 func TestExternalSymbol(t *testing.T) {
+	tok := &token.Token{
+		Start: loc.Pos{},
+		End:   loc.Pos{},
+	}
 	ref := &ast.VarRef{
-		&token.Token{},
+		tok,
 		ast.NewSymbol("x"),
 	}
 
@@ -319,8 +355,12 @@ func TestExternalSymbol(t *testing.T) {
 }
 
 func TestUnderscoreName(t *testing.T) {
+	tok := &token.Token{
+		Start: loc.Pos{},
+		End:   loc.Pos{},
+	}
 	ref := &ast.VarRef{
-		&token.Token{},
+		tok,
 		ast.NewSymbol("_"),
 	}
 	err := Transform(ref)

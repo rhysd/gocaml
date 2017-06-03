@@ -7,14 +7,14 @@ import (
 	"github.com/rhysd/gocaml/gcil"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
-	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/loc"
 	"path/filepath"
 )
 
 func Example() {
 	file := filepath.FromSlash("../testdata/from-mincaml/ack.ml")
-	src, err := token.NewSourceFromFile(file)
+	src, err := loc.NewSourceFromFile(file)
 	if err != nil {
 		// File not found
 		panic(err)

@@ -7,8 +7,8 @@ import (
 	"github.com/rhysd/gocaml/gcil"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
-	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/loc"
 	"strings"
 	"testing"
 )
@@ -337,7 +337,7 @@ func TestClosureTransform(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.what, func(t *testing.T) {
-			s := token.NewDummySource(fmt.Sprintf("%s; ()", tc.code))
+			s := loc.NewDummySource(fmt.Sprintf("%s; ()", tc.code))
 			l := lexer.NewLexer(s)
 			go l.Lex()
 			ast, err := parser.Parse(l.Tokens)
@@ -482,7 +482,7 @@ func TestClosureCaptureInInsn(t *testing.T) {
 		expected[c] = struct{}{}
 	}
 
-	s := token.NewDummySource(code)
+	s := loc.NewDummySource(code)
 	l := lexer.NewLexer(s)
 	go l.Lex()
 	ast, err := parser.Parse(l.Tokens)

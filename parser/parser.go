@@ -2,17 +2,17 @@
 package parser
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/rhysd/gocaml/ast"
 	"github.com/rhysd/gocaml/token"
+	"github.com/rhysd/loc"
 )
 
 type pseudoLexer struct {
 	lastToken    *token.Token
 	tokens       chan token.Token
 	errorCount   int
-	errorMessage bytes.Buffer
+	errorMessage string
 	result       *ast.AST
 }
 
@@ -45,16 +45,18 @@ func (l *pseudoLexer) Lex(lval *yySymType) int {
 
 func (l *pseudoLexer) Error(msg string) {
 	l.errorCount++
-	l.errorMessage.WriteString(fmt.Sprintf("  * %s\n", msg))
+	l.errorMessage = msg
 }
 
 func (l *pseudoLexer) getError() error {
-	loc := ""
-	if l.lastToken != nil {
-		pos := l.lastToken.Start
-		loc = fmt.Sprintf(" around line:%d, col:%d", pos.Line, pos.Column)
+	msg := fmt.Sprintf("Error occurred while parsing. %s", l.errorMessage)
+	if l.errorCount > 1 {
+		msg = fmt.Sprintf("%s (%d error(s) remain)", msg, l.errorCount-1)
 	}
-	return fmt.Errorf("%d error(s) while parsing%s\n%s", l.errorCount, loc, l.errorMessage.String())
+	if l.lastToken != nil {
+		return loc.ErrorfAt(l.lastToken.Start, msg)
+	}
+	return loc.NewError(msg)
 }
 
 // Parse parses given tokens and returns parsed AST.
@@ -71,7 +73,7 @@ func Parse(tokens chan token.Token) (*ast.AST, error) {
 
 	root := l.result
 	if root == nil {
-		return nil, fmt.Errorf("Parsing failed")
+		return nil, loc.NewError("Parsing failed")
 	}
 
 	return root, nil

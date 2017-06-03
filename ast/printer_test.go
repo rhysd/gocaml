@@ -3,17 +3,18 @@ package ast
 import (
 	"bytes"
 	"github.com/rhysd/gocaml/token"
+	"github.com/rhysd/loc"
 	"io"
 	"os"
 	"testing"
 )
 
 func TestPrintAST(t *testing.T) {
-	s := token.NewDummySource("")
+	s := loc.NewDummySource("")
 	tok := &token.Token{
 		Kind:  token.ILLEGAL,
-		Start: token.Position{0, 0, 0},
-		End:   token.Position{0, 0, 0},
+		Start: loc.Pos{0, 0, 0, s},
+		End:   loc.Pos{0, 0, 0, s},
 		File:  s,
 	}
 
@@ -260,7 +261,7 @@ func TestPrintAST(t *testing.T) {
 	w.Close()
 	os.Stdout = old
 
-	expected := `AST for dummy:
+	expected := `AST for <dummy>:
 -   TypeDecl (mytype) (0:0-0:0)
 -   -   CtorType (bool) (0:0-0:0)
 -   Let (foo) (0:0-0:0)

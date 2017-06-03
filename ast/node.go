@@ -4,6 +4,7 @@ package ast
 import (
 	"fmt"
 	"github.com/rhysd/gocaml/token"
+	"github.com/rhysd/loc"
 	"strings"
 )
 
@@ -37,15 +38,15 @@ import (
 
 type AST struct {
 	Root      Expr
-	File      *token.Source
+	File      *loc.Source
 	TypeDecls []*TypeDecl
 }
 
 // Expr is an interface for node of GoCaml AST.
 // All nodes have its position and name.
 type Expr interface {
-	Pos() token.Position
-	End() token.Position
+	Pos() loc.Pos
+	End() loc.Pos
 	Name() string
 }
 
@@ -266,7 +267,7 @@ type (
 		Target         Expr
 		IfSome, IfNone Expr
 		SomeIdent      *Symbol
-		EndPos         token.Position
+		EndPos         loc.Pos
 	}
 
 	Some struct {
@@ -307,297 +308,297 @@ type (
 	}
 )
 
-func (e *Unit) Pos() token.Position {
+func (e *Unit) Pos() loc.Pos {
 	return e.LParenToken.Start
 }
-func (e *Unit) End() token.Position {
+func (e *Unit) End() loc.Pos {
 	return e.RParenToken.End
 }
 
-func (e *Bool) Pos() token.Position {
+func (e *Bool) Pos() loc.Pos {
 	return e.Token.Start
 }
-func (e *Bool) End() token.Position {
+func (e *Bool) End() loc.Pos {
 	return e.Token.End
 }
 
-func (e *Int) Pos() token.Position {
+func (e *Int) Pos() loc.Pos {
 	return e.Token.Start
 }
-func (e *Int) End() token.Position {
+func (e *Int) End() loc.Pos {
 	return e.Token.End
 }
 
-func (e *Float) Pos() token.Position {
+func (e *Float) Pos() loc.Pos {
 	return e.Token.Start
 }
-func (e *Float) End() token.Position {
+func (e *Float) End() loc.Pos {
 	return e.Token.End
 }
 
-func (e *String) Pos() token.Position {
+func (e *String) Pos() loc.Pos {
 	return e.Token.Start
 }
-func (e *String) End() token.Position {
+func (e *String) End() loc.Pos {
 	return e.Token.End
 }
 
-func (e *Not) Pos() token.Position {
+func (e *Not) Pos() loc.Pos {
 	return e.OpToken.Start
 }
-func (e *Not) End() token.Position {
+func (e *Not) End() loc.Pos {
 	return e.Child.End()
 }
 
-func (e *Neg) Pos() token.Position {
+func (e *Neg) Pos() loc.Pos {
 	return e.MinusToken.Start
 }
-func (e *Neg) End() token.Position {
+func (e *Neg) End() loc.Pos {
 	return e.Child.End()
 }
 
-func (e *Add) Pos() token.Position {
+func (e *Add) Pos() loc.Pos {
 	return e.Left.Pos()
 }
-func (e *Add) End() token.Position {
+func (e *Add) End() loc.Pos {
 	return e.Right.End()
 }
 
-func (e *Sub) Pos() token.Position {
+func (e *Sub) Pos() loc.Pos {
 	return e.Left.Pos()
 }
-func (e *Sub) End() token.Position {
+func (e *Sub) End() loc.Pos {
 	return e.Right.End()
 }
 
-func (e *Mul) Pos() token.Position {
+func (e *Mul) Pos() loc.Pos {
 	return e.Left.Pos()
 }
-func (e *Mul) End() token.Position {
+func (e *Mul) End() loc.Pos {
 	return e.Right.End()
 }
 
-func (e *Div) Pos() token.Position {
+func (e *Div) Pos() loc.Pos {
 	return e.Left.Pos()
 }
-func (e *Div) End() token.Position {
+func (e *Div) End() loc.Pos {
 	return e.Right.End()
 }
 
-func (e *Mod) Pos() token.Position {
+func (e *Mod) Pos() loc.Pos {
 	return e.Left.Pos()
 }
-func (e *Mod) End() token.Position {
+func (e *Mod) End() loc.Pos {
 	return e.Right.End()
 }
 
-func (e *FNeg) Pos() token.Position {
+func (e *FNeg) Pos() loc.Pos {
 	return e.MinusToken.Start
 }
-func (e *FNeg) End() token.Position {
+func (e *FNeg) End() loc.Pos {
 	return e.Child.End()
 }
 
-func (e *FAdd) Pos() token.Position {
+func (e *FAdd) Pos() loc.Pos {
 	return e.Left.Pos()
 }
-func (e *FAdd) End() token.Position {
+func (e *FAdd) End() loc.Pos {
 	return e.Right.End()
 }
 
-func (e *FSub) Pos() token.Position {
+func (e *FSub) Pos() loc.Pos {
 	return e.Left.Pos()
 }
-func (e *FSub) End() token.Position {
+func (e *FSub) End() loc.Pos {
 	return e.Right.End()
 }
 
-func (e *FMul) Pos() token.Position {
+func (e *FMul) Pos() loc.Pos {
 	return e.Left.Pos()
 }
-func (e *FMul) End() token.Position {
+func (e *FMul) End() loc.Pos {
 	return e.Right.End()
 }
 
-func (e *FDiv) Pos() token.Position {
+func (e *FDiv) Pos() loc.Pos {
 	return e.Left.Pos()
 }
-func (e *FDiv) End() token.Position {
+func (e *FDiv) End() loc.Pos {
 	return e.Right.End()
 }
 
-func (e *Eq) Pos() token.Position {
+func (e *Eq) Pos() loc.Pos {
 	return e.Left.Pos()
 }
-func (e *Eq) End() token.Position {
+func (e *Eq) End() loc.Pos {
 	return e.Right.End()
 }
 
-func (e *NotEq) Pos() token.Position {
+func (e *NotEq) Pos() loc.Pos {
 	return e.Left.Pos()
 }
-func (e *NotEq) End() token.Position {
+func (e *NotEq) End() loc.Pos {
 	return e.Right.End()
 }
 
-func (e *Less) Pos() token.Position {
+func (e *Less) Pos() loc.Pos {
 	return e.Left.Pos()
 }
-func (e *Less) End() token.Position {
+func (e *Less) End() loc.Pos {
 	return e.Right.End()
 }
 
-func (e *LessEq) Pos() token.Position {
+func (e *LessEq) Pos() loc.Pos {
 	return e.Left.Pos()
 }
-func (e *LessEq) End() token.Position {
+func (e *LessEq) End() loc.Pos {
 	return e.Right.End()
 }
 
-func (e *Greater) Pos() token.Position {
+func (e *Greater) Pos() loc.Pos {
 	return e.Left.Pos()
 }
-func (e *Greater) End() token.Position {
+func (e *Greater) End() loc.Pos {
 	return e.Right.End()
 }
 
-func (e *GreaterEq) Pos() token.Position {
+func (e *GreaterEq) Pos() loc.Pos {
 	return e.Left.Pos()
 }
-func (e *GreaterEq) End() token.Position {
+func (e *GreaterEq) End() loc.Pos {
 	return e.Right.End()
 }
 
-func (e *And) Pos() token.Position {
+func (e *And) Pos() loc.Pos {
 	return e.Left.Pos()
 }
-func (e *And) End() token.Position {
+func (e *And) End() loc.Pos {
 	return e.Right.End()
 }
 
-func (e *Or) Pos() token.Position {
+func (e *Or) Pos() loc.Pos {
 	return e.Left.Pos()
 }
-func (e *Or) End() token.Position {
+func (e *Or) End() loc.Pos {
 	return e.Right.End()
 }
 
-func (e *If) Pos() token.Position {
+func (e *If) Pos() loc.Pos {
 	return e.IfToken.Start
 }
-func (e *If) End() token.Position {
+func (e *If) End() loc.Pos {
 	return e.Else.End()
 }
 
-func (e *Let) Pos() token.Position {
+func (e *Let) Pos() loc.Pos {
 	return e.LetToken.Start
 }
-func (e *Let) End() token.Position {
+func (e *Let) End() loc.Pos {
 	return e.Body.End()
 }
 
-func (e *VarRef) Pos() token.Position {
+func (e *VarRef) Pos() loc.Pos {
 	return e.Token.Start
 }
-func (e *VarRef) End() token.Position {
+func (e *VarRef) End() loc.Pos {
 	return e.Token.End
 }
 
-func (e *LetRec) Pos() token.Position {
+func (e *LetRec) Pos() loc.Pos {
 	return e.LetToken.Start
 }
-func (e *LetRec) End() token.Position {
+func (e *LetRec) End() loc.Pos {
 	return e.Body.End()
 }
 
-func (e *Apply) Pos() token.Position {
+func (e *Apply) Pos() loc.Pos {
 	return e.Callee.Pos()
 }
-func (e *Apply) End() token.Position {
+func (e *Apply) End() loc.Pos {
 	if len(e.Args) == 0 {
 		return e.Callee.End()
 	}
 	return e.Args[len(e.Args)-1].End()
 }
 
-func (e *Tuple) Pos() token.Position {
+func (e *Tuple) Pos() loc.Pos {
 	return e.Elems[0].Pos()
 }
-func (e *Tuple) End() token.Position {
+func (e *Tuple) End() loc.Pos {
 	return e.Elems[len(e.Elems)-1].End()
 }
 
-func (e *LetTuple) Pos() token.Position {
+func (e *LetTuple) Pos() loc.Pos {
 	return e.LetToken.Start
 }
-func (e *LetTuple) End() token.Position {
+func (e *LetTuple) End() loc.Pos {
 	return e.Body.End()
 }
 
-func (e *ArrayCreate) Pos() token.Position {
+func (e *ArrayCreate) Pos() loc.Pos {
 	return e.ArrayToken.Start
 }
-func (e *ArrayCreate) End() token.Position {
+func (e *ArrayCreate) End() loc.Pos {
 	return e.Elem.End()
 }
 
-func (e *ArraySize) Pos() token.Position {
+func (e *ArraySize) Pos() loc.Pos {
 	return e.ArrayToken.Start
 }
-func (e *ArraySize) End() token.Position {
+func (e *ArraySize) End() loc.Pos {
 	return e.Target.End()
 }
 
-func (e *Get) Pos() token.Position {
+func (e *Get) Pos() loc.Pos {
 	return e.Array.Pos()
 }
-func (e *Get) End() token.Position {
+func (e *Get) End() loc.Pos {
 	return e.Index.End()
 }
 
-func (e *Put) Pos() token.Position {
+func (e *Put) Pos() loc.Pos {
 	return e.Array.Pos()
 }
-func (e *Put) End() token.Position {
+func (e *Put) End() loc.Pos {
 	return e.Assignee.End()
 }
 
-func (e *Match) Pos() token.Position {
+func (e *Match) Pos() loc.Pos {
 	return e.StartToken.Start
 }
-func (e *Match) End() token.Position {
+func (e *Match) End() loc.Pos {
 	return e.EndPos
 }
 
-func (e *Some) Pos() token.Position {
+func (e *Some) Pos() loc.Pos {
 	return e.StartToken.Start
 }
-func (e *Some) End() token.Position {
+func (e *Some) End() loc.Pos {
 	return e.Child.End()
 }
 
-func (e *None) Pos() token.Position {
+func (e *None) Pos() loc.Pos {
 	return e.Token.Start
 }
-func (e *None) End() token.Position {
+func (e *None) End() loc.Pos {
 	return e.Token.End
 }
 
-func (e *FuncType) Pos() token.Position {
+func (e *FuncType) Pos() loc.Pos {
 	return e.ParamTypes[0].Pos()
 }
-func (e *FuncType) End() token.Position {
+func (e *FuncType) End() loc.Pos {
 	return e.RetType.End()
 }
 
-func (e *TupleType) Pos() token.Position {
+func (e *TupleType) Pos() loc.Pos {
 	return e.ElemTypes[0].Pos()
 }
-func (e *TupleType) End() token.Position {
+func (e *TupleType) End() loc.Pos {
 	return e.ElemTypes[len(e.ElemTypes)-1].End()
 }
 
-func (e *CtorType) Pos() token.Position {
+func (e *CtorType) Pos() loc.Pos {
 	switch len(e.ParamTypes) {
 	case 0:
 		// foo
@@ -610,21 +611,21 @@ func (e *CtorType) Pos() token.Position {
 		return e.StartToken.Start
 	}
 }
-func (e *CtorType) End() token.Position {
+func (e *CtorType) End() loc.Pos {
 	return e.EndToken.End
 }
 
-func (e *Typed) Pos() token.Position {
+func (e *Typed) Pos() loc.Pos {
 	return e.Child.Pos()
 }
-func (e *Typed) End() token.Position {
+func (e *Typed) End() loc.Pos {
 	return e.Type.End()
 }
 
-func (e *TypeDecl) Pos() token.Position {
+func (e *TypeDecl) Pos() loc.Pos {
 	return e.Token.Start
 }
-func (e *TypeDecl) End() token.Position {
+func (e *TypeDecl) End() loc.Pos {
 	return e.Type.End()
 }
 
