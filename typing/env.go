@@ -3,7 +3,6 @@ package typing
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"github.com/rhysd/gocaml/ast"
 )
 
@@ -37,27 +36,6 @@ func NewEnv() *Env {
 		builtinPopulatedTable(),
 		map[*ast.None]*Option{},
 	}
-}
-
-// ApplyTypeAnalysis executes type inference with the Env instance.
-func (env *Env) ApplyTypeAnalysis(root ast.Expr) error {
-	t, err := env.infer(root)
-	if err != nil {
-		return err
-	}
-
-	if err := Unify(UnitType, t); err != nil {
-		return errors.Wrap(err, "Type of root expression of program must be unit\n")
-	}
-
-	// While dereferencing type variables in table, we can detect type variables
-	// which does not have exact type and raise an error for that.
-	// External variables must be well-typed also.
-	if err := env.DerefTypeVars(root); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (env *Env) Dump() {

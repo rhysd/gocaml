@@ -55,6 +55,7 @@ You can see [more examples][examples]. (e.g. [Brainfxxk interpreter][Brainfxxk i
 - GoCaml has `fun` syntax to make an anonymous funcion or closure like `fun x y -> x + y`.
 - GoCaml has type annotations syntax. Users can specify types explicitly.
 - Symbols named `_` are ignored.
+- Type alias using `type` keyword.
 
 ## Language Spec
 
@@ -413,6 +414,22 @@ let a: _ array = Array.make 3 true in
 
 ()
 ```
+
+### Type Alias
+
+`type {name} = {type};` syntax declares type alias. It can be declared on toplevel. It means that
+all type aliases must be put before any expression.
+
+```ml
+type board = int array array;
+type point = int * int;
+let p: point = 1, 2 in
+let b: board = Array.make 4 (Array.make 4 0) in
+()
+```
+
+In above example, `board` is an alias of `int array array`. It can be used the same as `int array array`.
+Note that `type` does not make another type here. Just make an alias.
 
 ### Tuples
 

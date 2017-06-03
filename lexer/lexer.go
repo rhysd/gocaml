@@ -100,6 +100,8 @@ func (l *Lexer) emitIdent(ident string) {
 		l.emit(token.NONE)
 	case "fun":
 		l.emit(token.FUN)
+	case "type":
+		l.emit(token.TYPE)
 	default:
 		l.emit(token.IDENT)
 	}

@@ -21,28 +21,28 @@ func Example() {
 	lex := lexer.NewLexer(src)
 	go lex.Lex()
 
-	root, err := parser.Parse(lex.Tokens)
+	ast, err := parser.Parse(lex.Tokens)
 	if err != nil {
 		// When parse failed
 		panic(err)
 	}
 
 	// Run alpha transform against the root of AST
-	if err = alpha.Transform(root); err != nil {
+	if err = alpha.Transform(ast.Root); err != nil {
 		// When some some duplicates found
 		panic(err)
 	}
 
 	// Type analysis
-	env := typing.NewEnv()
-	if err := env.ApplyTypeAnalysis(root); err != nil {
+	env, err := typing.TypeInferernce(ast)
+	if err != nil {
 		// Type error detected
 		panic(err)
 	}
 
 	// Convert AST into GCIL instruction block
 	// Returned block represents the root block of program
-	block, err := FromAST(root, env)
+	block, err := FromAST(ast.Root, env)
 	if err != nil {
 		panic(err)
 	}

@@ -12,8 +12,19 @@ func typeError(err error, where string, pos token.Position) error {
 	return errors.Wrapf(err, "Type error: %s (line:%d, column:%d)\n", where, pos.Line, pos.Column)
 }
 
-func (env *Env) checkNodeType(where string, node ast.Expr, expected Type) error {
-	t, err := env.infer(node)
+// Inferer is a visitor to infer types in the AST
+type Inferer struct {
+	env  *Env
+	conv *nodeTypeConv
+}
+
+// NewInferer creates a new Inferer instance
+func NewInferer() *Inferer {
+	return &Inferer{NewEnv(), nil}
+}
+
+func (inf *Inferer) checkNodeType(where string, node ast.Expr, expected Type) error {
+	t, err := inf.infer(node)
 	if err != nil {
 		return err
 	}
@@ -23,12 +34,12 @@ func (env *Env) checkNodeType(where string, node ast.Expr, expected Type) error 
 	return nil
 }
 
-func (env *Env) inferArithmeticBinOp(op string, left, right ast.Expr, operand Type) (Type, error) {
-	l, err := env.infer(left)
+func (inf *Inferer) inferArithmeticBinOp(op string, left, right ast.Expr, operand Type) (Type, error) {
+	l, err := inf.infer(left)
 	if err != nil {
 		return nil, err
 	}
-	r, err := env.infer(right)
+	r, err := inf.infer(right)
 	if err != nil {
 		return nil, err
 	}
@@ -42,12 +53,12 @@ func (env *Env) inferArithmeticBinOp(op string, left, right ast.Expr, operand Ty
 	return operand, nil
 }
 
-func (env *Env) inferRelationalBinOp(op string, left, right ast.Expr) (Type, error) {
-	l, err := env.infer(left)
+func (inf *Inferer) inferRelationalBinOp(op string, left, right ast.Expr) (Type, error) {
+	l, err := inf.infer(left)
 	if err != nil {
 		return nil, err
 	}
-	r, err := env.infer(right)
+	r, err := inf.infer(right)
 	if err != nil {
 		return nil, err
 	}
@@ -57,9 +68,9 @@ func (env *Env) inferRelationalBinOp(op string, left, right ast.Expr) (Type, err
 	return BoolType, nil
 }
 
-func (env *Env) inferLogicalOp(op string, left, right ast.Expr) (Type, error) {
+func (inf *Inferer) inferLogicalOp(op string, left, right ast.Expr) (Type, error) {
 	for i, e := range []ast.Expr{left, right} {
-		t, err := env.infer(e)
+		t, err := inf.infer(e)
 		if err != nil {
 			return nil, err
 		}
@@ -70,7 +81,7 @@ func (env *Env) inferLogicalOp(op string, left, right ast.Expr) (Type, error) {
 	return BoolType, nil
 }
 
-func (env *Env) infer(e ast.Expr) (Type, error) {
+func (inf *Inferer) infer(e ast.Expr) (Type, error) {
 	switch n := e.(type) {
 	case *ast.Unit:
 		return UnitType, nil
@@ -83,65 +94,65 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 	case *ast.Bool:
 		return BoolType, nil
 	case *ast.Not:
-		if err := env.checkNodeType("operand of operator 'not'", n.Child, BoolType); err != nil {
+		if err := inf.checkNodeType("operand of operator 'not'", n.Child, BoolType); err != nil {
 			return nil, err
 		}
 		return BoolType, nil
 	case *ast.Neg:
-		if err := env.checkNodeType("operand of unary operator '-'", n.Child, IntType); err != nil {
+		if err := inf.checkNodeType("operand of unary operator '-'", n.Child, IntType); err != nil {
 			return nil, err
 		}
 		return IntType, nil
 	case *ast.Add:
-		return env.inferArithmeticBinOp("+", n.Left, n.Right, IntType)
+		return inf.inferArithmeticBinOp("+", n.Left, n.Right, IntType)
 	case *ast.Sub:
-		return env.inferArithmeticBinOp("-", n.Left, n.Right, IntType)
+		return inf.inferArithmeticBinOp("-", n.Left, n.Right, IntType)
 	case *ast.Mul:
-		return env.inferArithmeticBinOp("*", n.Left, n.Right, IntType)
+		return inf.inferArithmeticBinOp("*", n.Left, n.Right, IntType)
 	case *ast.Div:
-		return env.inferArithmeticBinOp("/", n.Left, n.Right, IntType)
+		return inf.inferArithmeticBinOp("/", n.Left, n.Right, IntType)
 	case *ast.Mod:
-		return env.inferArithmeticBinOp("%", n.Left, n.Right, IntType)
+		return inf.inferArithmeticBinOp("%", n.Left, n.Right, IntType)
 	case *ast.FNeg:
-		if err := env.checkNodeType("operand of unary operator '-.'", n.Child, FloatType); err != nil {
+		if err := inf.checkNodeType("operand of unary operator '-.'", n.Child, FloatType); err != nil {
 			return nil, err
 		}
 		return FloatType, nil
 	case *ast.FAdd:
-		return env.inferArithmeticBinOp("+.", n.Left, n.Right, FloatType)
+		return inf.inferArithmeticBinOp("+.", n.Left, n.Right, FloatType)
 	case *ast.FSub:
-		return env.inferArithmeticBinOp("-.", n.Left, n.Right, FloatType)
+		return inf.inferArithmeticBinOp("-.", n.Left, n.Right, FloatType)
 	case *ast.FMul:
-		return env.inferArithmeticBinOp("*.", n.Left, n.Right, FloatType)
+		return inf.inferArithmeticBinOp("*.", n.Left, n.Right, FloatType)
 	case *ast.FDiv:
-		return env.inferArithmeticBinOp("/.", n.Left, n.Right, FloatType)
+		return inf.inferArithmeticBinOp("/.", n.Left, n.Right, FloatType)
 	case *ast.Eq:
-		return env.inferRelationalBinOp("=", n.Left, n.Right)
+		return inf.inferRelationalBinOp("=", n.Left, n.Right)
 	case *ast.NotEq:
-		return env.inferRelationalBinOp("<>", n.Left, n.Right)
+		return inf.inferRelationalBinOp("<>", n.Left, n.Right)
 	case *ast.Less:
-		return env.inferRelationalBinOp("<", n.Left, n.Right)
+		return inf.inferRelationalBinOp("<", n.Left, n.Right)
 	case *ast.LessEq:
-		return env.inferRelationalBinOp("<=", n.Left, n.Right)
+		return inf.inferRelationalBinOp("<=", n.Left, n.Right)
 	case *ast.Greater:
-		return env.inferRelationalBinOp(">", n.Left, n.Right)
+		return inf.inferRelationalBinOp(">", n.Left, n.Right)
 	case *ast.GreaterEq:
-		return env.inferRelationalBinOp(">=", n.Left, n.Right)
+		return inf.inferRelationalBinOp(">=", n.Left, n.Right)
 	case *ast.And:
-		return env.inferLogicalOp("&&", n.Left, n.Right)
+		return inf.inferLogicalOp("&&", n.Left, n.Right)
 	case *ast.Or:
-		return env.inferLogicalOp("||", n.Left, n.Right)
+		return inf.inferLogicalOp("||", n.Left, n.Right)
 	case *ast.If:
-		if err := env.checkNodeType("condition of 'if' expression", n.Cond, BoolType); err != nil {
+		if err := inf.checkNodeType("condition of 'if' expression", n.Cond, BoolType); err != nil {
 			return nil, err
 		}
 
-		t, err := env.infer(n.Then)
+		t, err := inf.infer(n.Then)
 		if err != nil {
 			return nil, err
 		}
 
-		e, err := env.infer(n.Else)
+		e, err := inf.infer(n.Else)
 		if err != nil {
 			return nil, err
 		}
@@ -152,7 +163,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 
 		return t, nil
 	case *ast.Let:
-		bound, err := env.infer(n.Bound)
+		bound, err := inf.infer(n.Bound)
 		if err != nil {
 			return nil, err
 		}
@@ -160,7 +171,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		var t Type
 		if n.Type != nil {
 			// When let x: type = ...
-			t, err = nodeToType(n.Type)
+			t, err = inf.conv.nodeToType(n.Type)
 			if err != nil {
 				return nil, err
 			}
@@ -172,24 +183,24 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 			return nil, typeError(err, fmt.Sprintf("type of variable '%s'", n.Symbol.DisplayName), n.Body.Pos())
 		}
 
-		env.Table[n.Symbol.Name] = bound
-		return env.infer(n.Body)
+		inf.env.Table[n.Symbol.Name] = bound
+		return inf.infer(n.Body)
 	case *ast.VarRef:
-		if t, ok := env.Table[n.Symbol.Name]; ok {
+		if t, ok := inf.env.Table[n.Symbol.Name]; ok {
 			return t, nil
 		}
-		if t, ok := env.Externals[n.Symbol.Name]; ok {
+		if t, ok := inf.env.Externals[n.Symbol.Name]; ok {
 			return t, nil
 		}
 		// Assume as free variable. If free variable's type is not identified,
 		// It falls into compilation error
 		t := &Var{}
-		env.Externals[n.Symbol.DisplayName] = t
+		inf.env.Externals[n.Symbol.DisplayName] = t
 		return t, nil
 	case *ast.LetRec:
 		f := &Var{}
 		// Need to register function here because of recursive functions
-		env.Table[n.Func.Symbol.Name] = f
+		inf.env.Table[n.Func.Symbol.Name] = f
 
 		// Register parameters of function as variables to table
 		params := make([]Type, len(n.Func.Params))
@@ -197,25 +208,25 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 			var t Type
 			var err error
 			if p.Type != nil {
-				t, err = nodeToType(p.Type)
+				t, err = inf.conv.nodeToType(p.Type)
 				if err != nil {
 					return nil, typeError(err, fmt.Sprintf("%s parameter of function", common.Ordinal(i+1)), p.Type.Pos())
 				}
 			} else {
 				t = &Var{}
 			}
-			env.Table[p.Ident.Name] = t
+			inf.env.Table[p.Ident.Name] = t
 			params[i] = t
 		}
 
 		// Infer return type of function from its body
-		ret, err := env.infer(n.Func.Body)
+		ret, err := inf.infer(n.Func.Body)
 		if err != nil {
 			return nil, err
 		}
 
 		if n.Func.RetType != nil {
-			t, err := nodeToType(n.Func.RetType)
+			t, err := inf.conv.nodeToType(n.Func.RetType)
 			if err != nil {
 				return nil, typeError(err, "return type of function", n.Func.RetType.Pos())
 			}
@@ -235,11 +246,11 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 			return nil, typeError(err, fmt.Sprintf("function '%s'", n.Func.Symbol.DisplayName), n.Pos())
 		}
 
-		return env.infer(n.Body)
+		return inf.infer(n.Body)
 	case *ast.Apply:
 		args := make([]Type, len(n.Args))
 		for i, a := range n.Args {
-			t, err := env.infer(a)
+			t, err := inf.infer(a)
 			if err != nil {
 				return nil, err
 			}
@@ -254,7 +265,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 			Params: args,
 		}
 
-		callee, err := env.infer(n.Callee)
+		callee, err := inf.infer(n.Callee)
 		if err != nil {
 			return nil, err
 		}
@@ -267,7 +278,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 	case *ast.Tuple:
 		elems := make([]Type, len(n.Elems))
 		for i, e := range n.Elems {
-			t, err := env.infer(e)
+			t, err := inf.infer(e)
 			if err != nil {
 				return nil, err
 			}
@@ -279,7 +290,7 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 
 		if n.Type != nil {
 			var err error
-			t, err = nodeToType(n.Type)
+			t, err = inf.conv.nodeToType(n.Type)
 			if err != nil {
 				return nil, err
 			}
@@ -293,36 +304,36 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 				return nil, errors.Errorf("Type error: Mismatch numbers of elements of specified tuple type and symbols in 'let (...)' expression: %d vs %d (line:%d, column:%d)", len(tpl.Elems), len(n.Symbols), p.Line, p.Column)
 			}
 			for i, sym := range n.Symbols {
-				env.Table[sym.Name] = tpl.Elems[i]
+				inf.env.Table[sym.Name] = tpl.Elems[i]
 			}
 		} else {
 			elems := make([]Type, len(n.Symbols))
 			for i, sym := range n.Symbols {
 				// Bound elements' types are unknown in this point
 				v := &Var{}
-				env.Table[sym.Name] = v
+				inf.env.Table[sym.Name] = v
 				elems[i] = v
 			}
 			t = &Tuple{Elems: elems}
 		}
 
 		// Bound value must be tuple
-		if err := env.checkNodeType("bound tuple value at 'let'", n.Bound, t); err != nil {
+		if err := inf.checkNodeType("bound tuple value at 'let'", n.Bound, t); err != nil {
 			return nil, err
 		}
 
-		return env.infer(n.Body)
+		return inf.infer(n.Body)
 	case *ast.ArrayCreate:
-		if err := env.checkNodeType("size at array creation", n.Size, IntType); err != nil {
+		if err := inf.checkNodeType("size at array creation", n.Size, IntType); err != nil {
 			return nil, err
 		}
-		elem, err := env.infer(n.Elem)
+		elem, err := inf.infer(n.Elem)
 		if err != nil {
 			return nil, err
 		}
 		return &Array{Elem: elem}, nil
 	case *ast.ArraySize:
-		if err := env.checkNodeType("argument of 'Array.length'", n.Target, &Array{Elem: &Var{}}); err != nil {
+		if err := inf.checkNodeType("argument of 'Array.length'", n.Target, &Array{Elem: &Var{}}); err != nil {
 			return nil, err
 		}
 		return IntType, nil
@@ -332,55 +343,55 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		elem := &Var{}
 		array := &Array{Elem: elem}
 
-		if err := env.checkNodeType("array value in index access", n.Array, array); err != nil {
+		if err := inf.checkNodeType("array value in index access", n.Array, array); err != nil {
 			return nil, err
 		}
 
-		if err := env.checkNodeType("index access to array", n.Index, IntType); err != nil {
+		if err := inf.checkNodeType("index access to array", n.Index, IntType); err != nil {
 			return nil, err
 		}
 
 		return elem, nil
 	case *ast.Put:
-		if err := env.checkNodeType("index at assignment to an element of array", n.Index, IntType); err != nil {
+		if err := inf.checkNodeType("index at assignment to an element of array", n.Index, IntType); err != nil {
 			return nil, err
 		}
-		assignee, err := env.infer(n.Assignee)
+		assignee, err := inf.infer(n.Assignee)
 		if err != nil {
 			return nil, err
 		}
 
 		// Type of assigned value must be the same as element type of the array
 		array := &Array{Elem: assignee}
-		if err := env.checkNodeType("assignment to an element of array", n.Array, array); err != nil {
+		if err := inf.checkNodeType("assignment to an element of array", n.Array, array); err != nil {
 			return nil, err
 		}
 
 		// Assign to array does not have a value, so return unit type
 		return UnitType, nil
 	case *ast.Some:
-		elem, err := env.infer(n.Child)
+		elem, err := inf.infer(n.Child)
 		if err != nil {
 			return nil, err
 		}
 		return &Option{elem}, nil
 	case *ast.None:
 		t := &Option{&Var{}}
-		env.NoneTypes[n] = t
+		inf.env.NoneTypes[n] = t
 		return t, nil
 	case *ast.Match:
 		elem := &Var{}
 		matched := &Option{elem}
-		if err := env.checkNodeType("matching target in 'match' expression", n.Target, matched); err != nil {
+		if err := inf.checkNodeType("matching target in 'match' expression", n.Target, matched); err != nil {
 			return nil, err
 		}
 
-		env.Table[n.SomeIdent.Name] = elem
-		some, err := env.infer(n.IfSome)
+		inf.env.Table[n.SomeIdent.Name] = elem
+		some, err := inf.infer(n.IfSome)
 		if err != nil {
 			return nil, err
 		}
-		none, err := env.infer(n.IfNone)
+		none, err := inf.infer(n.IfNone)
 		if err != nil {
 			return nil, err
 		}
@@ -389,12 +400,12 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 		}
 		return some, nil
 	case *ast.Typed:
-		child, err := env.infer(n.Child)
+		child, err := inf.infer(n.Child)
 		if err != nil {
 			return nil, err
 		}
 
-		t, err := nodeToType(n.Type)
+		t, err := inf.conv.nodeToType(n.Type)
 		if err != nil {
 			return nil, err
 		}
@@ -407,4 +418,36 @@ func (env *Env) infer(e ast.Expr) (Type, error) {
 	default:
 		panic(fmt.Sprintf("FATAL: Unreachable: %s %v %v", e.Name(), e.Pos(), e.End()))
 	}
+}
+
+// Infer infers types in given AST and returns error when detecting type errors
+func (inferer *Inferer) Infer(parsed *ast.AST) error {
+	var err error
+	inferer.conv, err = newNodeTypeConv(parsed.TypeDecls)
+	if err != nil {
+		return err
+	}
+
+	root, err := inferer.infer(parsed.Root)
+	if err != nil {
+		return err
+	}
+
+	if err := Unify(UnitType, root); err != nil {
+		return errors.Wrap(err, "Type of root expression of program must be unit\n")
+	}
+
+	// While dereferencing type variables in table, we can detect type variables
+	// which does not have exact type and raise an error for that.
+	// External variables must be well-typed also.
+	return derefTypeVars(inferer.env, parsed.Root)
+}
+
+// TypeInferernce applies type inference and returns a type environment as the result
+func TypeInferernce(parsed *ast.AST) (*Env, error) {
+	inferer := NewInferer()
+	if err := inferer.Infer(parsed); err != nil {
+		return nil, err
+	}
+	return inferer.env, nil
 }

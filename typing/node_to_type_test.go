@@ -31,6 +31,15 @@ func TestSuccess(t *testing.T) {
 			name,
 		}
 	}
+	decls := []*ast.TypeDecl{
+		{tok, "foo", prim("int")},
+		{tok, "bar", prim("foo")},
+		{tok, "piyo", &ast.FuncType{
+			[]ast.Expr{prim("int"), prim("foo")},
+			prim("bar"),
+		}},
+	}
+
 	cases := []struct {
 		what string
 		node ast.Expr
@@ -140,11 +149,47 @@ func TestSuccess(t *testing.T) {
 				},
 			},
 		},
+		{
+			what: "simple aliased type",
+			node: prim("foo"),
+			want: IntType,
+		},
+		{
+			what: "nested aliased type",
+			node: prim("bar"),
+			want: IntType,
+		},
+		{
+			what: "alias in parameter",
+			node: ctor("array", prim("bar")),
+			want: &Array{IntType},
+		},
+		{
+			what: "multiple aliases in tuple",
+			node: &ast.TupleType{[]ast.Expr{
+				prim("foo"),
+				prim("bar"),
+				prim("piyo"),
+			}},
+			want: &Tuple{[]Type{
+				IntType,
+				IntType,
+				&Fun{
+					IntType,
+					[]Type{IntType, IntType},
+				},
+			}},
+		},
+	}
+
+	c, err := newNodeTypeConv(decls)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.what, func(t *testing.T) {
-			have, err := nodeToType(tc.node)
+			have, err := c.nodeToType(tc.node)
 			if err != nil {
 				t.Fatal(tc.node.Name(), "caused an error:", err)
 			}
@@ -218,12 +263,81 @@ func TestErrors(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.what, func(t *testing.T) {
-			_, err := nodeToType(tc.node)
+			c, err := newNodeTypeConv([]*ast.TypeDecl{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = c.nodeToType(tc.node)
 			if err == nil {
 				t.Fatal("Error did not occur")
 			}
 			if !strings.Contains(err.Error(), tc.msg) {
 				t.Fatal("Unexpected error message:", err)
+			}
+		})
+	}
+}
+
+func TestInvalidAliases(t *testing.T) {
+	pos := token.Position{}
+	tok := &token.Token{
+		Start: pos,
+		End:   pos,
+		File:  token.NewDummySource(""),
+	}
+	prim := func(name string) ast.Expr {
+		return &ast.CtorType{
+			nil,
+			tok,
+			nil,
+			name,
+		}
+	}
+
+	cases := []struct {
+		what  string
+		decls []*ast.TypeDecl
+		msg   string
+	}{
+		{
+			what: "ignored name",
+			decls: []*ast.TypeDecl{
+				{tok, "_", prim("int")},
+			},
+			msg: "Cannot declare '_' type name",
+		},
+		{
+			what: "redeclare primitive type name",
+			decls: []*ast.TypeDecl{
+				{tok, "int", prim("float")},
+			},
+			msg: "Type name 'int' was already declared",
+		},
+		{
+			what: "redeclare alias name",
+			decls: []*ast.TypeDecl{
+				{tok, "foo", prim("float")},
+				{tok, "foo", prim("bool")},
+			},
+			msg: "Type name 'foo' was already declared",
+		},
+		{
+			what: "invalid aliased type",
+			decls: []*ast.TypeDecl{
+				{tok, "foo", prim("piyo")},
+			},
+			msg: "Type declaration 'foo'",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.what, func(t *testing.T) {
+			_, err := newNodeTypeConv(tc.decls)
+			if err == nil {
+				t.Fatal("Error expected but there is no error")
+			}
+			if !strings.Contains(err.Error(), tc.msg) {
+				t.Fatal("Unexpected error", err, "...it should contain:", tc.msg)
 			}
 		})
 	}

@@ -22,6 +22,7 @@ import (
 	decls []*ast.Symbol
 	decl *ast.Symbol
 	params []ast.Param
+	type_decls []*ast.TypeDecl
 }
 
 %token<token> ILLEGAL
@@ -71,6 +72,7 @@ import (
 %token<token> MINUS_GREATER
 %token<token> FUN
 %token<token> COLON
+%token<token> TYPE
 
 %right prec_let
 %right SEMICOLON
@@ -105,6 +107,8 @@ import (
 %type<nodes> arrow_types
 %type<nodes> simple_type_star_list
 %type<nodes> type_comma_list
+%type<type_decls> type_decls
+%type<> sep
 %type<> program
 
 %start program
@@ -112,10 +116,22 @@ import (
 %%
 
 program:
-	exp
+	type_decls exp
 		{
-			yylex.(*pseudoLexer).result = $1
+			yylex.(*pseudoLexer).result = &ast.AST{Root: $2, TypeDecls: $1}
 		}
+
+type_decls:
+	/* empty */
+		{ $$ = []*ast.TypeDecl{} }
+	| type_decls TYPE IDENT EQUAL type sep
+		{
+			decl := &ast.TypeDecl{$2, $3.Value(), $5}
+			$$ = append($1, decl)
+		}
+
+sep:
+   SEMICOLON {} | sep SEMICOLON {}
 
 exp:
 	parenless_exp

@@ -63,16 +63,13 @@ func (c *Compiler) PrintTokens(src *token.Source) {
 // Parse parses the source and returns the parsed AST.
 func (c *Compiler) Parse(src *token.Source) (*ast.AST, error) {
 	tokens := c.Lex(src)
-	root, err := parser.Parse(tokens)
+	ast, err := parser.Parse(tokens)
 
 	if err != nil {
 		return nil, err
 	}
 
-	ast := &ast.AST{
-		File: src,
-		Root: root,
-	}
+	ast.File = src // TODO
 
 	return ast, nil
 }
@@ -93,8 +90,8 @@ func (c *Compiler) SemanticAnalysis(a *ast.AST) (*typing.Env, error) {
 	if err := alpha.Transform(a.Root); err != nil {
 		return nil, errors.Wrapf(err, "While semantic analysis (alpha transform) for %s\n", a.File.Name)
 	}
-	env := typing.NewEnv()
-	if err := env.ApplyTypeAnalysis(a.Root); err != nil {
+	env, err := typing.TypeInferernce(a)
+	if err != nil {
 		return nil, errors.Wrapf(err, "While semantic analysis (type infererence) for %s\n", a.File.Name)
 	}
 	return env, nil

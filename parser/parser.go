@@ -13,7 +13,7 @@ type pseudoLexer struct {
 	tokens       chan token.Token
 	errorCount   int
 	errorMessage bytes.Buffer
-	result       ast.Expr
+	result       *ast.AST
 }
 
 func (l *pseudoLexer) Lex(lval *yySymType) int {
@@ -59,7 +59,7 @@ func (l *pseudoLexer) getError() error {
 
 // Parse parses given tokens and returns parsed AST.
 // Tokens are passed via channel.
-func Parse(tokens chan token.Token) (ast.Expr, error) {
+func Parse(tokens chan token.Token) (*ast.AST, error) {
 	yyErrorVerbose = true
 
 	l := &pseudoLexer{tokens: tokens}

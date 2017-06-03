@@ -340,18 +340,18 @@ func TestEmitInsn(t *testing.T) {
 			s := token.NewDummySource(fmt.Sprintf("%s; ()", tc.code))
 			l := lexer.NewLexer(s)
 			go l.Lex()
-			root, err := parser.Parse(l.Tokens)
+			ast, err := parser.Parse(l.Tokens)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err = alpha.Transform(root); err != nil {
+			if err = alpha.Transform(ast.Root); err != nil {
 				t.Fatal(err)
 			}
-			env := typing.NewEnv()
-			if err := env.ApplyTypeAnalysis(root); err != nil {
+			env, err := typing.TypeInferernce(ast)
+			if err != nil {
 				t.Fatal(err)
 			}
-			ir, err := FromAST(root, env)
+			ir, err := FromAST(ast.Root, env)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -412,18 +412,18 @@ func TestSemanticError(t *testing.T) {
 			s := token.NewDummySource(fmt.Sprintf("%s; ()", tc.code))
 			l := lexer.NewLexer(s)
 			go l.Lex()
-			root, err := parser.Parse(l.Tokens)
+			ast, err := parser.Parse(l.Tokens)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err = alpha.Transform(root); err != nil {
+			if err = alpha.Transform(ast.Root); err != nil {
 				t.Fatal(err)
 			}
-			env := typing.NewEnv()
-			if err := env.ApplyTypeAnalysis(root); err != nil {
+			env, err := typing.TypeInferernce(ast)
+			if err != nil {
 				t.Fatal(err)
 			}
-			_, err = FromAST(root, env)
+			_, err = FromAST(ast.Root, env)
 			if err == nil {
 				t.Fatalf("Expected code '%s' to cause an error '%s' but actually there is no error", tc.code, tc.expected)
 			}

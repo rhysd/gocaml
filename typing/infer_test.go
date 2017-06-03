@@ -26,15 +26,19 @@ func TestEdgeCases(t *testing.T) {
 			s := token.NewDummySource(tc.code)
 			l := lexer.NewLexer(s)
 			go l.Lex()
-			e, err := parser.Parse(l.Tokens)
+			ast, err := parser.Parse(l.Tokens)
 			if err != nil {
 				panic(err)
 			}
-			if err = alpha.Transform(e); err != nil {
+			if err = alpha.Transform(ast.Root); err != nil {
 				panic(err)
 			}
-			env := NewEnv()
-			_, err = env.infer(e)
+			i := NewInferer()
+			i.conv, err = newNodeTypeConv(ast.TypeDecls)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = i.infer(ast.Root)
 			if err != nil {
 				t.Fatalf("Type check raised an error for code '%s': %s", tc.code, err.Error())
 			}
@@ -345,15 +349,19 @@ func TestInvalidExpressions(t *testing.T) {
 			s := token.NewDummySource(testcase.code)
 			l := lexer.NewLexer(s)
 			go l.Lex()
-			e, err := parser.Parse(l.Tokens)
+			ast, err := parser.Parse(l.Tokens)
 			if err != nil {
 				panic(err)
 			}
-			if err = alpha.Transform(e); err != nil {
+			if err = alpha.Transform(ast.Root); err != nil {
 				panic(err)
 			}
-			env := NewEnv()
-			_, err = env.infer(e)
+			i := NewInferer()
+			i.conv, err = newNodeTypeConv(ast.TypeDecls)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = i.infer(ast.Root)
 			if err == nil {
 				t.Fatalf("Type check did not raise an error for code '%s'", testcase.code)
 			}
@@ -368,20 +376,24 @@ func TestRegisterNoneTypes(t *testing.T) {
 	s := token.NewDummySource("let rec f x = () in f (Some 42); f None; let a = None in f a")
 	l := lexer.NewLexer(s)
 	go l.Lex()
-	e, err := parser.Parse(l.Tokens)
+	ast, err := parser.Parse(l.Tokens)
 	if err != nil {
 		panic(err)
 	}
-	if err = alpha.Transform(e); err != nil {
+	if err = alpha.Transform(ast.Root); err != nil {
 		panic(err)
 	}
-	env := NewEnv()
-	_, err = env.infer(e)
+	i := NewInferer()
+	i.conv, err = newNodeTypeConv(ast.TypeDecls)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(env.NoneTypes) != 2 {
-		t.Errorf("2 None node should be detected but actually %d", len(env.NoneTypes))
+	_, err = i.infer(ast.Root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(i.env.NoneTypes) != 2 {
+		t.Errorf("2 None node should be detected but actually %d", len(i.env.NoneTypes))
 	}
 }
 
@@ -398,15 +410,19 @@ func TestInferSuccess(t *testing.T) {
 			}
 			l := lexer.NewLexer(s)
 			go l.Lex()
-			root, err := parser.Parse(l.Tokens)
+			ast, err := parser.Parse(l.Tokens)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err = alpha.Transform(root); err != nil {
+			if err = alpha.Transform(ast.Root); err != nil {
 				t.Fatal(err)
 			}
-			env := NewEnv()
-			_, err = env.infer(root)
+			i := NewInferer()
+			i.conv, err = newNodeTypeConv(ast.TypeDecls)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = i.infer(ast.Root)
 			if err != nil {
 				t.Fatal(err)
 			}

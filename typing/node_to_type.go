@@ -2,21 +2,44 @@ package typing
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"github.com/rhysd/gocaml/ast"
 )
 
-var Primitives = map[string]Type{
-	"unit":   UnitType,
-	"int":    IntType,
-	"bool":   BoolType,
-	"float":  FloatType,
-	"string": StringType,
+type nodeTypeConv struct {
+	aliases map[string]Type
 }
 
-func nodesToTypes(nodes []ast.Expr) ([]Type, error) {
+func newNodeTypeConv(decls []*ast.TypeDecl) (*nodeTypeConv, error) {
+	conv := &nodeTypeConv{make(map[string]Type, len(decls)+5 /*primitives*/)}
+	conv.aliases["unit"] = UnitType
+	conv.aliases["int"] = IntType
+	conv.aliases["bool"] = BoolType
+	conv.aliases["float"] = FloatType
+	conv.aliases["string"] = StringType
+
+	for _, decl := range decls {
+		if decl.Ident == "_" {
+			pos := decl.Pos()
+			return nil, errors.Errorf("Cannot declare '_' type name at (line:%d, column:%d)", pos.Line, pos.Column)
+		}
+		if t, ok := conv.aliases[decl.Ident]; ok {
+			pos := decl.Pos()
+			return nil, errors.Errorf("Type name '%s' was already declared as type '%s' at (line:%d, column:%d)", decl.Ident, t.String(), pos.Line, pos.Column)
+		}
+		t, err := conv.nodeToType(decl.Type)
+		if err != nil {
+			return nil, typeError(err, fmt.Sprintf("Type declaration '%s'", decl.Ident), decl.Pos())
+		}
+		conv.aliases[decl.Ident] = t
+	}
+	return conv, nil
+}
+
+func (conv *nodeTypeConv) nodesToTypes(nodes []ast.Expr) ([]Type, error) {
 	types := make([]Type, 0, len(nodes))
 	for _, n := range nodes {
-		t, err := nodeToType(n)
+		t, err := conv.nodeToType(n)
 		if err != nil {
 			return nil, err
 		}
@@ -25,22 +48,22 @@ func nodesToTypes(nodes []ast.Expr) ([]Type, error) {
 	return types, nil
 }
 
-func nodeToType(node ast.Expr) (Type, error) {
+func (conv *nodeTypeConv) nodeToType(node ast.Expr) (Type, error) {
 	switch n := node.(type) {
 	case *ast.FuncType:
-		params, err := nodesToTypes(n.ParamTypes)
+		params, err := conv.nodesToTypes(n.ParamTypes)
 		if err != nil {
 			return nil, err
 		}
 
-		ret, err := nodeToType(n.RetType)
+		ret, err := conv.nodeToType(n.RetType)
 		if err != nil {
 			return nil, err
 		}
 
 		return &Fun{ret, params}, nil
 	case *ast.TupleType:
-		elems, err := nodesToTypes(n.ElemTypes)
+		elems, err := conv.nodesToTypes(n.ElemTypes)
 		return &Tuple{elems}, err
 	case *ast.CtorType:
 		len := len(n.ParamTypes)
@@ -49,8 +72,9 @@ func nodeToType(node ast.Expr) (Type, error) {
 				// '_' accepts any type.
 				return &Var{}, nil
 			}
-			if prim, ok := Primitives[n.Ctor]; ok {
-				return prim, nil
+			if t, ok := conv.aliases[n.Ctor]; ok {
+				// TODO: Currently
+				return t, nil
 			}
 		}
 
@@ -59,20 +83,20 @@ func nodeToType(node ast.Expr) (Type, error) {
 		case "array":
 			if len != 1 {
 				p := n.Pos()
-				return nil, fmt.Errorf("Invalid array type at (line:%d,column:%d). 'array' only has 1 type parameter.", p.Line, p.Column)
+				return nil, errors.Errorf("Invalid array type at (line:%d,column:%d). 'array' only has 1 type parameter.", p.Line, p.Column)
 			}
-			elem, err := nodeToType(n.ParamTypes[0])
+			elem, err := conv.nodeToType(n.ParamTypes[0])
 			return &Array{elem}, err
 		case "option":
 			if len != 1 {
 				p := n.Pos()
-				return nil, fmt.Errorf("Invalid option type at (line:%d,column:%d). 'option' only has 1 type parameter.", p.Line, p.Column)
+				return nil, errors.Errorf("Invalid option type at (line:%d,column:%d). 'option' only has 1 type parameter.", p.Line, p.Column)
 			}
-			elem, err := nodeToType(n.ParamTypes[0])
+			elem, err := conv.nodeToType(n.ParamTypes[0])
 			return &Option{elem}, err
 		default:
 			p := n.Pos()
-			return nil, fmt.Errorf("Unknown type constructor '%s' at (line:%d,column:%d). Currently only primitive types, 'array', 'option' and '_' are supported as built-in.", n.Ctor, p.Line, p.Column)
+			return nil, errors.Errorf("Unknown type constructor '%s' at (line:%d,column:%d). Primitive types, aliased types, 'array', 'option' and '_' are supported", n.Ctor, p.Line, p.Column)
 		}
 	default:
 		panic("FATAL: Cannot convert non-type AST node into type values: " + node.Name())
