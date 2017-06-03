@@ -74,12 +74,16 @@ import (
 %token<token> COLON
 %token<token> TYPE
 
+%nonassoc IN
 %right prec_let
 %right SEMICOLON
+%nonassoc WITH
 %right prec_if
 %right prec_match
 %right prec_fun
 %right LESS_MINUS
+%nonassoc BAR
+%left prec_tuple
 %left COMMA
 %left BAR_BAR
 %left AND_AND
@@ -108,7 +112,6 @@ import (
 %type<nodes> simple_type_star_list
 %type<nodes> type_comma_list
 %type<type_decls> type_decls
-%type<> sep
 %type<> program
 
 %start program
@@ -124,14 +127,13 @@ program:
 type_decls:
 	/* empty */
 		{ $$ = []*ast.TypeDecl{} }
-	| type_decls TYPE IDENT EQUAL type sep
+	| type_decls SEMICOLON
+		{ $$ = $1 }
+	| type_decls TYPE IDENT EQUAL type SEMICOLON
 		{
 			decl := &ast.TypeDecl{$2, $3.Value(), $5}
 			$$ = append($1, decl)
 		}
-
-sep:
-   SEMICOLON {} | sep SEMICOLON {}
 
 exp:
 	parenless_exp
@@ -200,10 +202,11 @@ exp:
 	| LET REC fundef IN exp
 		%prec prec_let
 		{ $$ = &ast.LetRec{$1, $3, $5} }
-	| exp args
+	| parenless_exp args
 		%prec prec_app
 		{ $$ = &ast.Apply{$1, $2} }
 	| elems
+		%prec prec_tuple
 		{ $$ = &ast.Tuple{$1} }
 	| LET LPAREN pat RPAREN type_annotation EQUAL exp IN exp
 		{ $$ = &ast.LetTuple{$1, $3, $7, $9, $5} }
