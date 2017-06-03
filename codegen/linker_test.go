@@ -25,7 +25,7 @@ func TestMultiGOPATH(t *testing.T) {
 
 	l := newDefaultLinker("")
 	err := l.link("dummy", []string{"not-exist.o"})
-	if !strings.HasPrefix(err.Error(), "Linker command failed: ") {
+	if !strings.Contains(err.Error(), "Linker command failed: ") {
 		t.Fatalf("Unexpected error message '%s'", err.Error())
 	}
 }
@@ -37,7 +37,7 @@ func TestRuntimeNotFound(t *testing.T) {
 
 	l := newDefaultLinker("")
 	err := l.link("dummy", []string{"not-exist.o"})
-	if !strings.HasPrefix(err.Error(), "Runtime library (gocamlrt.a) was not found") {
+	if !strings.Contains(err.Error(), "Runtime library (gocamlrt.a) was not found") {
 		t.Fatalf("Unexpected error message '%s'", err.Error())
 	}
 }

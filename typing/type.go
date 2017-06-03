@@ -53,11 +53,20 @@ type Fun struct {
 }
 
 func (t *Fun) String() string {
-	params := make([]string, len(t.Params))
-	for i, p := range t.Params {
-		params[i] = p.String()
+	ss := make([]string, 0, len(t.Params)+1)
+	for _, p := range t.Params {
+		if f, ok := p.(*Fun); ok {
+			ss = append(ss, fmt.Sprintf("(%s)", f.String()))
+		} else {
+			ss = append(ss, p.String())
+		}
 	}
-	return fmt.Sprintf("(%s) -> %s", strings.Join(params, ", "), t.Ret.String())
+	if f, ok := t.Ret.(*Fun); ok {
+		ss = append(ss, fmt.Sprintf("(%s)", f.String()))
+	} else {
+		ss = append(ss, t.Ret.String())
+	}
+	return strings.Join(ss, " -> ")
 }
 
 type Tuple struct {
@@ -69,7 +78,7 @@ func (t *Tuple) String() string {
 	for i, e := range t.Elems {
 		elems[i] = e.String()
 	}
-	return fmt.Sprintf("(%s)", strings.Join(elems, ", "))
+	return strings.Join(elems, " * ")
 }
 
 type Array struct {
@@ -94,7 +103,7 @@ type Var struct {
 
 func (t *Var) String() string {
 	if t.Ref == nil {
-		return fmt.Sprintf("{unknown:%p}", t)
+		return fmt.Sprintf("?(%p)", t)
 	}
 	return t.Ref.String()
 }

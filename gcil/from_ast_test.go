@@ -160,13 +160,13 @@ func TestEmitInsn(t *testing.T) {
 			"function and its application",
 			"let rec f a = a + 1 in f 3",
 			[]string{
-				"fun a$t2 ; type=(int) -> int",
+				"fun a$t2 ; type=int -> int",
 				"BEGIN: body (f$t1)",
 				"ref a$t2 ; type=int",
 				"int 1 ; type=int",
 				"binary + $k1 $k2 ; type=int",
 				"END: body (f$t1)",
-				"ref f$t1 ; type=(int) -> int",
+				"ref f$t1 ; type=int -> int",
 				"int 3 ; type=int",
 				"app $k4 $k5 ; type=int",
 			},
@@ -178,7 +178,7 @@ func TestEmitInsn(t *testing.T) {
 				"int 1 ; type=int",
 				"int 2 ; type=int",
 				"int 3 ; type=int",
-				"tuple $k1,$k2,$k3 ; type=(int, int, int)",
+				"tuple $k1,$k2,$k3 ; type=int * int * int",
 			},
 		},
 		{
@@ -187,7 +187,7 @@ func TestEmitInsn(t *testing.T) {
 			[]string{
 				"int 1 ; type=int",
 				"int 2 ; type=int",
-				"tuple $k1,$k2 ; type=(int, int)",
+				"tuple $k1,$k2 ; type=int * int",
 				"tplload 0 $k3 ; type=int",
 				"tplload 1 $k3 ; type=int",
 				"ref a$t1 ; type=int",
@@ -393,7 +393,7 @@ func TestSemanticError(t *testing.T) {
 		{
 			what:     "tuple is invalid for operator '<'",
 			code:     "let t = (1, 2) in t < t",
-			expected: "'(int, int)' can't be compared with operator '<'",
+			expected: "'int * int' can't be compared with operator '<'",
 		},
 		{
 			what:     "option is invalid for operator '<'",

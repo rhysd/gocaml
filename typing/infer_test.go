@@ -165,17 +165,17 @@ func TestInvalidExpressions(t *testing.T) {
 		{
 			what:     "mismatch parameter type",
 			code:     "let rec f a b = a < b in (f 1 1) = (f 1.0 1.0)",
-			expected: "On unifying 1st parameter of function '(int, int) -> bool' and '(float, float) -> bool'",
+			expected: "On unifying 1st parameter of function 'int -> int -> bool' and 'float -> float -> bool'",
 		},
 		{
 			what:     "does not meet parameter type requirements",
 			code:     "let rec f a b = a + b in f 1 1.0",
-			expected: "On unifying 2nd parameter of function '(int, int) -> int' and '(int, float) -> int'",
+			expected: "On unifying 2nd parameter of function 'int -> int -> int' and 'int -> float -> int'",
 		},
 		{
 			what:     "wrong number of arguments",
 			code:     "let rec f a b = a + b in f 1",
-			expected: "Number of parameters of function does not match: 2 vs 1 (between '(int, int) -> int' and '(int) -> int')",
+			expected: "Number of parameters of function does not match: 2 vs 1 (between 'int -> int -> int' and 'int -> int')",
 		},
 		{
 			what:     "type mismatch in return type",
@@ -210,7 +210,7 @@ func TestInvalidExpressions(t *testing.T) {
 		{
 			what:     "index access to wrong value",
 			code:     "true.(1)",
-			expected: "} array' and 'bool'",
+			expected: "array' and 'bool'",
 		},
 		{
 			what:     "set wrong type value to array",
@@ -235,7 +235,7 @@ func TestInvalidExpressions(t *testing.T) {
 		{
 			what:     "Array.length with invalid argument",
 			code:     "Array.length true",
-			expected: "} array' and 'bool'",
+			expected: "array' and 'bool'",
 		},
 		{
 			what:     "Array.length returns int type value",
@@ -270,7 +270,7 @@ func TestInvalidExpressions(t *testing.T) {
 		{
 			what:     "matching target in match expression",
 			code:     "match 42 with Some i -> 0 | None -> 0",
-			expected: "matching target in 'match' expression must be '{",
+			expected: "matching target in 'match' expression must be '?",
 		},
 		{
 			what:     "matched symbol type and matching expression",
@@ -285,7 +285,7 @@ func TestInvalidExpressions(t *testing.T) {
 		{
 			what:     "None type comparison",
 			code:     "let o = None in o = 42",
-			expected: "} option' and 'int'",
+			expected: "option' and 'int'",
 		},
 		{
 			what:     "Invalid type specified",
