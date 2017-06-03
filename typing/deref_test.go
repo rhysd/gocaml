@@ -1,7 +1,6 @@
 package typing
 
 import (
-	"strings"
 	"testing"
 )
 
@@ -58,7 +57,7 @@ func testTypeEquals(l, r Type) bool {
 }
 
 func TestUnwrapExternalSimpleTypes(t *testing.T) {
-	v := &typeVarDereferencer{[]string{}, NewEnv()}
+	v := &typeVarDereferencer{nil, NewEnv()}
 	for _, ty := range []Type{
 		UnitType,
 		IntType,
@@ -82,14 +81,14 @@ func TestUnwrapExternalSimpleTypes(t *testing.T) {
 		if a != ty {
 			t.Errorf("It must be %s but actually %s", ty.String(), a.String())
 		}
-		if len(v.errors) > 0 {
-			t.Errorf("Unexpected error at %s: %s", ty.String(), strings.Join(v.errors, "\n"))
+		if v.err != nil {
+			t.Errorf("Unexpected error at %s: %s", ty.String(), v.err.Error())
 		}
 	}
 }
 
 func TestUnwrapTypeVarsInExternals(t *testing.T) {
-	v := &typeVarDereferencer{[]string{}, NewEnv()}
+	v := &typeVarDereferencer{nil, NewEnv()}
 	for _, tc := range []struct {
 		input    Type
 		expected Type
@@ -104,14 +103,14 @@ func TestUnwrapTypeVarsInExternals(t *testing.T) {
 		if !testTypeEquals(actual, tc.expected) {
 			t.Errorf("Expected dereferenced type to be '%s' but actually '%s'", tc.expected.String(), actual.String())
 		}
-		if len(v.errors) > 0 {
-			t.Errorf("Unexpected error at type %s: %s", tc.input.String(), strings.Join(v.errors, "\n"))
+		if v.err != nil {
+			t.Errorf("Unexpected error at type %s: %s", tc.input.String(), v.err.Error())
 		}
 	}
 }
 
 func TestRaiseErrorOnUnknownTypeInExternals(t *testing.T) {
-	v := &typeVarDereferencer{[]string{}, NewEnv()}
+	v := &typeVarDereferencer{nil, NewEnv()}
 	for _, ty := range []Type{
 		&Var{},
 		&Var{&Var{}},
@@ -123,14 +122,14 @@ func TestRaiseErrorOnUnknownTypeInExternals(t *testing.T) {
 		&Fun{&Option{&Var{}}, []Type{}},
 	} {
 		v.derefExternalSym("test", ty)
-		if len(v.errors) == 0 {
+		if v.err == nil {
 			t.Errorf("Error should be raised for dereferencing external's type %s", ty.String())
 		}
 	}
 }
 
 func TestFixReturnTypeOfExternalFunction(t *testing.T) {
-	v := &typeVarDereferencer{[]string{}, NewEnv()}
+	v := &typeVarDereferencer{nil, NewEnv()}
 	for _, ty := range []Type{
 		&Fun{&Var{}, []Type{}},
 		&Fun{&Var{&Var{}}, []Type{IntType}},

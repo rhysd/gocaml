@@ -2,19 +2,17 @@ package gcil
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"github.com/rhysd/gocaml/ast"
 	"github.com/rhysd/gocaml/typing"
 	"github.com/rhysd/loc"
-	"strings"
 )
 
 // Convert AST into GCIL with K-Normalization
 
 type emitter struct {
-	count  uint
-	types  *typing.Env
-	errors []string
+	count uint
+	types *typing.Env
+	err   *loc.Error
 }
 
 func (e *emitter) genID() string {
@@ -31,9 +29,11 @@ func (e *emitter) typeOf(i *Insn) typing.Type {
 }
 
 func (e *emitter) semanticError(msg string, pos loc.Pos) {
-	e.errors = append(
-		e.errors, fmt.Sprintf("%s at (line:%d, column:%d)", msg, pos.Line, pos.Column),
-	)
+	if e.err == nil {
+		e.err = loc.ErrorAt(pos, msg)
+		return
+	}
+	e.err = e.err.NoteAt(pos, msg)
 }
 
 func (e *emitter) emitBinaryInsn(op OperatorKind, lhs ast.Expr, rhs ast.Expr) (typing.Type, Val, *Insn) {
@@ -377,10 +377,10 @@ func (e *emitter) emitBlock(name string, node ast.Expr) (*Block, typing.Type) {
 }
 
 func FromAST(root ast.Expr, types *typing.Env) (*Block, error) {
-	e := &emitter{0, types, []string{}}
+	e := &emitter{0, types, nil}
 	b, _ := e.emitBlock("program", root)
-	if len(e.errors) > 0 {
-		return nil, errors.New("Semantics error:\n  " + strings.Join(e.errors, "\n  "))
+	if e.err != nil {
+		return nil, e.err.Note("Semantics error while GCIL generation")
 	}
 	return b, nil
 }

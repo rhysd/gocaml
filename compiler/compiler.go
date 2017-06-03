@@ -3,7 +3,6 @@ package compiler
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/ast"
 	"github.com/rhysd/gocaml/closure"
@@ -89,11 +88,11 @@ func (c *Compiler) PrintAST(src *loc.Source) {
 // It returns the result of type analysis or an error.
 func (c *Compiler) SemanticAnalysis(a *ast.AST) (*typing.Env, error) {
 	if err := alpha.Transform(a.Root); err != nil {
-		return nil, errors.Wrapf(err, "While semantic analysis (alpha transform) for %s\n", a.File.Path)
+		return nil, loc.Notef(err, "While semantic analysis (alpha transform) in %s\n", a.File.Path)
 	}
 	env, err := typing.TypeInferernce(a)
 	if err != nil {
-		return nil, errors.Wrapf(err, "While semantic analysis (type infererence) for %s\n", a.File.Path)
+		return nil, loc.Notef(err, "While semantic analysis (type infererence) in %s", a.File.Path)
 	}
 	return env, nil
 }

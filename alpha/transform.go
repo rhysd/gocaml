@@ -4,6 +4,7 @@ package alpha
 import (
 	"fmt"
 	"github.com/rhysd/gocaml/ast"
+	"github.com/rhysd/loc"
 )
 
 // Alpha transform.
@@ -42,9 +43,8 @@ func newTransformer() *transformer {
 	}
 }
 
-func (t *transformer) setDuplicateError(node ast.Expr, name string) {
-	pos := node.Pos()
-	t.err = fmt.Errorf("Detected duplicate symbol '%s' in node '%s' at (line:%d, column:%d)", name, node.Name(), pos.Line, pos.Column)
+func (t *transformer) duplicateError(node ast.Expr, name string) {
+	t.err = loc.ErrorfIn(node.Pos(), node.End(), "Detected duplicate symbol '%s'", name)
 }
 
 func (t *transformer) newID(n string) string {
@@ -80,7 +80,7 @@ func (t *transformer) Visit(node ast.Expr) ast.Visitor {
 		return nil
 	case *ast.LetRec:
 		if s := duplicateSymbol(n.Func.ParamSymbols()); s != nil {
-			t.setDuplicateError(n, s.DisplayName)
+			t.duplicateError(n, s.DisplayName)
 			return nil
 		}
 		t.nest()
@@ -97,7 +97,7 @@ func (t *transformer) Visit(node ast.Expr) ast.Visitor {
 	case *ast.LetTuple:
 		ast.Visit(t, n.Bound)
 		if s := duplicateSymbol(n.Symbols); s != nil {
-			t.setDuplicateError(n, s.DisplayName)
+			t.duplicateError(n, s.DisplayName)
 			return nil
 		}
 		t.nest()
@@ -119,8 +119,7 @@ func (t *transformer) Visit(node ast.Expr) ast.Visitor {
 		if n.Symbol.DisplayName == "_" {
 			// Note: Check '_'. Without this check, compiler will consdier it as
 			// external variable wrongly.
-			p := n.Pos()
-			t.err = fmt.Errorf("Cannot refer '_' variable at (line:%d, column:%d) because creating '_' variable is not permitted", p.Line, p.Column)
+			t.err = loc.ErrorAt(n.Pos(), "Cannot refer '_' variable because creating '_' variable is not permitted")
 			return nil
 		}
 		mapped, ok := t.current.resolve(n.Symbol.DisplayName)

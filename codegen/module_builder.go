@@ -2,7 +2,6 @@ package codegen
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"github.com/rhysd/gocaml/gcil"
 	"github.com/rhysd/gocaml/typing"
 	"github.com/rhysd/loc"
@@ -391,7 +390,7 @@ func (b *moduleBuilder) build(prog *gcil.Program) error {
 	}
 
 	if err := llvm.VerifyModule(b.module, llvm.ReturnStatusAction); err != nil {
-		return errors.Wrapf(err, "Error while emitting IR:\n\n%s\n", b.module.String())
+		return loc.Notef(err, "Error while emitting IR:\n\n%s\n", b.module.String())
 	}
 
 	return nil

@@ -105,7 +105,7 @@ func TestEmitExecutable(t *testing.T) {
 	defer os.Remove(outfile)
 	stats, err := os.Stat(outfile)
 	if err != nil {
-		t.Fatalf("Cannot stat emitted executable: %s", err.Error())
+		t.Fatal("Cannot stat emitted executable", err)
 	}
 	if stats.IsDir() {
 		t.Fatalf("File was not emitted actually")
@@ -123,7 +123,7 @@ func TestEmitUnoptimizedLLVMIR(t *testing.T) {
 	defer e.Dispose()
 	ir := e.EmitLLVMIR()
 	if !strings.Contains(ir, `define private i64 @"f$t1"(i64 %"x$t2")`) {
-		t.Fatalf("Function 'f' was inlined with OptimizeNone config: %s", ir)
+		t.Fatal("Function 'f' was inlined with OptimizeNone config:", ir)
 	}
 }
 

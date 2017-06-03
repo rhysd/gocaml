@@ -3,7 +3,7 @@ package typing
 import (
 	"fmt"
 	"github.com/rhysd/gocaml/ast"
-	"strings"
+	"github.com/rhysd/loc"
 )
 
 func unwrapVar(variable *Var) (Type, bool) {
@@ -64,8 +64,8 @@ func unwrap(target Type) (Type, bool) {
 }
 
 type typeVarDereferencer struct {
-	errors []string
-	env    *Env
+	err *loc.Error
+	env *Env
 }
 
 func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
@@ -84,14 +84,18 @@ func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
 	}
 
 	if !ok {
-		panic(fmt.Sprintf("Cannot dereference unknown symbol '%s'", sym.Name))
+		panic(fmt.Sprintf("FATAL: Cannot dereference unknown symbol '%s'", sym.Name))
 		return
 	}
 
 	t, ok := unwrap(symType)
 	if !ok {
-		pos := node.Pos()
-		d.errors = append(d.errors, fmt.Sprintf("Cannot infer type of variable '%s' in node %s (line:%d, column:%d). Inferred type was '%s'", sym.DisplayName, node.Name(), pos.Line, pos.Column, symType.String()))
+		msg := fmt.Sprintf("Cannot infer type of variable '%s'. Inferred type was '%s'", sym.DisplayName, symType.String())
+		if d.err == nil {
+			d.err = loc.ErrorAt(node.Pos(), msg)
+		} else {
+			d.err = d.err.NoteAt(node.Pos(), msg)
+		}
 		return
 	}
 
@@ -129,7 +133,12 @@ func (d *typeVarDereferencer) fixExternalFuncRet(ret Type) Type {
 }
 
 func (d *typeVarDereferencer) externalSymError(n string, t Type) {
-	d.errors = append(d.errors, fmt.Sprintf("Cannot infer type of external symbol '%s'. Note: Inferred as '%s'", n, t.String()))
+	msg := fmt.Sprintf("Cannot infer type of external symbol '%s'. Note: Inferred as '%s'", n, t.String())
+	if d.err == nil {
+		d.err = loc.NewError(msg)
+		return
+	}
+	d.err = d.err.Note(msg)
 }
 
 func (d *typeVarDereferencer) derefExternalSym(name string, symType Type) Type {
@@ -183,14 +192,14 @@ func (d *typeVarDereferencer) Visit(node ast.Expr) ast.Visitor {
 }
 
 func derefTypeVars(env *Env, root ast.Expr) error {
-	v := &typeVarDereferencer{[]string{}, env}
+	v := &typeVarDereferencer{nil, env}
 	for n, t := range env.Externals {
 		env.Externals[n] = v.derefExternalSym(n, t)
 	}
 	ast.Visit(v, root)
 
-	if len(v.errors) > 0 {
-		return fmt.Errorf("Error while type inference (dereferencing type vars)\n%s", strings.Join(v.errors, "\n"))
+	if v.err != nil {
+		return v.err
 	}
 
 	for n, t := range env.NoneTypes {

@@ -7,6 +7,7 @@ import (
 	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/loc"
 	"io"
+	"os"
 	"unicode"
 	"unicode/utf8"
 )
@@ -143,7 +144,8 @@ func (l *Lexer) forward() {
 	}
 
 	if !utf8.ValidRune(r) {
-		panic(fmt.Errorf("Invalid UTF-8 character at line:%d,col:%d: '%c' (%d)", l.current.Line, l.current.Column, r, r))
+		fmt.Fprintln(os.Stderr, loc.ErrorfAt(l.current, "Invalid UTF-8 character '%c' (%d)", r, r))
+		panic("FATAL: Cannot continue to lex source")
 	}
 
 	l.top = r
