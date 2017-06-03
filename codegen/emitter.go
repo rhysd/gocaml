@@ -7,8 +7,8 @@ package codegen
 import (
 	"fmt"
 	"github.com/rhysd/gocaml/gcil"
-	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/loc"
 	"io/ioutil"
 	"llvm.org/llvm/bindings/go/llvm"
 	"os"
@@ -53,7 +53,7 @@ type Emitter struct {
 	EmitOptions
 	GCIL     *gcil.Program
 	Env      *typing.Env
-	Source   *token.Source
+	Source   *loc.Source
 	Module   llvm.Module
 	Machine  llvm.TargetMachine
 	Disposed bool
@@ -152,7 +152,7 @@ func (emitter *Emitter) EmitExecutable(executable string) (err error) {
 }
 
 // Creates new emitter object.
-func NewEmitter(prog *gcil.Program, env *typing.Env, src *token.Source, opts EmitOptions) (*Emitter, error) {
+func NewEmitter(prog *gcil.Program, env *typing.Env, src *loc.Source, opts EmitOptions) (*Emitter, error) {
 	builder, err := newModuleBuilder(env, src, opts)
 	if err != nil {
 		return nil, err

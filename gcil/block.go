@@ -53,7 +53,7 @@
 package gcil
 
 import (
-	"github.com/rhysd/gocaml/token"
+	"github.com/rhysd/loc"
 )
 
 // Block struct represents basic block.
@@ -67,9 +67,9 @@ type Block struct {
 }
 
 func NewBlock(name string, top, bottom *Insn) *Block {
-	start := &Insn{"", NOPVal, top, nil, token.Position{}}
+	start := &Insn{"", NOPVal, top, nil, loc.Pos{}}
 	top.Prev = start
-	end := &Insn{"", NOPVal, nil, bottom, token.Position{}}
+	end := &Insn{"", NOPVal, nil, bottom, loc.Pos{}}
 	bottom.Next = end
 	return &Block{start, end, name}
 }
@@ -118,7 +118,7 @@ type Insn struct {
 	Val   Val
 	Next  *Insn
 	Prev  *Insn
-	Pos   token.Position
+	Pos   loc.Pos
 }
 
 func (insn *Insn) Last() *Insn {
@@ -142,7 +142,7 @@ func (insn *Insn) RemoveFromList() {
 	insn.Prev.Next = insn.Next
 }
 
-func NewInsn(n string, v Val, pos token.Position) *Insn {
+func NewInsn(n string, v Val, pos loc.Pos) *Insn {
 	return &Insn{n, v, nil, nil, pos}
 }
 

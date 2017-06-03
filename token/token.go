@@ -3,15 +3,8 @@ package token
 
 import (
 	"fmt"
+	"github.com/rhysd/loc"
 )
-
-// Position representation.
-// Offset is a byte offset from the head of file.
-type Position struct {
-	Offset int
-	Line   int
-	Column int
-}
 
 type Kind int
 
@@ -123,9 +116,9 @@ var tokenTable = [...]string{
 // It contains its location information and kind.
 type Token struct {
 	Kind  Kind
-	Start Position
-	End   Position
-	File  *Source
+	Start loc.Pos
+	End   loc.Pos
+	File  *loc.Source
 }
 
 // String returns an information of token. This method is used mainly for

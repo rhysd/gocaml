@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/token"
+	"github.com/rhysd/loc"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
@@ -27,7 +28,7 @@ func TestParseOK(t *testing.T) {
 			}
 
 			t.Run(fmt.Sprintf("Check parsing successfully: %s", n), func(t *testing.T) {
-				s, err := token.NewSourceFromFile(n)
+				s, err := loc.NewSourceFromFile(n)
 				if err != nil {
 					panic(err)
 				}
@@ -48,21 +49,22 @@ func TestParseOK(t *testing.T) {
 }
 
 func TestParseInvalid(t *testing.T) {
+	src := loc.NewDummySource("")
 	tokens := []token.Token{
 		token.Token{
 			Kind:  token.IF,
-			Start: token.Position{0, 1, 1},
-			End:   token.Position{2, 1, 3},
+			Start: loc.Pos{0, 1, 1, src},
+			End:   loc.Pos{2, 1, 3, src},
 		},
 		token.Token{
 			Kind:  token.IF,
-			Start: token.Position{3, 1, 4},
-			End:   token.Position{5, 1, 6},
+			Start: loc.Pos{3, 1, 4, src},
+			End:   loc.Pos{5, 1, 6, src},
 		},
 		token.Token{
 			Kind:  token.EOF,
-			Start: token.Position{2, 1, 6},
-			End:   token.Position{2, 1, 6},
+			Start: loc.Pos{2, 1, 6, src},
+			End:   loc.Pos{2, 1, 6, src},
 		},
 	}
 	c := make(chan token.Token)
@@ -78,18 +80,18 @@ func TestParseInvalid(t *testing.T) {
 }
 
 func TestTooLargeIntLiteral(t *testing.T) {
-	src := token.NewDummySource("123456789123456789123456789123456789123456789")
+	src := loc.NewDummySource("123456789123456789123456789123456789123456789")
 	tokens := []token.Token{
 		token.Token{
 			Kind:  token.INT,
-			Start: token.Position{0, 1, 1},
-			End:   token.Position{45, 1, 45},
+			Start: loc.Pos{0, 1, 1, src},
+			End:   loc.Pos{45, 1, 45, src},
 			File:  src,
 		},
 		token.Token{
 			Kind:  token.EOF,
-			Start: token.Position{45, 1, 45},
-			End:   token.Position{45, 1, 45},
+			Start: loc.Pos{45, 1, 45, src},
+			End:   loc.Pos{45, 1, 45, src},
 			File:  src,
 		},
 	}
@@ -109,18 +111,18 @@ func TestTooLargeIntLiteral(t *testing.T) {
 }
 
 func TestInvalidStringLiteral(t *testing.T) {
-	src := token.NewDummySource("\"a\nb\"\n")
+	src := loc.NewDummySource("\"a\nb\"\n")
 	tokens := []token.Token{
 		token.Token{
 			Kind:  token.STRING_LITERAL,
-			Start: token.Position{1, 1, 0},
-			End:   token.Position{2, 3, 5},
+			Start: loc.Pos{1, 1, 0, src},
+			End:   loc.Pos{2, 3, 5, src},
 			File:  src,
 		},
 		token.Token{
 			Kind:  token.EOF,
-			Start: token.Position{3, 1, 6},
-			End:   token.Position{3, 1, 6},
+			Start: loc.Pos{3, 1, 6, src},
+			End:   loc.Pos{3, 1, 6, src},
 			File:  src,
 		},
 	}
@@ -137,18 +139,18 @@ func TestInvalidStringLiteral(t *testing.T) {
 }
 
 func TestTooLargeFloatLiteral(t *testing.T) {
-	src := token.NewDummySource("1.7976931348623159e308")
+	src := loc.NewDummySource("1.7976931348623159e308")
 	tokens := []token.Token{
 		token.Token{
 			Kind:  token.FLOAT,
-			Start: token.Position{0, 1, 1},
-			End:   token.Position{22, 1, 22},
+			Start: loc.Pos{0, 1, 1, src},
+			End:   loc.Pos{22, 1, 22, src},
 			File:  src,
 		},
 		token.Token{
 			Kind:  token.EOF,
-			Start: token.Position{22, 1, 22},
-			End:   token.Position{22, 1, 22},
+			Start: loc.Pos{22, 1, 22, src},
+			End:   loc.Pos{22, 1, 22, src},
 			File:  src,
 		},
 	}

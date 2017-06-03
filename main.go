@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/rhysd/gocaml/codegen"
 	"github.com/rhysd/gocaml/compiler"
-	"github.com/rhysd/gocaml/token"
+	"github.com/rhysd/loc"
 	"os"
 )
 
@@ -36,13 +36,6 @@ Flags:`
 func usage() {
 	fmt.Fprintln(os.Stderr, usageHeader)
 	flag.PrintDefaults()
-}
-
-func getSource(args []string) (*token.Source, error) {
-	if len(args) == 0 {
-		return token.NewSourceFromStdin()
-	}
-	return token.NewSourceFromFile(args[1])
 }
 
 func getOptLevel() compiler.OptLevel {
@@ -79,13 +72,13 @@ func main() {
 		os.Exit(0)
 	}
 
-	var src *token.Source
+	var src *loc.Source
 	var err error
 
 	if flag.NArg() == 0 {
-		src, err = token.NewSourceFromStdin()
+		src, err = loc.NewSourceFromStdin()
 	} else {
-		src, err = token.NewSourceFromFile(flag.Arg(0))
+		src, err = loc.NewSourceFromFile(flag.Arg(0))
 	}
 
 	if err != nil {

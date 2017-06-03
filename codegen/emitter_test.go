@@ -6,8 +6,8 @@ import (
 	"github.com/rhysd/gocaml/gcil"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
-	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/loc"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,7 +15,7 @@ import (
 )
 
 func testCreateEmitter(code string, optimize OptLevel, debug bool) (e *Emitter, err error) {
-	s := token.NewDummySource(code)
+	s := loc.NewDummySource(code)
 	l := lexer.NewLexer(s)
 	go l.Lex()
 	ast, err := parser.Parse(l.Tokens)
@@ -51,7 +51,7 @@ func TestEmitLLVMIR(t *testing.T) {
 	}
 	defer e.Dispose()
 	ir := e.EmitLLVMIR()
-	if !strings.Contains(ir, "ModuleID = 'dummy'") {
+	if !strings.Contains(ir, "ModuleID = '<dummy>'") {
 		t.Fatalf("Module ID is not contained: %s", ir)
 	}
 	if !strings.Contains(ir, "target datalayout = ") {

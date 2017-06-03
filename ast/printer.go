@@ -20,7 +20,7 @@ func (p Printer) Visit(e Expr) Visitor {
 
 // Fprint outputs a structure of AST to given io.Writer object
 func Fprint(out io.Writer, a *AST) {
-	fmt.Fprintf(out, "AST for %s:", a.File.Name)
+	fmt.Fprintf(out, "AST for %s:", a.File.Path)
 	for _, t := range a.TypeDecls {
 		p := Printer{1, out}
 		Visit(p, t)

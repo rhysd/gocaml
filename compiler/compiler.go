@@ -13,6 +13,7 @@ import (
 	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/loc"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -36,9 +37,9 @@ type Compiler struct {
 }
 
 // PrintTokens returns the lexed tokens for a source code.
-func (c *Compiler) Lex(src *token.Source) chan token.Token {
+func (c *Compiler) Lex(src *loc.Source) chan token.Token {
 	l := lexer.NewLexer(src)
-	l.Error = func(msg string, pos token.Position) {
+	l.Error = func(msg string, pos loc.Pos) {
 		fmt.Fprintf(os.Stderr, "%s at (line:%d, column:%d)\n", msg, pos.Line, pos.Column)
 	}
 	go l.Lex()
@@ -46,7 +47,7 @@ func (c *Compiler) Lex(src *token.Source) chan token.Token {
 }
 
 // PrintTokens show list of tokens lexed.
-func (c *Compiler) PrintTokens(src *token.Source) {
+func (c *Compiler) PrintTokens(src *loc.Source) {
 	tokens := c.Lex(src)
 	for {
 		select {
@@ -61,7 +62,7 @@ func (c *Compiler) PrintTokens(src *token.Source) {
 }
 
 // Parse parses the source and returns the parsed AST.
-func (c *Compiler) Parse(src *token.Source) (*ast.AST, error) {
+func (c *Compiler) Parse(src *loc.Source) (*ast.AST, error) {
 	tokens := c.Lex(src)
 	ast, err := parser.Parse(tokens)
 
@@ -75,7 +76,7 @@ func (c *Compiler) Parse(src *token.Source) (*ast.AST, error) {
 }
 
 // PrintAST outputs AST structure to stdout.
-func (c *Compiler) PrintAST(src *token.Source) {
+func (c *Compiler) PrintAST(src *loc.Source) {
 	a, err := c.Parse(src)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
@@ -88,17 +89,17 @@ func (c *Compiler) PrintAST(src *token.Source) {
 // It returns the result of type analysis or an error.
 func (c *Compiler) SemanticAnalysis(a *ast.AST) (*typing.Env, error) {
 	if err := alpha.Transform(a.Root); err != nil {
-		return nil, errors.Wrapf(err, "While semantic analysis (alpha transform) for %s\n", a.File.Name)
+		return nil, errors.Wrapf(err, "While semantic analysis (alpha transform) for %s\n", a.File.Path)
 	}
 	env, err := typing.TypeInferernce(a)
 	if err != nil {
-		return nil, errors.Wrapf(err, "While semantic analysis (type infererence) for %s\n", a.File.Name)
+		return nil, errors.Wrapf(err, "While semantic analysis (type infererence) for %s\n", a.File.Path)
 	}
 	return env, nil
 }
 
 // EmitGCIL emits GCIL tree representation.
-func (c *Compiler) EmitGCIL(src *token.Source) (*gcil.Program, *typing.Env, error) {
+func (c *Compiler) EmitGCIL(src *loc.Source) (*gcil.Program, *typing.Env, error) {
 	ast, err := c.Parse(src)
 	if err != nil {
 		return nil, nil, err
@@ -116,7 +117,7 @@ func (c *Compiler) EmitGCIL(src *token.Source) (*gcil.Program, *typing.Env, erro
 	return prog, env, nil
 }
 
-func (c *Compiler) emitterFromSource(src *token.Source) (*codegen.Emitter, error) {
+func (c *Compiler) emitterFromSource(src *loc.Source) (*codegen.Emitter, error) {
 	prog, env, err := c.EmitGCIL(src)
 	if err != nil {
 		return nil, err
@@ -136,7 +137,7 @@ func (c *Compiler) emitterFromSource(src *token.Source) (*codegen.Emitter, error
 	return codegen.NewEmitter(prog, env, src, opts)
 }
 
-func (c *Compiler) EmitObjFile(src *token.Source) error {
+func (c *Compiler) EmitObjFile(src *loc.Source) error {
 	emitter, err := c.emitterFromSource(src)
 	if err != nil {
 		return err
@@ -151,7 +152,7 @@ func (c *Compiler) EmitObjFile(src *token.Source) error {
 	return ioutil.WriteFile(filename, obj, 0666)
 }
 
-func (c *Compiler) EmitLLVMIR(src *token.Source) (string, error) {
+func (c *Compiler) EmitLLVMIR(src *loc.Source) (string, error) {
 	emitter, err := c.emitterFromSource(src)
 	if err != nil {
 		return "", err
@@ -162,7 +163,7 @@ func (c *Compiler) EmitLLVMIR(src *token.Source) (string, error) {
 	return emitter.EmitLLVMIR(), nil
 }
 
-func (c *Compiler) EmitAsm(src *token.Source) (string, error) {
+func (c *Compiler) EmitAsm(src *loc.Source) (string, error) {
 	emitter, err := c.emitterFromSource(src)
 	if err != nil {
 		return "", err
@@ -173,7 +174,7 @@ func (c *Compiler) EmitAsm(src *token.Source) (string, error) {
 	return emitter.EmitAsm()
 }
 
-func (c *Compiler) Compile(source *token.Source) error {
+func (c *Compiler) Compile(source *loc.Source) error {
 	emitter, err := c.emitterFromSource(source)
 	if err != nil {
 		return err

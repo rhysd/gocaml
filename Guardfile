@@ -19,11 +19,9 @@ end
 
 guard :shell do
   watch /\.go$/ do |m|
+    sep m[0]
     case m[0]
     when /_test\.go$/
-      sep m[0]
-      # dir = m[0].match(%r[^[^/]+])[0]
-      # system "go test ./#{dir}"
       run_test m[0]
     else
       system "make build"
@@ -34,9 +32,11 @@ guard :shell do
     puts_out `go test -v ./#{m[1]}`
   end
   watch /\.c$/ do |m|
+    sep m[0]
     system "make build"
   end
   watch /\.go\.y$/ do |m|
+    sep m[0]
     system "make build"
   end
 end

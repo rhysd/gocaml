@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/rhysd/gocaml/token"
+	"github.com/rhysd/loc"
 	"io"
 	"unicode"
 	"unicode/utf8"
@@ -17,24 +18,25 @@ const eof = -1
 // Lexer instance which contains lexing states.
 type Lexer struct {
 	state   stateFn
-	start   token.Position
-	current token.Position
-	src     *token.Source
+	start   loc.Pos
+	current loc.Pos
+	src     *loc.Source
 	input   *bytes.Reader
 	Tokens  chan token.Token
 	top     rune
 	eof     bool
 	// Function called when error occurs.
 	// By default it outputs an error to stderr.
-	Error func(msg string, pos token.Position)
+	Error func(msg string, pos loc.Pos)
 }
 
 // NewLexer creates new Lexer instance.
-func NewLexer(src *token.Source) *Lexer {
-	start := token.Position{
+func NewLexer(src *loc.Source) *Lexer {
+	start := loc.Pos{
 		Offset: 0,
 		Line:   1,
 		Column: 1,
+		File:   src,
 	}
 	return &Lexer{
 		state:   lex,

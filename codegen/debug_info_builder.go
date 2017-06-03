@@ -1,8 +1,8 @@
 package codegen
 
 import (
-	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/loc"
 	"llvm.org/llvm/bindings/go/llvm"
 	"path/filepath"
 )
@@ -74,17 +74,17 @@ type debugInfoBuilder struct {
 	module      llvm.Module
 }
 
-func newDebugInfoBuilder(module llvm.Module, file *token.Source, tb *typeBuilder, target llvm.TargetData, willOptimize bool) (*debugInfoBuilder, error) {
+func newDebugInfoBuilder(module llvm.Module, file *loc.Source, tb *typeBuilder, target llvm.TargetData, willOptimize bool) (*debugInfoBuilder, error) {
 	d := &debugInfoBuilder{}
 	d.typeBuilder = tb
 	d.sizes = newSizeTable(tb, target)
 	d.builder = llvm.NewDIBuilder(module)
 	d.module = module
 
-	filename := file.Name
+	filename := file.Path
 	directory := ""
 	if file.Exists {
-		p, err := filepath.Abs(file.Name)
+		p, err := filepath.Abs(file.Path)
 		if err != nil {
 			return nil, err
 		}
@@ -284,7 +284,7 @@ func (d *debugInfoBuilder) setFuncInfo(funptr llvm.Value, ty *typing.Fun, line i
 	d.scope = meta
 }
 
-func (d *debugInfoBuilder) setLocation(b llvm.Builder, pos token.Position) {
+func (d *debugInfoBuilder) setLocation(b llvm.Builder, pos loc.Pos) {
 	scope := d.scope
 	if scope.C == nil {
 		scope = d.compileUnit

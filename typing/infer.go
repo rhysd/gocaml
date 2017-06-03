@@ -5,10 +5,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rhysd/gocaml/ast"
 	"github.com/rhysd/gocaml/common"
-	"github.com/rhysd/gocaml/token"
+	"github.com/rhysd/loc"
 )
 
-func typeError(err error, where string, pos token.Position) error {
+func typeError(err error, where string, pos loc.Pos) error {
 	return errors.Wrapf(err, "Type error: %s (line:%d, column:%d)\n", where, pos.Line, pos.Column)
 }
 

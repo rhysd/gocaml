@@ -6,7 +6,7 @@ import (
 	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
-	"github.com/rhysd/gocaml/token"
+	"github.com/rhysd/loc"
 	"io"
 	"io/ioutil"
 	"os"
@@ -16,7 +16,7 @@ import (
 )
 
 func TestResolvedSymbols(t *testing.T) {
-	s := token.NewDummySource("let x = 1 in x + y; ()")
+	s := loc.NewDummySource("let x = 1 in x + y; ()")
 	l := lexer.NewLexer(s)
 	go l.Lex()
 	ast, err := parser.Parse(l.Tokens)
@@ -50,7 +50,7 @@ func TestTypeCheckOK(t *testing.T) {
 		}
 
 		t.Run(fmt.Sprintf("Infer types successfully: %s", n), func(t *testing.T) {
-			s, err := token.NewSourceFromFile(n)
+			s, err := loc.NewSourceFromFile(n)
 			if err != nil {
 				panic(err)
 			}
@@ -76,7 +76,7 @@ func TestTypeCheckOK(t *testing.T) {
 }
 
 func TestProgramRootTypeIsUnit(t *testing.T) {
-	s := token.NewDummySource("42")
+	s := loc.NewDummySource("42")
 	l := lexer.NewLexer(s)
 	go l.Lex()
 	ast, err := parser.Parse(l.Tokens)
@@ -95,7 +95,7 @@ func TestProgramRootTypeIsUnit(t *testing.T) {
 }
 
 func TestTypeCheckFail(t *testing.T) {
-	s := token.NewDummySource("let x = 42 in x +. 3.14")
+	s := loc.NewDummySource("let x = 42 in x +. 3.14")
 	l := lexer.NewLexer(s)
 	go l.Lex()
 	ast, err := parser.Parse(l.Tokens)
@@ -110,7 +110,7 @@ func TestTypeCheckFail(t *testing.T) {
 }
 
 func TestDumpResult(t *testing.T) {
-	s := token.NewDummySource("let x = 42 in x + y; ()")
+	s := loc.NewDummySource("let x = 42 in x + y; ()")
 	l := lexer.NewLexer(s)
 	go l.Lex()
 	ast, err := parser.Parse(l.Tokens)
@@ -148,7 +148,7 @@ func TestDumpResult(t *testing.T) {
 }
 
 func TestDerefNoneTypes(t *testing.T) {
-	s := token.NewDummySource("let rec f x = () in f (Some 42); f None; let a = None in f a")
+	s := loc.NewDummySource("let rec f x = () in f (Some 42); f None; let a = None in f a")
 	l := lexer.NewLexer(s)
 	go l.Lex()
 	ast, err := parser.Parse(l.Tokens)

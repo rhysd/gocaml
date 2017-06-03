@@ -3,6 +3,7 @@ package alpha
 import (
 	"github.com/rhysd/gocaml/ast"
 	"github.com/rhysd/gocaml/token"
+	"github.com/rhysd/loc"
 	"strings"
 	"testing"
 )
@@ -81,7 +82,7 @@ func TestMatch(t *testing.T) {
 		someRef,
 		noneRef,
 		ast.NewSymbol("a"),
-		token.Position{},
+		loc.Pos{},
 	}
 	root := &ast.Let{
 		tok, ast.NewSymbol("a"),

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/rhysd/gocaml/ast"
-	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/loc"
 	"strings"
 )
 
@@ -30,7 +30,7 @@ func (e *emitter) typeOf(i *Insn) typing.Type {
 	return t
 }
 
-func (e *emitter) semanticError(msg string, pos token.Position) {
+func (e *emitter) semanticError(msg string, pos loc.Pos) {
 	e.errors = append(
 		e.errors, fmt.Sprintf("%s at (line:%d, column:%d)", msg, pos.Line, pos.Column),
 	)
