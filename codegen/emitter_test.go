@@ -7,7 +7,7 @@ import (
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/typing"
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,7 +15,7 @@ import (
 )
 
 func testCreateEmitter(code string, optimize OptLevel, debug bool) (e *Emitter, err error) {
-	s := loc.NewDummySource(code)
+	s := locerr.NewDummySource(code)
 	l := lexer.NewLexer(s)
 	go l.Lex()
 	ast, err := parser.Parse(l.Tokens)

@@ -3,7 +3,7 @@ package gcil
 import (
 	"bytes"
 	"github.com/rhysd/gocaml/typing"
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 	"strings"
 	"testing"
 )
@@ -13,7 +13,7 @@ func TestDump(t *testing.T) {
 		NewToplevel(),
 		map[string][]string{},
 		NewBlockFromArray("program", []*Insn{
-			NewInsn("$k1", UnitVal, loc.Pos{}),
+			NewInsn("$k1", UnitVal, locerr.Pos{}),
 		}),
 	}
 

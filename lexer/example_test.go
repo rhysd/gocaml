@@ -3,13 +3,13 @@ package lexer
 import (
 	"fmt"
 	"github.com/rhysd/gocaml/token"
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 	"path/filepath"
 )
 
 func Example() {
 	file := filepath.FromSlash("../testdata/from-mincaml/ack.ml")
-	src, err := loc.NewSourceFromFile(file)
+	src, err := locerr.NewSourceFromFile(file)
 	if err != nil {
 		// File not found
 		panic(err)

@@ -1,16 +1,16 @@
 package token
 
 import (
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 	"testing"
 )
 
 func TestTokenString(t *testing.T) {
-	s := loc.NewDummySource("abcd")
+	s := locerr.NewDummySource("abcd")
 	tok := Token{
 		Kind:  IDENT,
-		Start: loc.Pos{1, 1, 2, s},
-		End:   loc.Pos{3, 1, 4, s},
+		Start: locerr.Pos{1, 1, 2, s},
+		End:   locerr.Pos{3, 1, 4, s},
 		File:  s,
 	}
 	actual := tok.String()

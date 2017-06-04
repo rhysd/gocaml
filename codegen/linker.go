@@ -1,7 +1,7 @@
 package codegen
 
 import (
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 	"go/build"
 	"os"
 	"os/exec"
@@ -45,7 +45,7 @@ func detectRuntimePath() (string, error) {
 		candidates = append(candidates, fromGopath)
 	}
 
-	return "", loc.Errorf("Runtime library (gocamlrt.a) was not found. Candidates: %s", strings.Join(candidates, ", "))
+	return "", locerr.Errorf("Runtime library (gocamlrt.a) was not found. Candidates: %s", strings.Join(candidates, ", "))
 }
 
 func detectLibgcPath() string {
@@ -73,7 +73,7 @@ func newDefaultLinker(ldflags string) *linker {
 }
 
 func (lnk *linker) cmdFailed(args []string, msg string) error {
-	return loc.Errorf("Linker command failed: %s %s:\n%s", lnk.linkerCmd, strings.Join(args, " "), msg)
+	return locerr.Errorf("Linker command failed: %s %s:\n%s", lnk.linkerCmd, strings.Join(args, " "), msg)
 }
 
 func (lnk *linker) link(executable string, objFiles []string) error {

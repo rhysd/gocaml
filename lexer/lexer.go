@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/rhysd/gocaml/token"
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 	"io"
 	"os"
 	"unicode"
@@ -19,21 +19,21 @@ const eof = -1
 // Lexer instance which contains lexing states.
 type Lexer struct {
 	state   stateFn
-	start   loc.Pos
-	current loc.Pos
-	src     *loc.Source
+	start   locerr.Pos
+	current locerr.Pos
+	src     *locerr.Source
 	input   *bytes.Reader
 	Tokens  chan token.Token
 	top     rune
 	eof     bool
 	// Function called when error occurs.
 	// By default it outputs an error to stderr.
-	Error func(msg string, pos loc.Pos)
+	Error func(msg string, pos locerr.Pos)
 }
 
 // NewLexer creates new Lexer instance.
-func NewLexer(src *loc.Source) *Lexer {
-	start := loc.Pos{
+func NewLexer(src *locerr.Source) *Lexer {
+	start := locerr.Pos{
 		Offset: 0,
 		Line:   1,
 		Column: 1,
@@ -144,7 +144,7 @@ func (l *Lexer) forward() {
 	}
 
 	if !utf8.ValidRune(r) {
-		fmt.Fprintln(os.Stderr, loc.ErrorfAt(l.current, "Invalid UTF-8 character '%c' (%d)", r, r))
+		fmt.Fprintln(os.Stderr, locerr.ErrorfAt(l.current, "Invalid UTF-8 character '%c' (%d)", r, r))
 		panic("FATAL: Cannot continue to lex source")
 	}
 

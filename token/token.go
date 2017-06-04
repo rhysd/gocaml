@@ -3,7 +3,7 @@ package token
 
 import (
 	"fmt"
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 )
 
 type Kind int
@@ -116,9 +116,9 @@ var tokenTable = [...]string{
 // It contains its location information and kind.
 type Token struct {
 	Kind  Kind
-	Start loc.Pos
-	End   loc.Pos
-	File  *loc.Source
+	Start locerr.Pos
+	End   locerr.Pos
+	File  *locerr.Source
 }
 
 // String returns an information of token. This method is used mainly for

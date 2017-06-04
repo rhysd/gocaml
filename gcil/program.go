@@ -3,7 +3,7 @@ package gcil
 import (
 	"fmt"
 	"github.com/rhysd/gocaml/typing"
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 	"io"
 	"strings"
 )
@@ -12,7 +12,7 @@ type Closures map[string][]string
 type FunInsn struct {
 	Name string
 	Val  *Fun
-	Pos  loc.Pos
+	Pos  locerr.Pos
 }
 
 type Toplevel map[string]FunInsn
@@ -21,7 +21,7 @@ func NewToplevel() Toplevel {
 	return map[string]FunInsn{}
 }
 
-func (top Toplevel) Add(n string, f *Fun, p loc.Pos) {
+func (top Toplevel) Add(n string, f *Fun, p locerr.Pos) {
 	top[n] = FunInsn{n, f, p}
 }
 

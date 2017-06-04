@@ -1,14 +1,14 @@
 package compiler
 
 import (
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 	"path/filepath"
 )
 
 func Example() {
 	// Compile testdata/from-mincaml/ack.ml
 	file := filepath.FromSlash("../testdata/from-mincaml/ack.ml")
-	src, err := loc.NewSourceFromFile(file)
+	src, err := locerr.NewSourceFromFile(file)
 	if err != nil {
 		// File not found
 		panic(err)

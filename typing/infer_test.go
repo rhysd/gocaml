@@ -4,7 +4,7 @@ import (
 	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -23,7 +23,7 @@ func TestEdgeCases(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.what, func(t *testing.T) {
-			s := loc.NewDummySource(tc.code)
+			s := locerr.NewDummySource(tc.code)
 			l := lexer.NewLexer(s)
 			go l.Lex()
 			ast, err := parser.Parse(l.Tokens)
@@ -346,7 +346,7 @@ func TestInvalidExpressions(t *testing.T) {
 
 	for _, testcase := range testcases {
 		t.Run(testcase.what, func(t *testing.T) {
-			s := loc.NewDummySource(testcase.code)
+			s := locerr.NewDummySource(testcase.code)
 			l := lexer.NewLexer(s)
 			go l.Lex()
 			ast, err := parser.Parse(l.Tokens)
@@ -373,7 +373,7 @@ func TestInvalidExpressions(t *testing.T) {
 }
 
 func TestRegisterNoneTypes(t *testing.T) {
-	s := loc.NewDummySource("let rec f x = () in f (Some 42); f None; let a = None in f a")
+	s := locerr.NewDummySource("let rec f x = () in f (Some 42); f None; let a = None in f a")
 	l := lexer.NewLexer(s)
 	go l.Lex()
 	ast, err := parser.Parse(l.Tokens)
@@ -404,7 +404,7 @@ func TestInferSuccess(t *testing.T) {
 	}
 	for _, file := range files {
 		t.Run(file, func(t *testing.T) {
-			s, err := loc.NewSourceFromFile(file)
+			s, err := locerr.NewSourceFromFile(file)
 			if err != nil {
 				panic(err)
 			}

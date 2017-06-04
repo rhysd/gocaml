@@ -4,13 +4,13 @@ import (
 	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 	"path/filepath"
 )
 
 func Example() {
 	file := filepath.FromSlash("../testdata/from-mincaml/ack.ml")
-	src, err := loc.NewSourceFromFile(file)
+	src, err := locerr.NewSourceFromFile(file)
 	if err != nil {
 		// File not found
 		panic(err)

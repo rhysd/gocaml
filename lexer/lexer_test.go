@@ -3,7 +3,7 @@ package lexer
 import (
 	"fmt"
 	"github.com/rhysd/gocaml/token"
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
@@ -27,7 +27,7 @@ func TestLexingOK(t *testing.T) {
 			}
 
 			t.Run(fmt.Sprintf("Check lexing successfully: %s", n), func(t *testing.T) {
-				s, err := loc.NewSourceFromFile(n)
+				s, err := locerr.NewSourceFromFile(n)
 				if err != nil {
 					panic(err)
 				}
@@ -63,13 +63,13 @@ func TestLexingIllegal(t *testing.T) {
 		}
 
 		t.Run(fmt.Sprintf("Check lexing illegal input: %s", f.Name()), func(t *testing.T) {
-			s, err := loc.NewSourceFromFile(n)
+			s, err := locerr.NewSourceFromFile(n)
 			if err != nil {
 				panic(err)
 			}
 			errorOccurred := false
 			l := NewLexer(s)
-			l.Error = func(_ string, _ loc.Pos) {
+			l.Error = func(_ string, _ locerr.Pos) {
 				errorOccurred = true
 			}
 			go l.Lex()

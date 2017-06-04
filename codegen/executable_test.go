@@ -8,7 +8,7 @@ import (
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/typing"
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -50,7 +50,7 @@ func TestExecutable(t *testing.T) {
 				}
 			}()
 
-			s, err := loc.NewSourceFromFile(input)
+			s, err := locerr.NewSourceFromFile(input)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -123,9 +123,9 @@ func BenchmarkExecutableCreation(b *testing.B) {
 	if len(inputs) == 0 {
 		panic("No test found")
 	}
-	sources := make(map[string]*loc.Source, len(inputs))
+	sources := make(map[string]*locerr.Source, len(inputs))
 	for _, input := range inputs {
-		source, err := loc.NewSourceFromFile(input)
+		source, err := locerr.NewSourceFromFile(input)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -133,7 +133,7 @@ func BenchmarkExecutableCreation(b *testing.B) {
 		sources[base] = source
 	}
 
-	makeEmitter := func(source *loc.Source) *Emitter {
+	makeEmitter := func(source *locerr.Source) *Emitter {
 		l := lexer.NewLexer(source)
 		go l.Lex()
 

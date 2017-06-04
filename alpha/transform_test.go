@@ -3,15 +3,15 @@ package alpha
 import (
 	"github.com/rhysd/gocaml/ast"
 	"github.com/rhysd/gocaml/token"
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 	"strings"
 	"testing"
 )
 
 func TestFlatScope(t *testing.T) {
 	tok := &token.Token{
-		Start: loc.Pos{},
-		End:   loc.Pos{},
+		Start: locerr.Pos{},
+		End:   locerr.Pos{},
 	}
 	ref := &ast.VarRef{
 		tok,
@@ -37,8 +37,8 @@ func TestFlatScope(t *testing.T) {
 
 func TestNested(t *testing.T) {
 	tok := &token.Token{
-		Start: loc.Pos{},
-		End:   loc.Pos{},
+		Start: locerr.Pos{},
+		End:   locerr.Pos{},
 	}
 	ref := &ast.VarRef{
 		tok,
@@ -76,8 +76,8 @@ func TestNested(t *testing.T) {
 
 func TestMatch(t *testing.T) {
 	tok := &token.Token{
-		Start: loc.Pos{},
-		End:   loc.Pos{},
+		Start: locerr.Pos{},
+		End:   locerr.Pos{},
 	}
 	someRef := &ast.VarRef{
 		tok,
@@ -93,7 +93,7 @@ func TestMatch(t *testing.T) {
 		someRef,
 		noneRef,
 		ast.NewSymbol("a"),
-		loc.Pos{},
+		locerr.Pos{},
 	}
 	root := &ast.Let{
 		tok, ast.NewSymbol("a"),
@@ -154,8 +154,8 @@ func TestLetTuple(t *testing.T) {
 
 func TestLetTupleHasDuplicateName(t *testing.T) {
 	tok := &token.Token{
-		Start: loc.Pos{},
-		End:   loc.Pos{},
+		Start: locerr.Pos{},
+		End:   locerr.Pos{},
 	}
 	root := &ast.LetTuple{
 		tok,
@@ -176,8 +176,8 @@ func TestLetTupleHasDuplicateName(t *testing.T) {
 
 func TestLetRec(t *testing.T) {
 	tok := &token.Token{
-		Start: loc.Pos{},
-		End:   loc.Pos{},
+		Start: locerr.Pos{},
+		End:   locerr.Pos{},
 	}
 	ref := &ast.VarRef{
 		tok,
@@ -231,8 +231,8 @@ func TestLetRec(t *testing.T) {
 
 func TestRecursiveFunc(t *testing.T) {
 	tok := &token.Token{
-		Start: loc.Pos{},
-		End:   loc.Pos{},
+		Start: locerr.Pos{},
+		End:   locerr.Pos{},
 	}
 	ref := &ast.VarRef{
 		tok,
@@ -267,8 +267,8 @@ func TestRecursiveFunc(t *testing.T) {
 
 func TestFuncAndParamHaveSameName(t *testing.T) {
 	tok := &token.Token{
-		Start: loc.Pos{},
-		End:   loc.Pos{},
+		Start: locerr.Pos{},
+		End:   locerr.Pos{},
 	}
 	ref := &ast.VarRef{
 		tok,
@@ -312,8 +312,8 @@ func TestFuncAndParamHaveSameName(t *testing.T) {
 
 func TestParamDuplicate(t *testing.T) {
 	tok := &token.Token{
-		Start: loc.Pos{},
-		End:   loc.Pos{},
+		Start: locerr.Pos{},
+		End:   locerr.Pos{},
 	}
 	root := &ast.LetRec{
 		tok,
@@ -337,8 +337,8 @@ func TestParamDuplicate(t *testing.T) {
 
 func TestExternalSymbol(t *testing.T) {
 	tok := &token.Token{
-		Start: loc.Pos{},
-		End:   loc.Pos{},
+		Start: locerr.Pos{},
+		End:   locerr.Pos{},
 	}
 	ref := &ast.VarRef{
 		tok,
@@ -356,8 +356,8 @@ func TestExternalSymbol(t *testing.T) {
 
 func TestUnderscoreName(t *testing.T) {
 	tok := &token.Token{
-		Start: loc.Pos{},
-		End:   loc.Pos{},
+		Start: locerr.Pos{},
+		End:   locerr.Pos{},
 	}
 	ref := &ast.VarRef{
 		tok,

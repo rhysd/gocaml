@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/rhysd/gocaml/codegen"
 	"github.com/rhysd/gocaml/compiler"
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 	"os"
 )
 
@@ -72,13 +72,13 @@ func main() {
 		os.Exit(0)
 	}
 
-	var src *loc.Source
+	var src *locerr.Source
 	var err error
 
 	if flag.NArg() == 0 {
-		src, err = loc.NewSourceFromStdin()
+		src, err = locerr.NewSourceFromStdin()
 	} else {
-		src, err = loc.NewSourceFromFile(flag.Arg(0))
+		src, err = locerr.NewSourceFromFile(flag.Arg(0))
 	}
 
 	if err != nil {

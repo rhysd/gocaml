@@ -4,7 +4,7 @@ package alpha
 import (
 	"fmt"
 	"github.com/rhysd/gocaml/ast"
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 )
 
 // Alpha transform.
@@ -44,7 +44,7 @@ func newTransformer() *transformer {
 }
 
 func (t *transformer) duplicateError(node ast.Expr, name string) {
-	t.err = loc.ErrorfIn(node.Pos(), node.End(), "Detected duplicate symbol '%s'", name)
+	t.err = locerr.ErrorfIn(node.Pos(), node.End(), "Detected duplicate symbol '%s'", name)
 }
 
 func (t *transformer) newID(n string) string {
@@ -119,7 +119,7 @@ func (t *transformer) Visit(node ast.Expr) ast.Visitor {
 		if n.Symbol.DisplayName == "_" {
 			// Note: Check '_'. Without this check, compiler will consdier it as
 			// external variable wrongly.
-			t.err = loc.ErrorAt(n.Pos(), "Cannot refer '_' variable because creating '_' variable is not permitted")
+			t.err = locerr.ErrorAt(n.Pos(), "Cannot refer '_' variable because creating '_' variable is not permitted")
 			return nil
 		}
 		mapped, ok := t.current.resolve(n.Symbol.DisplayName)

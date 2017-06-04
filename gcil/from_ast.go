@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/rhysd/gocaml/ast"
 	"github.com/rhysd/gocaml/typing"
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 )
 
 // Convert AST into GCIL with K-Normalization
@@ -12,7 +12,7 @@ import (
 type emitter struct {
 	count uint
 	types *typing.Env
-	err   *loc.Error
+	err   *locerr.Error
 }
 
 func (e *emitter) genID() string {
@@ -28,9 +28,9 @@ func (e *emitter) typeOf(i *Insn) typing.Type {
 	return t
 }
 
-func (e *emitter) semanticError(msg string, pos loc.Pos) {
+func (e *emitter) semanticError(msg string, pos locerr.Pos) {
 	if e.err == nil {
-		e.err = loc.ErrorAt(pos, msg)
+		e.err = locerr.ErrorAt(pos, msg)
 		return
 	}
 	e.err = e.err.NoteAt(pos, msg)

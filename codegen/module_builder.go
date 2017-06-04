@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/rhysd/gocaml/gcil"
 	"github.com/rhysd/gocaml/typing"
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 	"llvm.org/llvm/bindings/go/llvm"
 )
 
@@ -52,7 +52,7 @@ func createAttributeTable(ctx llvm.Context) map[string]llvm.Attribute {
 	return attrs
 }
 
-func newModuleBuilder(env *typing.Env, file *loc.Source, opts EmitOptions) (*moduleBuilder, error) {
+func newModuleBuilder(env *typing.Env, file *locerr.Source, opts EmitOptions) (*moduleBuilder, error) {
 	triple := opts.Triple
 	if triple == "" {
 		triple = llvm.DefaultTargetTriple()
@@ -390,7 +390,7 @@ func (b *moduleBuilder) build(prog *gcil.Program) error {
 	}
 
 	if err := llvm.VerifyModule(b.module, llvm.ReturnStatusAction); err != nil {
-		return loc.Notef(err, "Error while emitting IR:\n\n%s\n", b.module.String())
+		return locerr.Notef(err, "Error while emitting IR:\n\n%s\n", b.module.String())
 	}
 
 	return nil

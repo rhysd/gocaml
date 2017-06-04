@@ -2,7 +2,7 @@ package typing
 
 import (
 	"github.com/rhysd/gocaml/ast"
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 )
 
 type nodeTypeConv struct {
@@ -19,14 +19,14 @@ func newNodeTypeConv(decls []*ast.TypeDecl) (*nodeTypeConv, error) {
 
 	for _, decl := range decls {
 		if decl.Ident == "_" {
-			return nil, loc.ErrorAt(decl.Pos(), "Cannot declare '_' type name")
+			return nil, locerr.ErrorAt(decl.Pos(), "Cannot declare '_' type name")
 		}
 		if t, ok := conv.aliases[decl.Ident]; ok {
-			return nil, loc.ErrorfAt(decl.Pos(), "Type name '%s' was already declared as type '%s' at (line:%d, column:%d)", decl.Ident, t.String())
+			return nil, locerr.ErrorfAt(decl.Pos(), "Type name '%s' was already declared as type '%s' at (line:%d, column:%d)", decl.Ident, t.String())
 		}
 		t, err := conv.nodeToType(decl.Type)
 		if err != nil {
-			return nil, loc.NotefAt(decl.Pos(), err, "Type declaration '%s'", decl.Ident)
+			return nil, locerr.NotefAt(decl.Pos(), err, "Type declaration '%s'", decl.Ident)
 		}
 		conv.aliases[decl.Ident] = t
 	}
@@ -79,18 +79,18 @@ func (conv *nodeTypeConv) nodeToType(node ast.Expr) (Type, error) {
 		switch n.Ctor {
 		case "array":
 			if len != 1 {
-				return nil, loc.ErrorAt(n.Pos(), "Invalid array type. 'array' only has 1 type parameter.")
+				return nil, locerr.ErrorAt(n.Pos(), "Invalid array type. 'array' only has 1 type parameter.")
 			}
 			elem, err := conv.nodeToType(n.ParamTypes[0])
 			return &Array{elem}, err
 		case "option":
 			if len != 1 {
-				return nil, loc.ErrorAt(n.Pos(), "Invalid option type. 'option' only has 1 type parameter.")
+				return nil, locerr.ErrorAt(n.Pos(), "Invalid option type. 'option' only has 1 type parameter.")
 			}
 			elem, err := conv.nodeToType(n.ParamTypes[0])
 			return &Option{elem}, err
 		default:
-			return nil, loc.ErrorfAt(n.Pos(), "Unknown type constructor '%s'. Primitive types, aliased types, 'array', 'option' and '_' are supported", n.Ctor)
+			return nil, locerr.ErrorfAt(n.Pos(), "Unknown type constructor '%s'. Primitive types, aliased types, 'array', 'option' and '_' are supported", n.Ctor)
 		}
 	default:
 		panic("FATAL: Cannot convert non-type AST node into type values: " + node.Name())

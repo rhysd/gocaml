@@ -3,7 +3,7 @@ package typing
 import (
 	"fmt"
 	"github.com/rhysd/gocaml/ast"
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 )
 
 func unwrapVar(variable *Var) (Type, bool) {
@@ -64,7 +64,7 @@ func unwrap(target Type) (Type, bool) {
 }
 
 type typeVarDereferencer struct {
-	err *loc.Error
+	err *locerr.Error
 	env *Env
 }
 
@@ -92,7 +92,7 @@ func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
 	if !ok {
 		msg := fmt.Sprintf("Cannot infer type of variable '%s'. Inferred type was '%s'", sym.DisplayName, symType.String())
 		if d.err == nil {
-			d.err = loc.ErrorAt(node.Pos(), msg)
+			d.err = locerr.ErrorAt(node.Pos(), msg)
 		} else {
 			d.err = d.err.NoteAt(node.Pos(), msg)
 		}
@@ -135,7 +135,7 @@ func (d *typeVarDereferencer) fixExternalFuncRet(ret Type) Type {
 func (d *typeVarDereferencer) externalSymError(n string, t Type) {
 	msg := fmt.Sprintf("Cannot infer type of external symbol '%s'. Note: Inferred as '%s'", n, t.String())
 	if d.err == nil {
-		d.err = loc.NewError(msg)
+		d.err = locerr.NewError(msg)
 		return
 	}
 	d.err = d.err.Note(msg)

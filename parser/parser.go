@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/rhysd/gocaml/ast"
 	"github.com/rhysd/gocaml/token"
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 )
 
 type pseudoLexer struct {
@@ -54,9 +54,9 @@ func (l *pseudoLexer) getError() error {
 		msg = fmt.Sprintf("%s (%d error(s) remain)", msg, l.errorCount-1)
 	}
 	if l.lastToken != nil {
-		return loc.ErrorfAt(l.lastToken.Start, msg)
+		return locerr.ErrorfAt(l.lastToken.Start, msg)
 	}
-	return loc.NewError(msg)
+	return locerr.NewError(msg)
 }
 
 // Parse parses given tokens and returns parsed AST.
@@ -73,7 +73,7 @@ func Parse(tokens chan token.Token) (*ast.AST, error) {
 
 	root := l.result
 	if root == nil {
-		return nil, loc.NewError("Parsing failed")
+		return nil, locerr.NewError("Parsing failed")
 	}
 
 	return root, nil

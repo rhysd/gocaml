@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"github.com/rhysd/gocaml/gcil"
 	"github.com/rhysd/gocaml/typing"
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 	"io/ioutil"
 	"llvm.org/llvm/bindings/go/llvm"
 	"os"
@@ -53,7 +53,7 @@ type Emitter struct {
 	EmitOptions
 	GCIL     *gcil.Program
 	Env      *typing.Env
-	Source   *loc.Source
+	Source   *locerr.Source
 	Module   llvm.Module
 	Machine  llvm.TargetMachine
 	Disposed bool
@@ -152,7 +152,7 @@ func (emitter *Emitter) EmitExecutable(executable string) (err error) {
 }
 
 // Creates new emitter object.
-func NewEmitter(prog *gcil.Program, env *typing.Env, src *loc.Source, opts EmitOptions) (*Emitter, error) {
+func NewEmitter(prog *gcil.Program, env *typing.Env, src *locerr.Source, opts EmitOptions) (*Emitter, error) {
 	builder, err := newModuleBuilder(env, src, opts)
 	if err != nil {
 		return nil, err

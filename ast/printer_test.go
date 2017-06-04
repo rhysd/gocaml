@@ -3,18 +3,18 @@ package ast
 import (
 	"bytes"
 	"github.com/rhysd/gocaml/token"
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 	"io"
 	"os"
 	"testing"
 )
 
 func TestPrintAST(t *testing.T) {
-	s := loc.NewDummySource("")
+	s := locerr.NewDummySource("")
 	tok := &token.Token{
 		Kind:  token.ILLEGAL,
-		Start: loc.Pos{0, 0, 0, s},
-		End:   loc.Pos{0, 0, 0, s},
+		Start: locerr.Pos{0, 0, 0, s},
+		End:   locerr.Pos{0, 0, 0, s},
 		File:  s,
 	}
 

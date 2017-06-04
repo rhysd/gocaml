@@ -3,18 +3,18 @@ package typing
 import (
 	"github.com/rhysd/gocaml/ast"
 	"github.com/rhysd/gocaml/token"
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 	"strings"
 	"testing"
 )
 
 func TestSuccess(t *testing.T) {
 	any := &Var{}
-	pos := loc.Pos{}
+	pos := locerr.Pos{}
 	tok := &token.Token{
 		Start: pos,
 		End:   pos,
-		File:  loc.NewDummySource(""),
+		File:  locerr.NewDummySource(""),
 	}
 	prim := func(name string) ast.Expr {
 		return &ast.CtorType{
@@ -202,11 +202,11 @@ func TestSuccess(t *testing.T) {
 }
 
 func TestErrors(t *testing.T) {
-	pos := loc.Pos{}
+	pos := locerr.Pos{}
 	tok := &token.Token{
 		Start: pos,
 		End:   pos,
-		File:  loc.NewDummySource(""),
+		File:  locerr.NewDummySource(""),
 	}
 	prim := func(name string) ast.Expr {
 		return &ast.CtorType{
@@ -280,11 +280,11 @@ func TestErrors(t *testing.T) {
 }
 
 func TestInvalidAliases(t *testing.T) {
-	pos := loc.Pos{}
+	pos := locerr.Pos{}
 	tok := &token.Token{
 		Start: pos,
 		End:   pos,
-		File:  loc.NewDummySource(""),
+		File:  locerr.NewDummySource(""),
 	}
 	prim := func(name string) ast.Expr {
 		return &ast.CtorType{

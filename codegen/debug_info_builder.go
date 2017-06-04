@@ -2,7 +2,7 @@ package codegen
 
 import (
 	"github.com/rhysd/gocaml/typing"
-	"github.com/rhysd/loc"
+	"github.com/rhysd/locerr"
 	"llvm.org/llvm/bindings/go/llvm"
 	"path/filepath"
 )
@@ -74,7 +74,7 @@ type debugInfoBuilder struct {
 	module      llvm.Module
 }
 
-func newDebugInfoBuilder(module llvm.Module, file *loc.Source, tb *typeBuilder, target llvm.TargetData, willOptimize bool) (*debugInfoBuilder, error) {
+func newDebugInfoBuilder(module llvm.Module, file *locerr.Source, tb *typeBuilder, target llvm.TargetData, willOptimize bool) (*debugInfoBuilder, error) {
 	d := &debugInfoBuilder{}
 	d.typeBuilder = tb
 	d.sizes = newSizeTable(tb, target)
@@ -284,7 +284,7 @@ func (d *debugInfoBuilder) setFuncInfo(funptr llvm.Value, ty *typing.Fun, line i
 	d.scope = meta
 }
 
-func (d *debugInfoBuilder) setLocation(b llvm.Builder, pos loc.Pos) {
+func (d *debugInfoBuilder) setLocation(b llvm.Builder, pos locerr.Pos) {
 	scope := d.scope
 	if scope.C == nil {
 		scope = d.compileUnit
