@@ -90,10 +90,14 @@ func TestPrintAST(t *testing.T) {
 						&Int{tok, 1},
 					},
 					&Put{
-						&ArrayCreate{
+						&ArrayLit{
 							tok,
-							&Int{tok, 42},
-							&Bool{tok, false},
+							tok,
+							[]Expr{
+								&Int{tok, 100},
+								&Int{tok, 200},
+								&Int{tok, 300},
+							},
 						},
 						&Int{tok, 1},
 						&Bool{tok, true},
@@ -307,9 +311,10 @@ func TestPrintAST(t *testing.T) {
 -   -   -   -   -   -   -   Bool (0:0-0:0)
 -   -   -   -   -   -   Int (0:0-0:0)
 -   -   -   -   -   Put (0:0-0:0)
--   -   -   -   -   -   ArrayCreate (0:0-0:0)
+-   -   -   -   -   -   ArrayLit (3) (0:0-0:0)
 -   -   -   -   -   -   -   Int (0:0-0:0)
--   -   -   -   -   -   -   Bool (0:0-0:0)
+-   -   -   -   -   -   -   Int (0:0-0:0)
+-   -   -   -   -   -   -   Int (0:0-0:0)
 -   -   -   -   -   -   Int (0:0-0:0)
 -   -   -   -   -   -   Bool (0:0-0:0)
 -   -   LetTuple (a, b) (0:0-0:0)

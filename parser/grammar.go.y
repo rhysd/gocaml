@@ -73,6 +73,8 @@ import (
 %token<token> FUN
 %token<token> COLON
 %token<token> TYPE
+%token<token> LBRACKET_BAR
+%token<token> BAR_RBRACKET
 
 %nonassoc IN
 %right prec_let
@@ -105,6 +107,7 @@ import (
 %type<funcdef> fundef
 %type<token> match_arm_start
 %type<decl> match_ident
+%type<nodes> semi_elems
 %type<node> type_annotation
 %type<node> simple_type_annotation
 %type<node> type
@@ -114,6 +117,7 @@ import (
 %type<nodes> simple_type_star_list
 %type<nodes> type_comma_list
 %type<type_decls> type_decls
+%type<> opt_semi
 %type<> program
 
 %start program
@@ -315,6 +319,10 @@ simple_exp:
 				$$ = &ast.String{$1, s}
 			}
 		}
+	| LBRACKET_BAR BAR_RBRACKET
+		{ $$ = &ast.ArrayLit{$1, $2, nil} }
+	| LBRACKET_BAR semi_elems opt_semi BAR_RBRACKET
+		{ $$ = &ast.ArrayLit{$1, $4, $2} }
 	| NONE
 		{ $$ = &ast.None{$1} }
 	| IDENT
@@ -331,6 +339,14 @@ match_ident:
 	| IDENT
 		{ $$ = ast.NewSymbol($1.Value()) }
 
+semi_elems:
+	exp %prec prec_seq
+		{ $$ = []ast.Expr{$1} }
+	| semi_elems SEMICOLON exp
+		{ $$ = append($1, $3) }
+
+opt_semi:
+	/* empty */ {} | SEMICOLON {}
 type_annotation:
 		{ $$ = nil }
 	| COLON type

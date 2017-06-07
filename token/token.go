@@ -57,6 +57,8 @@ const (
 	FUN
 	COLON
 	TYPE
+	LBRACKET_BAR
+	BAR_RBRACKET
 	EOF
 )
 
@@ -110,6 +112,8 @@ var tokenTable = [...]string{
 	FUN:            "fun",
 	COLON:          ":",
 	TYPE:           "type",
+	LBRACKET_BAR:   "[|",
+	BAR_RBRACKET:   "|]",
 }
 
 // Token instance for GoCaml.
