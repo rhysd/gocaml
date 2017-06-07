@@ -281,21 +281,42 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		}
 		ty = f.Ret
 	case *ast.Tuple:
-		if len(n.Elems) == 0 {
+		len := len(n.Elems)
+		if len == 0 {
 			panic("Tuple must not be empty!")
 		}
-		prev = e.emitInsn(n.Elems[0])
-		elems := []string{prev.Ident}
-		types := []typing.Type{e.typeOf(prev)}
-		for _, elem := range n.Elems[1:] {
-			elemInsn := e.emitInsn(elem)
-			elemInsn.Append(prev)
-			elems = append(elems, elemInsn.Ident)
-			types = append(types, e.typeOf(elemInsn))
-			prev = elemInsn
+		elems := make([]string, 0, len)
+		types := make([]typing.Type, 0, len)
+		for _, elem := range n.Elems {
+			i := e.emitInsn(elem)
+			i.Append(prev)
+			elems = append(elems, i.Ident)
+			types = append(types, e.typeOf(i))
+			prev = i
 		}
 		ty = &typing.Tuple{types}
 		val = &Tuple{elems}
+	case *ast.ArrayLit:
+		if len(n.Elems) == 0 {
+			// Cannot know the type of empty array by bottom-up deduction. So we need to depend on
+			// type hint here.
+			var ok bool
+			ty, ok = e.types.TypeHints[n]
+			if !ok {
+				panic("Type of empty array literal is unknown")
+			}
+			val = &ArrLit{}
+			break
+		}
+		elems := make([]string, 0, len(n.Elems))
+		for _, elem := range n.Elems {
+			i := e.emitInsn(elem)
+			i.Append(prev)
+			elems = append(elems, i.Ident)
+			prev = i
+		}
+		ty = &typing.Array{e.typeOf(prev)}
+		val = &ArrLit{elems}
 	case *ast.LetTuple:
 		return e.emitLetTupleInsn(n)
 	case *ast.ArrayCreate:
@@ -345,7 +366,7 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		val = &Some{child.Ident}
 	case *ast.None:
 		var ok bool
-		ty, ok = e.types.NoneTypes[n]
+		ty, ok = e.types.TypeHints[n]
 		if !ok {
 			panic("Type of 'None' value is unknown")
 		}

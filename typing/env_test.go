@@ -161,12 +161,38 @@ func TestDerefNoneTypes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(env.NoneTypes) != 2 {
+	if len(env.TypeHints) != 2 {
 		t.Fatal("None type values were not detected")
 	}
 
-	for _, o := range env.NoneTypes {
-		v, ok := o.Elem.(*Var)
+	for _, h := range env.TypeHints {
+		v, ok := h.(*Option).Elem.(*Var)
+		if ok {
+			t.Errorf("Element type of 'None' value was not dereferenced: %s", v.String())
+		}
+	}
+}
+
+func TestDerefEmptyArray(t *testing.T) {
+	s := locerr.NewDummySource("let a = [| |] in println_int a.(0)")
+	l := lexer.NewLexer(s)
+	go l.Lex()
+	ast, err := parser.Parse(l.Tokens)
+	if err != nil {
+		panic(ast.Root)
+	}
+
+	env, err := TypeInferernce(ast)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(env.TypeHints) != 1 {
+		t.Fatal("Empty array value was not detected")
+	}
+
+	for _, h := range env.TypeHints {
+		v, ok := h.(*Array).Elem.(*Var)
 		if ok {
 			t.Errorf("Element type of 'None' value was not dereferenced: %s", v.String())
 		}

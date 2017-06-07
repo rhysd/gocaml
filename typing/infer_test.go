@@ -392,31 +392,6 @@ func TestUnificationFailure(t *testing.T) {
 	}
 }
 
-func TestRegisterNoneTypes(t *testing.T) {
-	s := locerr.NewDummySource("let rec f x = () in f (Some 42); f None; let a = None in f a")
-	l := lexer.NewLexer(s)
-	go l.Lex()
-	ast, err := parser.Parse(l.Tokens)
-	if err != nil {
-		panic(err)
-	}
-	if err = alpha.Transform(ast.Root); err != nil {
-		panic(err)
-	}
-	i := NewInferer()
-	i.conv, err = newNodeTypeConv(ast.TypeDecls)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = i.infer(ast.Root)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(i.env.NoneTypes) != 2 {
-		t.Errorf("2 None node should be detected but actually %d", len(i.env.NoneTypes))
-	}
-}
-
 func TestInferSuccess(t *testing.T) {
 	files, err := filepath.Glob("testdata/*.ml")
 	if err != nil {

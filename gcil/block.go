@@ -130,11 +130,12 @@ func (insn *Insn) Last() *Insn {
 }
 
 func (insn *Insn) Append(other *Insn) {
+	if other == nil {
+		return
+	}
 	last := insn.Last()
 	last.Next = other
-	if other != nil {
-		other.Prev = last
-	}
+	other.Prev = last
 }
 
 func (insn *Insn) RemoveFromList() {

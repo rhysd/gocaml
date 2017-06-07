@@ -122,6 +122,9 @@ type (
 	Array struct {
 		Size, Elem string
 	}
+	ArrLit struct {
+		Elems []string
+	}
 	TplLoad struct { // Used for each element of LetTuple
 		From  string
 		Index int
@@ -206,6 +209,9 @@ func (v *Tuple) Print(out io.Writer) {
 }
 func (v *Array) Print(out io.Writer) {
 	fmt.Fprintf(out, "array %s %s", v.Size, v.Elem)
+}
+func (v *ArrLit) Print(out io.Writer) {
+	fmt.Fprintf(out, "arrlit %s", strings.Join(v.Elems, ","))
 }
 func (v *TplLoad) Print(out io.Writer) {
 	fmt.Fprintf(out, "tplload %d %s", v.Index, v.From)

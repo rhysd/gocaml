@@ -24,9 +24,9 @@ type Env struct {
 	// External variable names which are referred but not defined.
 	// External variables are exposed as external symbols in other object files.
 	Externals map[string]Type
-	// Type of `None` will be inferred. To know what type the `None` values is typed,
-	// we need to memorize them in type inference.
-	NoneTypes map[*ast.None]*Option
+	// Need to remember inferred types of some nodes because some nodes' types can be determined
+	// only by top-down type inference. Currently ast.None and ast.ArrayLit are applicable.
+	TypeHints map[ast.Expr]Type
 }
 
 // NewEnv creates empty Env instance.
@@ -34,7 +34,7 @@ func NewEnv() *Env {
 	return &Env{
 		map[string]Type{},
 		builtinPopulatedTable(),
-		map[*ast.None]*Option{},
+		map[ast.Expr]Type{},
 	}
 }
 

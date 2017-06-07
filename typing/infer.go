@@ -365,7 +365,11 @@ func (inf *Inferer) infer(e ast.Expr) (Type, error) {
 	case *ast.ArrayLit:
 		if len(n.Elems) == 0 {
 			// Array is empty. Cannot infer type of elements.
-			return &Array{&Var{}}, nil
+			t := &Array{&Var{}}
+			// Type of empty ast.ArrayLit can only be determined top-down direction
+			// type inference.
+			inf.env.TypeHints[n] = t
+			return t, nil
 		}
 		elem, err := inf.infer(n.Elems[0])
 		if err != nil {
@@ -389,7 +393,8 @@ func (inf *Inferer) infer(e ast.Expr) (Type, error) {
 		return &Option{elem}, nil
 	case *ast.None:
 		t := &Option{&Var{}}
-		inf.env.NoneTypes[n] = t
+		// Type of ast.None can only be determined top-down direction type inference.
+		inf.env.TypeHints[n] = t
 		return t, nil
 	case *ast.Match:
 		elem := &Var{}
