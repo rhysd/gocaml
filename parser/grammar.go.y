@@ -76,6 +76,7 @@ import (
 
 %nonassoc IN
 %right prec_let
+%right prec_seq
 %right SEMICOLON
 %nonassoc WITH
 %right prec_if
@@ -95,7 +96,8 @@ import (
 %left DOT
 
 %type<node> exp
-%type<node> parenless_exp
+%type<node> simple_exp
+%type<node> seq_exp
 %type<nodes> elems
 %type<nodes> args
 %type<params> params
@@ -119,7 +121,7 @@ import (
 %%
 
 program:
-	type_decls exp
+	type_decls seq_exp
 		{
 			yylex.(*pseudoLexer).result = &ast.AST{Root: $2, TypeDecls: $1}
 		}
@@ -127,16 +129,20 @@ program:
 type_decls:
 	/* empty */
 		{ $$ = []*ast.TypeDecl{} }
-	| type_decls SEMICOLON
-		{ $$ = $1 }
 	| type_decls TYPE IDENT EQUAL type SEMICOLON
 		{
 			decl := &ast.TypeDecl{$2, $3.Value(), $5}
 			$$ = append($1, decl)
 		}
 
+seq_exp:
+	exp %prec prec_seq
+		{ $$ = $1 }
+	| seq_exp SEMICOLON exp
+		{ $$ = &ast.Let{$2, ast.IgnoredSymbol(), $1, $3, nil} }
+
 exp:
-	parenless_exp
+	simple_exp
 		{ $$ = $1 }
 	| NOT exp
 		%prec prec_app
@@ -170,16 +176,16 @@ exp:
 		{ $$ = &ast.And{$1, $3} }
 	| exp BAR_BAR exp
 		{ $$ = &ast.Or{$1, $3} }
-	| IF exp THEN exp ELSE exp
+	| IF seq_exp THEN exp ELSE exp
 		%prec prec_if
 		{ $$ = &ast.If{$1, $2, $4, $6} }
-	| MATCH exp match_arm_start SOME match_ident MINUS_GREATER exp BAR NONE MINUS_GREATER exp
+	| MATCH seq_exp match_arm_start SOME match_ident MINUS_GREATER seq_exp BAR NONE MINUS_GREATER exp
 		%prec prec_match
 		{
 			none := $11
 			$$ = &ast.Match{$1, $2, $7, none, $5, none.Pos()}
 		}
-	| MATCH exp match_arm_start NONE MINUS_GREATER exp BAR SOME match_ident MINUS_GREATER exp
+	| MATCH seq_exp match_arm_start NONE MINUS_GREATER seq_exp BAR SOME match_ident MINUS_GREATER exp
 		%prec prec_match
 		{
 			some := $11
@@ -196,33 +202,31 @@ exp:
 		{ $$ = &ast.FMul{$1, $3} }
 	| exp SLASH_DOT exp
 		{ $$ = &ast.FDiv{$1, $3} }
-	| LET IDENT type_annotation EQUAL exp IN exp
+	| LET IDENT type_annotation EQUAL seq_exp IN seq_exp
 		%prec prec_let
 		{ $$ = &ast.Let{$1, sym($2), $5, $7, $3} }
-	| LET REC fundef IN exp
+	| LET REC fundef IN seq_exp
 		%prec prec_let
 		{ $$ = &ast.LetRec{$1, $3, $5} }
-	| parenless_exp args
+	| simple_exp args
 		%prec prec_app
 		{ $$ = &ast.Apply{$1, $2} }
 	| elems
 		%prec prec_tuple
 		{ $$ = &ast.Tuple{$1} }
-	| LET LPAREN pat RPAREN type_annotation EQUAL exp IN exp
+	| LET LPAREN pat RPAREN type_annotation EQUAL seq_exp IN seq_exp
 		{ $$ = &ast.LetTuple{$1, $3, $7, $9, $5} }
-	| parenless_exp DOT LPAREN exp RPAREN LESS_MINUS exp
+	| simple_exp DOT LPAREN exp RPAREN LESS_MINUS exp
 		{ $$ = &ast.Put{$1, $4, $7} }
-	| exp SEMICOLON exp
-		{ $$ = &ast.Let{$2, ast.IgnoredSymbol(), $1, $3, nil} }
-	| ARRAY_MAKE parenless_exp parenless_exp
+	| ARRAY_MAKE simple_exp simple_exp
 		%prec prec_app
 		{ $$ = &ast.ArrayCreate{$1, $2, $3} }
-	| ARRAY_LENGTH parenless_exp
+	| ARRAY_LENGTH simple_exp
 		%prec prec_app
 		{ $$ = &ast.ArraySize{$1, $2} }
-	| SOME parenless_exp
+	| SOME simple_exp
 		{ $$ = &ast.Some{$1, $2} }
-	| FUN params simple_type_annotation MINUS_GREATER exp
+	| FUN params simple_type_annotation MINUS_GREATER seq_exp
 		%prec prec_fun
 		{
 			t := $1
@@ -233,12 +237,12 @@ exp:
 		}
 	| ILLEGAL error
 		{
-			yylex.Error(fmt.Sprintf("Parsing illegal token: %s", $1.String()))
+			yylex.Error("Parsing illegal token: " + $1.String())
 			$$ = nil
 		}
 
 fundef:
-	IDENT params type_annotation EQUAL exp
+	IDENT params type_annotation EQUAL seq_exp
 		{ $$ = &ast.FuncDef{ast.NewSymbol($1.Value()), $2, $5, $3} }
 
 params:
@@ -252,9 +256,9 @@ params:
 		{ $$ = append($1, ast.Param{sym($3), $5}) }
 
 args:
-	args parenless_exp
+	args simple_exp
 		{ $$ = append($1, $2) }
-	| parenless_exp
+	| simple_exp
 		{ $$ = []ast.Expr{$1} }
 
 elems:
@@ -269,8 +273,8 @@ pat:
 	| IDENT COMMA IDENT
 		{ $$ = []*ast.Symbol{sym($1), sym($3)} }
 
-parenless_exp:
-	LPAREN exp type_annotation RPAREN
+simple_exp:
+	LPAREN seq_exp type_annotation RPAREN
 		{
 			t := $3
 			if t == nil {
@@ -315,7 +319,7 @@ parenless_exp:
 		{ $$ = &ast.None{$1} }
 	| IDENT
 		{ $$ = &ast.VarRef{$1, ast.NewSymbol($1.Value())} }
-	| parenless_exp DOT LPAREN exp RPAREN
+	| simple_exp DOT LPAREN exp RPAREN
 		{ $$ = &ast.Get{$1, $4} }
 
 match_arm_start:
