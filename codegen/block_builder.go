@@ -423,7 +423,7 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 	case *gcil.Array:
 		t, ok := b.typeOf(ident).(*typing.Array)
 		if !ok {
-			panic("Type of array literal is not array")
+			panic("Type of array instruction is not array")
 		}
 
 		// Copy second argument to all elements of allocated array
@@ -468,6 +468,34 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		// Set size value
 		sizePtr := b.builder.CreateStructGEP(ptr, 1, "")
 		b.builder.CreateStore(sizeVal, sizePtr)
+
+		return b.builder.CreateLoad(ptr, "array")
+	case *gcil.ArrLit:
+		t, ok := b.typeOf(ident).(*typing.Array)
+		if !ok {
+			panic("Type of arrlit instruction is not array")
+		}
+
+		ptr := b.buildAlloca(b.typeBuilder.convertGCIL(t), ident)
+		sizePtr := b.builder.CreateStructGEP(ptr, 1, "")
+		sizeVal := llvm.ConstInt(b.typeBuilder.intT, uint64(len(val.Elems)), false /*signed*/)
+		b.builder.CreateStore(sizeVal, sizePtr)
+
+		if len(val.Elems) == 0 {
+			return b.builder.CreateLoad(ptr, "array")
+		}
+
+		elemTy := b.typeBuilder.convertGCIL(t.Elem)
+		arrPtr := b.builder.CreateStructGEP(ptr, 0, "")
+		arrVal := b.buildArrayMalloc(elemTy, sizeVal, "array.ptr")
+		b.builder.CreateStore(arrVal, arrPtr)
+
+		for i, elem := range val.Elems {
+			indices := []llvm.Value{llvm.ConstInt(b.typeBuilder.intT, uint64(i), false /*sized*/)}
+			elemVal := b.resolve(elem)
+			elemPtr := b.builder.CreateInBoundsGEP(arrVal, indices, fmt.Sprintf("array.elem.%d", i))
+			b.builder.CreateStore(elemVal, elemPtr)
+		}
 
 		return b.builder.CreateLoad(ptr, "array")
 	case *gcil.TplLoad:
