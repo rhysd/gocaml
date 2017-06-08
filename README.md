@@ -2,7 +2,7 @@ GoCaml :camel:
 ==============
 [![Linux and macOS Build Status][]][Travis CI]
 [![Windows Build Status][]][Appveyor]
-[![Coverage Status][]][Coveralls]
+[![Coverage Status][]][Codecov]
 
 GoCaml is subset of OCaml in Go based on [MinCaml][] using [LLVM][]. MinCaml is a minimal subset of
 OCaml for educational purpose. It is statically-typed and compiled into a binary.
@@ -472,7 +472,7 @@ arr.(8) <- false;
 (* Output: false *)
 println_bool arr.(8);
 
-(* Make an array with 1, 2 and 3 elements)
+(* Make an array with 1, 2 and 3 elements *)
 let lit = [| 1; 2; 3 |] in
 
 (* Ouput: 2 *)
@@ -884,8 +884,8 @@ $ gcc -m32 -lgc source.o ./runtime/gocamlrt.a
 [closure doc]: https://godoc.org/github.com/rhysd/gocaml/closure
 [codegen doc]: https://godoc.org/github.com/rhysd/gocaml/codegen
 [Boehm GC]: https://github.com/ivmai/bdwgc
-[Coverage Status]: https://coveralls.io/repos/github/rhysd/gocaml/badge.svg
-[Coveralls]: https://coveralls.io/github/rhysd/gocaml
+[Coverage Status]: https://codecov.io/gh/rhysd/gocaml/branch/master/graph/badge.svg
+[Codecov]: https://codecov.io/gh/rhysd/gocaml
 [Windows Build Status]: https://ci.appveyor.com/api/projects/status/7lfewhhjg57nek2v/branch/master?svg=true
 [Appveyor]: https://ci.appveyor.com/project/rhysd/gocaml/branch/master
 [small runtime]: ./runtime/gocamlrt.c
