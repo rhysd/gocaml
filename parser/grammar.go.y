@@ -98,6 +98,8 @@ import (
 %right prec_unary_minus
 %left prec_app
 %left DOT
+%nonassoc prec_below_ident
+%nonassoc IDENT
 
 %type<node> exp
 %type<node> simple_exp
@@ -409,9 +411,15 @@ simple_type:
 			t := $4
 			$$ = &ast.CtorType{$1, t, $2, t.Value()}
 		}
-	| LPAREN type RPAREN
+	| LPAREN type_comma_list RPAREN
+		%prec prec_below_ident
 		{
-			$$ = $2
+			ts := $2
+			if len(ts) > 1 {
+				yylex.Error("(t1, t2, ...) is not a type. For tuple, use t1 * t2 * ... * tn")
+			} else {
+				$$ = $2[0]
+			}
 		}
 
 type_comma_list:

@@ -48,19 +48,40 @@ func TestParseOK(t *testing.T) {
 	}
 }
 
-func TestErrorOnListLiteral(t *testing.T) {
-	for _, code := range []string{"[]", "[1; 2]", "[true; false;]"} {
-		s := locerr.NewDummySource(code)
-		l := lexer.NewLexer(s)
-		go l.Lex()
-		_, err := Parse(l.Tokens)
-		if err == nil {
-			t.Fatal("List literal must cause parse error:", code)
-		}
-		msg := err.Error()
-		if !strings.Contains(msg, "List literal is not implemented yet.") {
-			t.Fatal("Unexpected error message:", msg)
-		}
+func TestErrorHeuristic(t *testing.T) {
+	cases := []struct {
+		what  string
+		codes []string
+		msg   string
+	}{
+		{
+			what:  "list literal",
+			codes: []string{"[]", "[1; 2]", "[true; false;]"},
+			msg:   "List literal is not implemented yet.",
+		},
+		{
+			what:  "multiple types in paren",
+			codes: []string{"let t: (int, bool) = 42 in ()"},
+			msg:   "(t1, t2, ...) is not a type",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.what, func(t *testing.T) {
+			for _, code := range tc.codes {
+				s := locerr.NewDummySource(code)
+				l := lexer.NewLexer(s)
+				go l.Lex()
+				_, err := Parse(l.Tokens)
+				if err == nil {
+					t.Fatal("List literal must cause parse error:", code)
+				}
+				msg := err.Error()
+				if !strings.Contains(msg, tc.msg) {
+					t.Fatal("Unexpected error message:", msg)
+				}
+			}
+		})
 	}
 }
 
