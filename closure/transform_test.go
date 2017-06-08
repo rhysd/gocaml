@@ -333,6 +333,20 @@ func TestClosureTransform(t *testing.T) {
 				"derefsome $k2 ; type=int",
 			},
 		},
+		{
+			what: "capture in array literal",
+			code: "let a = 42 in let rec f x = [| a; x |] in f 3",
+			closures: map[string][]string{
+				"f$t2": []string{"a$t1"},
+			},
+			toplevel: []string{},
+			entry: []string{
+				"int 42 ; type=int",
+				"makecls (a$t1) f$t2 ; type=int -> int array",
+				"int 3 ; type=int",
+				"appcls f$t2 $k6 ; type=int array",
+			},
+		},
 	}
 
 	for _, tc := range cases {

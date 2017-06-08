@@ -49,6 +49,26 @@ func TestLexingOK(t *testing.T) {
 	}
 }
 
+// List literal can be lexed but parser should complain that it is not implemented yet.
+// This behavior is implemented because array literal ressembles to list literal.
+func TestLexingListLiteral(t *testing.T) {
+	s := locerr.NewDummySource("[1; 2; 3]")
+	l := NewLexer(s)
+	go l.Lex()
+lexing:
+	for {
+		select {
+		case tok := <-l.Tokens:
+			switch tok.Kind {
+			case token.ILLEGAL:
+				t.Fatal(tok.String())
+			case token.EOF:
+				break lexing
+			}
+		}
+	}
+}
+
 func TestLexingIllegal(t *testing.T) {
 	testdir := filepath.FromSlash("../testdata/lexer/invalid")
 	files, err := ioutil.ReadDir(testdir)

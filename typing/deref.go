@@ -92,7 +92,7 @@ func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
 	if !ok {
 		msg := fmt.Sprintf("Cannot infer type of variable '%s'. Inferred type was '%s'", sym.DisplayName, symType.String())
 		if d.err == nil {
-			d.err = locerr.ErrorAt(node.Pos(), msg)
+			d.err = locerr.ErrorIn(node.Pos(), node.End(), msg)
 		} else {
 			d.err = d.err.NoteAt(node.Pos(), msg)
 		}
@@ -202,13 +202,12 @@ func derefTypeVars(env *Env, root ast.Expr) error {
 		return v.err
 	}
 
-	for n, t := range env.NoneTypes {
-		deref, ok := unwrap(t.Elem)
+	for n, t := range env.TypeHints {
+		d, ok := unwrap(t)
 		if !ok {
-			p := n.Pos()
-			panic(fmt.Sprintf("FATAL: Dereferencing type of 'None' value must not fail. Value at (line:%d, col:%d) was wrongly typed as %s", p.Line, p.Column, t.String()))
+			panic("Cannot dereference type hint " + t.String() + " at " + n.Pos().String())
 		}
-		t.Elem = deref
+		env.TypeHints[n] = d
 	}
 
 	return nil

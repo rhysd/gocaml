@@ -333,6 +333,23 @@ func TestEmitInsn(t *testing.T) {
 				"END: else",
 			},
 		},
+		{
+			"array literal",
+			"[| 1; 2 |]",
+			[]string{
+				"int 1 ; type=int",
+				"int 2 ; type=int",
+				"arrlit $k1,$k2 ; type=int array",
+			},
+		},
+		{
+			"empty array literal",
+			"print_int [| |].(0)",
+			[]string{
+				"xref print_int ; type=int -> ()",
+				"arrlit  ; type=int array",
+			},
+		},
 	}
 
 	for _, tc := range cases {

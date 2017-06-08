@@ -279,6 +279,12 @@ type (
 		Token *token.Token
 	}
 
+	ArrayLit struct {
+		StartToken *token.Token
+		EndToken   *token.Token
+		Elems      []Expr
+	}
+
 	FuncType struct {
 		ParamTypes []Expr
 		RetType    Expr
@@ -584,6 +590,13 @@ func (e *None) End() locerr.Pos {
 	return e.Token.End
 }
 
+func (e *ArrayLit) Pos() locerr.Pos {
+	return e.StartToken.Start
+}
+func (e *ArrayLit) End() locerr.Pos {
+	return e.EndToken.End
+}
+
 func (e *FuncType) Pos() locerr.Pos {
 	return e.ParamTypes[0].Pos()
 }
@@ -680,6 +693,7 @@ func (e *Put) Name() string         { return "Put" }
 func (e *Match) Name() string       { return fmt.Sprintf("Match (%s)", e.SomeIdent.DisplayName) }
 func (e *Some) Name() string        { return "Some" }
 func (e *None) Name() string        { return "None" }
+func (e *ArrayLit) Name() string    { return fmt.Sprintf("ArrayLit (%d)", len(e.Elems)) }
 func (e *FuncType) Name() string    { return "FuncType" }
 func (e *TupleType) Name() string   { return fmt.Sprintf("TupleType (%d)", len(e.ElemTypes)) }
 func (e *CtorType) Name() string {

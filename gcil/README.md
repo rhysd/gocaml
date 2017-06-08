@@ -67,6 +67,7 @@ Variable names follow below naming convention.
 | `appx {id} {ids...}`      | Apply function. First `{id}` is external symbol. Following comma separated IDs are arguments.   |
 | `tuple {ids...}`          | Tuple value.                                                                                    |
 | `array {id} {id}`         | Array value. First `{id}` is index and second `{id}` is element value.                          |
+| `arrlit {id} {id}`        | Array literal value. `{ids...}` means elements of the literal and may be empty.                 |
 | `tplload {constant} {id}` | Load element value of tuple. Index must be constant.                                            |
 | `arrload {id} {id}`       | Load element value of array. First `{id}` is index value.                                       |
 | `arrstore {id} {id} {id}` | Store value to array. First `{id}` is index, second `{id}` is array, third `{id}` is set value. |

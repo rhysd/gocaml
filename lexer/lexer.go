@@ -271,16 +271,18 @@ func lexMultOp(l *Lexer) stateFn {
 }
 
 func lexBar(l *Lexer) stateFn {
-	prev := l.top
-	l.eat()
+	l.eat() // Eat first '|'
 
-	if prev != l.top {
+	switch l.top {
+	case '|':
+		l.eat()
+		l.emit(token.BAR_BAR)
+	case ']':
+		l.eat()
+		l.emit(token.BAR_RBRACKET)
+	default:
 		l.emit(token.BAR)
-		return lex
 	}
-
-	l.eat()
-	l.emit(token.BAR_BAR)
 
 	return lex
 }
@@ -440,6 +442,17 @@ func lexStringLiteral(l *Lexer) stateFn {
 	return nil
 }
 
+func lexLbracket(l *Lexer) stateFn {
+	l.eat() // Eat '['
+	if l.top == '|' {
+		l.eat()
+		l.emit(token.LBRACKET_BAR)
+	} else {
+		l.emit(token.LBRACKET)
+	}
+	return lex
+}
+
 func lex(l *Lexer) stateFn {
 	for {
 		if l.eof {
@@ -488,6 +501,11 @@ func lex(l *Lexer) stateFn {
 		case ':':
 			l.eat()
 			l.emit(token.COLON)
+		case '[':
+			return lexLbracket
+		case ']':
+			l.eat()
+			l.emit(token.RBRACKET)
 		default:
 			switch {
 			case unicode.IsSpace(l.top):

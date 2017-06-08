@@ -66,6 +66,10 @@ func (fvg *freeVarsGatherer) exploreInsn(insn *gcil.Insn) {
 	case *gcil.Array:
 		fvg.add(val.Size)
 		fvg.add(val.Elem)
+	case *gcil.ArrLit:
+		for _, e := range val.Elems {
+			fvg.add(e)
+		}
 	case *gcil.TplLoad:
 		fvg.add(val.From)
 	case *gcil.ArrLoad:

@@ -84,6 +84,7 @@ func TestExecutable(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			defer emitter.Dispose()
 			emitter.RunOptimizationPasses()
 			outfile, err := filepath.Abs(fmt.Sprintf("test.%s.a.out", base))
 			if err != nil {
@@ -170,6 +171,7 @@ func BenchmarkExecutableCreation(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			for base, source := range sources {
 				emitter := makeEmitter(source)
+				defer emitter.Dispose()
 				emitter.RunOptimizationPasses()
 				outfile, err := filepath.Abs(fmt.Sprintf("test.%s.a.out", base))
 				if err != nil {
@@ -185,8 +187,56 @@ func BenchmarkExecutableCreation(b *testing.B) {
 	b.Run("build LLVM IR", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			for _, source := range sources {
-				_ = makeEmitter(source)
+				e := makeEmitter(source)
+				defer e.Dispose()
 			}
 		}
 	})
+}
+
+func TestExamples(t *testing.T) {
+	examples, err := filepath.Glob("../examples/*.ml")
+	if err != nil {
+		panic(err)
+	}
+	for _, example := range examples {
+		t.Run(example, func(t *testing.T) {
+			s, err := locerr.NewSourceFromFile(example)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			l := lexer.NewLexer(s)
+			go l.Lex()
+
+			ast, err := parser.Parse(l.Tokens)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if err = alpha.Transform(ast.Root); err != nil {
+				t.Fatal(err)
+			}
+
+			env, err := typing.TypeInferernce(ast)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			ir, err := gcil.FromAST(ast.Root, env)
+			if err != nil {
+				t.Fatal(err)
+			}
+			gcil.ElimRefs(ir, env)
+			prog := closure.Transform(ir)
+
+			opts := EmitOptions{OptimizeDefault, "", "", true}
+			emitter, err := NewEmitter(prog, env, s, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer emitter.Dispose()
+			emitter.RunOptimizationPasses()
+		})
+	}
 }

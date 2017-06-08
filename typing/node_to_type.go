@@ -19,10 +19,10 @@ func newNodeTypeConv(decls []*ast.TypeDecl) (*nodeTypeConv, error) {
 
 	for _, decl := range decls {
 		if decl.Ident == "_" {
-			return nil, locerr.ErrorAt(decl.Pos(), "Cannot declare '_' type name")
+			return nil, locerr.ErrorIn(decl.Pos(), decl.End(), "Cannot declare '_' type name")
 		}
 		if t, ok := conv.aliases[decl.Ident]; ok {
-			return nil, locerr.ErrorfAt(decl.Pos(), "Type name '%s' was already declared as type '%s' at (line:%d, column:%d)", decl.Ident, t.String())
+			return nil, locerr.ErrorfIn(decl.Pos(), decl.End(), "Type name '%s' was already declared as type '%s' at (line:%d, column:%d)", decl.Ident, t.String())
 		}
 		t, err := conv.nodeToType(decl.Type)
 		if err != nil {
@@ -79,18 +79,18 @@ func (conv *nodeTypeConv) nodeToType(node ast.Expr) (Type, error) {
 		switch n.Ctor {
 		case "array":
 			if len != 1 {
-				return nil, locerr.ErrorAt(n.Pos(), "Invalid array type. 'array' only has 1 type parameter.")
+				return nil, locerr.ErrorIn(n.Pos(), n.End(), "Invalid array type. 'array' only has 1 type parameter")
 			}
 			elem, err := conv.nodeToType(n.ParamTypes[0])
 			return &Array{elem}, err
 		case "option":
 			if len != 1 {
-				return nil, locerr.ErrorAt(n.Pos(), "Invalid option type. 'option' only has 1 type parameter.")
+				return nil, locerr.ErrorIn(n.Pos(), n.End(), "Invalid option type. 'option' only has 1 type parameter")
 			}
 			elem, err := conv.nodeToType(n.ParamTypes[0])
 			return &Option{elem}, err
 		default:
-			return nil, locerr.ErrorfAt(n.Pos(), "Unknown type constructor '%s'. Primitive types, aliased types, 'array', 'option' and '_' are supported", n.Ctor)
+			return nil, locerr.ErrorfIn(n.Pos(), n.End(), "Unknown type constructor '%s'. Primitive types, aliased types, 'array', 'option' and '_' are supported", n.Ctor)
 		}
 	default:
 		panic("FATAL: Cannot convert non-type AST node into type values: " + node.Name())

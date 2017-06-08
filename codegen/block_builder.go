@@ -423,18 +423,17 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 	case *gcil.Array:
 		t, ok := b.typeOf(ident).(*typing.Array)
 		if !ok {
-			panic("Type of array literal is not array")
+			panic("Type of array instruction is not array")
 		}
 
 		// Copy second argument to all elements of allocated array
 		// Initialize array object {ptr, size}
 		elemTy := b.typeBuilder.convertGCIL(t.Elem)
-		ptr := b.buildAlloca(b.typeBuilder.convertGCIL(t), ident)
+		arr := llvm.Undef(b.typeBuilder.convertGCIL(t))
 
 		sizeVal := b.resolve(val.Size)
 		arrVal := b.buildArrayMalloc(elemTy, sizeVal, "array.ptr")
-		arrPtr := b.builder.CreateStructGEP(ptr, 0, "")
-		b.builder.CreateStore(arrVal, arrPtr)
+		arr = b.builder.CreateInsertValue(arr, arrVal, 0, "")
 
 		// Prepare 2nd argument value and iteration variable for the loop
 		elemVal := b.resolve(val.Elem)
@@ -466,10 +465,34 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		b.builder.SetInsertPointAtEnd(endBlock)
 
 		// Set size value
-		sizePtr := b.builder.CreateStructGEP(ptr, 1, "")
-		b.builder.CreateStore(sizeVal, sizePtr)
+		arr = b.builder.CreateInsertValue(arr, sizeVal, 1, "")
+		return arr
+	case *gcil.ArrLit:
+		t, ok := b.typeOf(ident).(*typing.Array)
+		if !ok {
+			panic("Type of arrlit instruction is not array")
+		}
 
-		return b.builder.CreateLoad(ptr, "array")
+		arr := llvm.Undef(b.typeBuilder.convertGCIL(t))
+		sizeVal := llvm.ConstInt(b.typeBuilder.intT, uint64(len(val.Elems)), false /*signed*/)
+		arr = b.builder.CreateInsertValue(arr, sizeVal, 1, "")
+
+		if len(val.Elems) == 0 {
+			return arr
+		}
+
+		elemTy := b.typeBuilder.convertGCIL(t.Elem)
+		arrPtr := b.buildArrayMalloc(elemTy, sizeVal, "array.ptr")
+		arr = b.builder.CreateInsertValue(arr, arrPtr, 0, "")
+
+		for i, elem := range val.Elems {
+			indices := []llvm.Value{llvm.ConstInt(b.typeBuilder.intT, uint64(i), false /*sized*/)}
+			elemVal := b.resolve(elem)
+			elemPtr := b.builder.CreateInBoundsGEP(arrPtr, indices, fmt.Sprintf("array.elem.%d", i))
+			b.builder.CreateStore(elemVal, elemPtr)
+		}
+
+		return arr
 	case *gcil.TplLoad:
 		from := b.resolve(val.From)
 		p := b.builder.CreateStructGEP(from, val.Index, "")

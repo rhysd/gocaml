@@ -126,6 +126,10 @@ func Visit(v Visitor, e Expr) {
 		Visit(v, n.IfNone)
 	case *Some:
 		Visit(v, n.Child)
+	case *ArrayLit:
+		for _, e := range n.Elems {
+			Visit(v, e)
+		}
 	case *FuncType:
 		for _, e := range n.ParamTypes {
 			Visit(v, e)

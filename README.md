@@ -49,7 +49,8 @@ You can see [more examples][examples]. (e.g. [Brainfxxk interpreter][Brainfxxk i
   GoCaml does not allow `-` unary operator for float values totally. You need to use `-.` unary operator instead (e.g. `-.3.14`).
 - GoCaml adds more operators. `*` and `/` for integers, `&&` and `||` for booleans.
 - GoCaml has string type. String value is immutable and used with slices.
-- GoCaml does not have `Array.create`, which is an alias to `Array.make`. `Array.length` is available to obtain the size of array.
+- GoCaml does not have `Array.create`, which is an alias to `Array.make`. `Array.length` is available to obtain the size of array
+  and `[| ... |]` literal is available to create an array with specific elements.
 - Some useful built-in functions are added (described in below section).
 - [Option type][] is implemented in GoCaml. Please see below 'Option Type' section or [test cases][option type test cases].
 - GoCaml has `fun` syntax to make an anonymous funcion or closure like `fun x y -> x + y`.
@@ -451,8 +452,9 @@ println_int (fst (42, true))
 
 ### Arrays
 
-Array can be created with `Array.make size elem` where created array is allocated with `size` elemens
-and all elements are initialized as `elem`.
+Array can be created with `Array.make size elem` where created array is allocated with `size` elements
+and all elements are initialized as `elem`. And array literal `[| e1; e2; ... |]` is also supported which
+allocates an array with specified (`e1`, `e2`...) elements.
 
 `arr.(idx)` accesses to the element of array where `arr` is an array and `idx` is an integer.
 And `arr.(idx) <- val` updates the `idx`th element to `val`.
@@ -462,18 +464,29 @@ And `arr.(idx) <- val` updates the `idx`th element to `val`.
 let arr = Array.make 42 true in
 
 (* Output: true *)
-println_bool arr.(8)
+println_bool arr.(8);
 
 (* Update element *)
 arr.(8) <- false;
 
 (* Output: false *)
-println_bool arr.(8)
+println_bool arr.(8);
+
+(* Make an array with 1, 2 and 3 elements)
+let lit = [| 1; 2; 3 |] in
+
+(* Ouput: 2 *)
+println_int lit.(1);
+
+(* Output: 3 *)
+println_int (Array.length lit)
 ```
 
 Note that arrays are NOT immutable because of performance (GoCaml doesn't have persistentarray).
 `e1.(e2) <- e3` is always evaluated to `()` and updates the element destructively.
 Accessing to out of bounds of arrays causes undefined behavior.
+
+And note that list literal (`[e1; e2; ...]`) is not supported yet. Please do not be confused.
 
 ### Option Type
 
@@ -485,7 +498,7 @@ let rec print o =
       | Some i -> println_int o
       | None   -> println_str "none"
 in
-print None
+print None;
 print (Some 42)
 ```
 

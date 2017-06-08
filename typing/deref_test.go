@@ -1,6 +1,10 @@
 package typing
 
 import (
+	"github.com/rhysd/gocaml/ast"
+	"github.com/rhysd/gocaml/token"
+	"github.com/rhysd/locerr"
+	"strings"
 	"testing"
 )
 
@@ -53,6 +57,49 @@ func testTypeEquals(l, r Type) bool {
 		return testTypeEquals(l.Elem, r.Elem)
 	default:
 		panic("Unreachable")
+	}
+}
+
+func TestDerefFailure(t *testing.T) {
+	s := locerr.NewDummySource("")
+	pos := locerr.Pos{0, 0, 0, s}
+	tok := &token.Token{token.ILLEGAL, pos, pos, s}
+	env := NewEnv()
+	env.Table["hello"] = &Var{}
+	v := &typeVarDereferencer{nil, env}
+	root := &ast.Let{
+		tok,
+		ast.NewSymbol("hello"),
+		&ast.Int{tok, 0},
+		&ast.Int{tok, 0},
+		nil,
+	}
+	ast.Visit(v, root)
+	if v.err == nil {
+		t.Fatal("Unknown symbol 'hello' must cause an error")
+	}
+	msg := v.err.Error()
+	if !strings.Contains(msg, "Cannot infer type of variable 'hello'") {
+		t.Fatal("Unexpected error message:", msg)
+	}
+}
+
+func TestUnwrapEmptyTypeVar(t *testing.T) {
+	e := &Var{}
+	for _, ty := range []Type{
+		e,
+		&Var{e},
+		&Var{&Var{e}},
+		&Tuple{[]Type{e}},
+		&Fun{e, []Type{}},
+		&Fun{IntType, []Type{e}},
+		&Option{e},
+		&Array{e},
+	} {
+		_, ok := unwrap(ty)
+		if ok {
+			t.Error("Unwrapping type variable must cause an error:", ty.String())
+		}
 	}
 }
 

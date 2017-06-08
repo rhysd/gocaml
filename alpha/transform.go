@@ -119,7 +119,7 @@ func (t *transformer) Visit(node ast.Expr) ast.Visitor {
 		if n.Symbol.DisplayName == "_" {
 			// Note: Check '_'. Without this check, compiler will consdier it as
 			// external variable wrongly.
-			t.err = locerr.ErrorAt(n.Pos(), "Cannot refer '_' variable because creating '_' variable is not permitted")
+			t.err = locerr.ErrorIn(n.Pos(), n.End(), "Cannot refer '_' variable because creating '_' variable is not permitted")
 			return nil
 		}
 		mapped, ok := t.current.resolve(n.Symbol.DisplayName)

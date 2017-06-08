@@ -46,7 +46,7 @@ func TestEdgeCases(t *testing.T) {
 	}
 }
 
-func TestInvalidExpressions(t *testing.T) {
+func TestUnificationFailure(t *testing.T) {
 	testcases := []struct {
 		what     string
 		code     string
@@ -280,7 +280,7 @@ func TestInvalidExpressions(t *testing.T) {
 		{
 			what:     "match expression arms",
 			code:     "match Some 42 with Some i -> 3.14 | None -> true",
-			expected: "mismatch of types between 'Some' arm and 'None' arm in 'match' expression",
+			expected: "Mismatch of types between 'Some' arm and 'None' arm in 'match' expression",
 		},
 		{
 			what:     "None type comparison",
@@ -315,7 +315,7 @@ func TestInvalidExpressions(t *testing.T) {
 		{
 			what:     "Type mismatch at (e: ty) expression",
 			code:     "let i = 42 in (i: bool)",
-			expected: "mismatch between inferred type and specified type",
+			expected: "Mismatch between inferred type and specified type",
 		},
 		{
 			what:     "Invalid type at (e: ty) expression",
@@ -330,7 +330,7 @@ func TestInvalidExpressions(t *testing.T) {
 		{
 			what:     "Type mismatch at return type",
 			code:     "let rec f (x:int): float = x in f",
-			expected: "return type of function",
+			expected: "Return type of function",
 		},
 		{
 			what:     "Invalid parameter type",
@@ -340,7 +340,27 @@ func TestInvalidExpressions(t *testing.T) {
 		{
 			what:     "Invalid return type",
 			code:     "let rec f x: foo = x in f",
-			expected: "return type of function",
+			expected: "Return type of function",
+		},
+		{
+			what:     "Element type mismatch",
+			code:     "let a = [| 1; true |] in a",
+			expected: "Mismatch between 1st element and 2nd element in array literal",
+		},
+		{
+			what:     "Array literal is array type",
+			code:     "let a = [| 42 |] in 10 + a",
+			expected: "Type mismatch between 'int' and 'int array'",
+		},
+		{
+			what:     "Array of 1st element is invalid",
+			code:     "let a = [| 1 + true |] in a",
+			expected: "1st element type of array literal is incorrect",
+		},
+		{
+			what:     "Array of 2nd element is invalid",
+			code:     "let a = [| 1; 2 + true |] in a",
+			expected: "2nd element type of array literal is incorrect",
 		},
 	}
 
@@ -369,31 +389,6 @@ func TestInvalidExpressions(t *testing.T) {
 				t.Fatalf("Expected error message '%s' to contain '%s'", err.Error(), testcase.expected)
 			}
 		})
-	}
-}
-
-func TestRegisterNoneTypes(t *testing.T) {
-	s := locerr.NewDummySource("let rec f x = () in f (Some 42); f None; let a = None in f a")
-	l := lexer.NewLexer(s)
-	go l.Lex()
-	ast, err := parser.Parse(l.Tokens)
-	if err != nil {
-		panic(err)
-	}
-	if err = alpha.Transform(ast.Root); err != nil {
-		panic(err)
-	}
-	i := NewInferer()
-	i.conv, err = newNodeTypeConv(ast.TypeDecls)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = i.infer(ast.Root)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(i.env.NoneTypes) != 2 {
-		t.Errorf("2 None node should be detected but actually %d", len(i.env.NoneTypes))
 	}
 }
 
