@@ -39,7 +39,9 @@ type Compiler struct {
 func (c *Compiler) Lex(src *locerr.Source) chan token.Token {
 	l := lexer.NewLexer(src)
 	l.Error = func(msg string, pos locerr.Pos) {
-		fmt.Fprintf(os.Stderr, "%s at (line:%d, column:%d)\n", msg, pos.Line, pos.Column)
+		err := locerr.ErrorAt(pos, msg)
+		err.PrintToFile(os.Stderr)
+		fmt.Fprintln(os.Stderr)
 	}
 	go l.Lex()
 	return l.Tokens
