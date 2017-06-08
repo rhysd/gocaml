@@ -59,6 +59,8 @@ const (
 	TYPE
 	LBRACKET_BAR
 	BAR_RBRACKET
+	LBRACKET
+	RBRACKET
 	EOF
 )
 
@@ -114,6 +116,8 @@ var tokenTable = [...]string{
 	TYPE:           "type",
 	LBRACKET_BAR:   "[|",
 	BAR_RBRACKET:   "|]",
+	LBRACKET:       "[",
+	RBRACKET:       "]",
 }
 
 // Token instance for GoCaml.

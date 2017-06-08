@@ -75,6 +75,8 @@ import (
 %token<token> TYPE
 %token<token> LBRACKET_BAR
 %token<token> BAR_RBRACKET
+%token<token> LBRACKET
+%token<token> RBRACKET
 
 %nonassoc IN
 %right prec_let
@@ -323,6 +325,10 @@ simple_exp:
 		{ $$ = &ast.ArrayLit{$1, $2, nil} }
 	| LBRACKET_BAR semi_elems opt_semi BAR_RBRACKET
 		{ $$ = &ast.ArrayLit{$1, $4, $2} }
+	| LBRACKET RBRACKET error
+		{ yylex.Error("List literal is not implemented yet. Please use array literal [| e1; e2; ... |] instead") }
+	| LBRACKET semi_elems opt_semi RBRACKET error
+		{ yylex.Error("List literal is not implemented yet. Please use array literal [| e1; e2; ... |] instead") }
 	| NONE
 		{ $$ = &ast.None{$1} }
 	| IDENT

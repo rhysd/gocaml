@@ -48,6 +48,22 @@ func TestParseOK(t *testing.T) {
 	}
 }
 
+func TestErrorOnListLiteral(t *testing.T) {
+	for _, code := range []string{"[]", "[1; 2]", "[true; false;]"} {
+		s := locerr.NewDummySource(code)
+		l := lexer.NewLexer(s)
+		go l.Lex()
+		_, err := Parse(l.Tokens)
+		if err == nil {
+			t.Fatal("List literal must cause parse error:", code)
+		}
+		msg := err.Error()
+		if !strings.Contains(msg, "List literal is not implemented yet.") {
+			t.Fatal("Unexpected error message:", msg)
+		}
+	}
+}
+
 func TestParseInvalid(t *testing.T) {
 	src := locerr.NewDummySource("")
 	tokens := []token.Token{

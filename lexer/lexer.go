@@ -444,12 +444,12 @@ func lexStringLiteral(l *Lexer) stateFn {
 
 func lexLbracket(l *Lexer) stateFn {
 	l.eat() // Eat '['
-	if l.top != '|' {
-		l.expected("'|' for '[|'", l.top)
-		return nil
+	if l.top == '|' {
+		l.eat()
+		l.emit(token.LBRACKET_BAR)
+	} else {
+		l.emit(token.LBRACKET)
 	}
-	l.eat()
-	l.emit(token.LBRACKET_BAR)
 	return lex
 }
 
@@ -503,6 +503,9 @@ func lex(l *Lexer) stateFn {
 			l.emit(token.COLON)
 		case '[':
 			return lexLbracket
+		case ']':
+			l.eat()
+			l.emit(token.RBRACKET)
 		default:
 			switch {
 			case unicode.IsSpace(l.top):
