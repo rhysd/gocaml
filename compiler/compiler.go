@@ -90,11 +90,11 @@ func (c *Compiler) PrintAST(src *locerr.Source) {
 // It returns the result of type analysis or an error.
 func (c *Compiler) SemanticAnalysis(a *ast.AST) (*typing.Env, error) {
 	if err := alpha.Transform(a.Root); err != nil {
-		return nil, locerr.Notef(err, "While semantic analysis (alpha transform) in %s\n", a.File.Path)
+		return nil, err
 	}
 	env, err := typing.TypeInferernce(a)
 	if err != nil {
-		return nil, locerr.Notef(err, "While semantic analysis (type infererence) in %s", a.File.Path)
+		return nil, err
 	}
 	return env, nil
 }

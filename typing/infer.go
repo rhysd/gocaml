@@ -291,10 +291,10 @@ func (inf *Inferer) infer(e ast.Expr) (Type, error) {
 			}
 			tpl, ok := t.(*Tuple)
 			if !ok {
-				return nil, locerr.ErrorfAt(n.Type.Pos(), "Type error: Bound value of 'let (...) =' must be tuple, but found '%s'", t.String())
+				return nil, locerr.ErrorfIn(n.Type.Pos(), n.Type.End(), "Type error: Bound value of 'let (...) =' must be tuple, but found '%s'", t.String())
 			}
 			if len(tpl.Elems) != len(n.Symbols) {
-				return nil, locerr.ErrorfAt(n.Type.Pos(), "Type error: Mismatch numbers of elements of specified tuple type and symbols in 'let (...)' expression: %d vs %d", len(tpl.Elems), len(n.Symbols))
+				return nil, locerr.ErrorfIn(n.Type.Pos(), n.Type.End(), "Type error: Mismatch numbers of elements of specified tuple type and symbols in 'let (...)' expression: %d vs %d", len(tpl.Elems), len(n.Symbols))
 			}
 			for i, sym := range n.Symbols {
 				inf.env.Table[sym.Name] = tpl.Elems[i]
@@ -464,7 +464,7 @@ func (inferer *Inferer) Infer(parsed *ast.AST) error {
 func TypeInferernce(parsed *ast.AST) (*Env, error) {
 	inferer := NewInferer()
 	if err := inferer.Infer(parsed); err != nil {
-		return nil, err
+		return nil, locerr.NoteAt(parsed.Root.Pos(), err, "Type inference failed")
 	}
 	return inferer.env, nil
 }

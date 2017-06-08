@@ -92,7 +92,7 @@ func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
 	if !ok {
 		msg := fmt.Sprintf("Cannot infer type of variable '%s'. Inferred type was '%s'", sym.DisplayName, symType.String())
 		if d.err == nil {
-			d.err = locerr.ErrorAt(node.Pos(), msg)
+			d.err = locerr.ErrorIn(node.Pos(), node.End(), msg)
 		} else {
 			d.err = d.err.NoteAt(node.Pos(), msg)
 		}

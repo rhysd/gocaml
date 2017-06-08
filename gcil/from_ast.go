@@ -28,12 +28,12 @@ func (e *emitter) typeOf(i *Insn) typing.Type {
 	return t
 }
 
-func (e *emitter) semanticError(msg string, pos locerr.Pos) {
+func (e *emitter) semanticError(msg string, node ast.Expr) {
 	if e.err == nil {
-		e.err = locerr.ErrorAt(pos, msg)
+		e.err = locerr.ErrorIn(node.Pos(), node.End(), msg)
 		return
 	}
-	e.err = e.err.NoteAt(pos, msg)
+	e.err = e.err.NoteAt(node.Pos(), msg)
 }
 
 func (e *emitter) emitBinaryInsn(op OperatorKind, lhs ast.Expr, rhs ast.Expr) (typing.Type, Val, *Insn) {
@@ -150,25 +150,25 @@ func (e *emitter) emitLetTupleInsn(node *ast.LetTuple) *Insn {
 	return body
 }
 
-func (e *emitter) emitLessInsn(kind OperatorKind, lhs, rhs ast.Expr) (typing.Type, Val, *Insn) {
+func (e *emitter) emitLessInsn(kind OperatorKind, lhs, rhs, parent ast.Expr) (typing.Type, Val, *Insn) {
 	operand, val, prev := e.emitBinaryInsn(kind, lhs, rhs)
 	// Note:
 	// This type constraint may be useful for type inference. But current HM type inference algorithm cannot
 	// handle a union type. In this context, the operand should be `int | float`
 	switch operand.(type) {
 	case *typing.Unit, *typing.Bool, *typing.String, *typing.Fun, *typing.Tuple, *typing.Array, *typing.Option:
-		e.semanticError(fmt.Sprintf("'%s' can't be compared with operator '%s'", operand.String(), OpTable[kind]), lhs.Pos())
+		e.semanticError(fmt.Sprintf("'%s' can't be compared with operator '%s'", operand.String(), OpTable[kind]), parent)
 	}
 	return typing.BoolType, val, prev
 }
 
-func (e *emitter) emitEqInsn(kind OperatorKind, lhs, rhs ast.Expr) (typing.Type, Val, *Insn) {
+func (e *emitter) emitEqInsn(kind OperatorKind, lhs, rhs, parent ast.Expr) (typing.Type, Val, *Insn) {
 	operand, val, prev := e.emitBinaryInsn(kind, lhs, rhs)
 	// Note:
 	// This type constraint may be useful for type inference. But current HM type inference algorithm cannot
 	// handle a union type. In this context, the operand should be `() | bool | int | float | fun<R, TS...> | tuple<Args...>`
 	if _, ok := operand.(*typing.Array); ok {
-		e.semanticError(fmt.Sprintf("'%s' can't be compared with operator '%s'", operand.String(), OpTable[kind]), lhs.Pos())
+		e.semanticError(fmt.Sprintf("'%s' can't be compared with operator '%s'", operand.String(), OpTable[kind]), parent)
 	}
 	return typing.BoolType, val, prev
 }
@@ -225,21 +225,21 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 	case *ast.FDiv:
 		ty, val, prev = e.emitBinaryInsn(FDIV, n.Left, n.Right)
 	case *ast.Less:
-		ty, val, prev = e.emitLessInsn(LT, n.Left, n.Right)
+		ty, val, prev = e.emitLessInsn(LT, n.Left, n.Right, n)
 	case *ast.LessEq:
-		ty, val, prev = e.emitLessInsn(LTE, n.Left, n.Right)
+		ty, val, prev = e.emitLessInsn(LTE, n.Left, n.Right, n)
 	case *ast.Greater:
-		ty, val, prev = e.emitLessInsn(GT, n.Left, n.Right)
+		ty, val, prev = e.emitLessInsn(GT, n.Left, n.Right, n)
 	case *ast.GreaterEq:
-		ty, val, prev = e.emitLessInsn(GTE, n.Left, n.Right)
+		ty, val, prev = e.emitLessInsn(GTE, n.Left, n.Right, n)
 	case *ast.And:
 		ty, val, prev = e.emitBinaryInsn(AND, n.Left, n.Right)
 	case *ast.Or:
 		ty, val, prev = e.emitBinaryInsn(OR, n.Left, n.Right)
 	case *ast.Eq:
-		ty, val, prev = e.emitEqInsn(EQ, n.Left, n.Right)
+		ty, val, prev = e.emitEqInsn(EQ, n.Left, n.Right, n)
 	case *ast.NotEq:
-		ty, val, prev = e.emitEqInsn(NEQ, n.Left, n.Right)
+		ty, val, prev = e.emitEqInsn(NEQ, n.Left, n.Right, n)
 	case *ast.If:
 		prev = e.emitInsn(n.Cond)
 		thenBlk, t := e.emitBlock("then", n.Then)
