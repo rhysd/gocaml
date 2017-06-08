@@ -40,16 +40,6 @@ let rec quick_sort xs less =
     go 0 (Array.length xs - 1);
     xs
 in
-let a = Array.make 10 0 in
-a.(0) <- 4;
-a.(1) <- 8;
-a.(2) <- 1;
-a.(3) <- 8;
-a.(4) <- 3;
-a.(5) <- 0;
-a.(6) <- 5;
-a.(7) <- 6;
-a.(8) <- 3;
-a.(9) <- 0;
+let a = [| 4; 8; 1; 8; 3; 0; 5; 6; 3; 0 |] in
 let sorted = quick_sort a (fun x y -> x < y) in
 show_array sorted
