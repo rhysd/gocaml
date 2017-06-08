@@ -180,7 +180,7 @@ exp:
 		{ $$ = &ast.And{$1, $3} }
 	| exp BAR_BAR exp
 		{ $$ = &ast.Or{$1, $3} }
-	| IF seq_exp THEN exp ELSE exp
+	| IF seq_exp THEN seq_exp ELSE exp
 		%prec prec_if
 		{ $$ = &ast.If{$1, $2, $4, $6} }
 	| MATCH seq_exp match_arm_start SOME match_ident MINUS_GREATER seq_exp BAR NONE MINUS_GREATER exp
