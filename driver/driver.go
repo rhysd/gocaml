@@ -86,24 +86,23 @@ func (d *Driver) SemanticAnalysis(a *ast.AST) (*types.Env, error) {
 	if err := alpha.Transform(a.Root); err != nil {
 		return nil, err
 	}
-	env, err := typing.TypeCheck(a)
-	if err != nil {
+	inf := typing.NewInferer()
+	if err := inf.Infer(a); err != nil {
 		return nil, err
 	}
-	return env, nil
+	return inf.Env, nil
 }
 
 // EmitMIR emits MIR tree representation.
 func (d *Driver) EmitMIR(src *locerr.Source) (*mir.Program, *types.Env, error) {
-	ast, err := d.Parse(src)
+	parsed, err := d.Parse(src)
 	if err != nil {
 		return nil, nil, err
 	}
-	env, err := d.SemanticAnalysis(ast)
-	if err != nil {
+	if err := alpha.Transform(parsed.Root); err != nil {
 		return nil, nil, err
 	}
-	ir, err := mir.FromAST(ast.Root, env)
+	env, ir, err := typing.TypeCheck(parsed)
 	if err != nil {
 		return nil, nil, err
 	}

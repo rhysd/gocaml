@@ -25,11 +25,7 @@ func testCreateEmitter(code string, optimize OptLevel, debug bool) (e *Emitter, 
 	if err = alpha.Transform(ast.Root); err != nil {
 		return
 	}
-	env, err := typing.TypeCheck(ast)
-	if err != nil {
-		return
-	}
-	ir, err := mir.FromAST(ast.Root, env)
+	env, ir, err := typing.TypeCheck(ast)
 	if err != nil {
 		return
 	}

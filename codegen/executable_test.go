@@ -67,12 +67,7 @@ func TestExecutable(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			env, err := typing.TypeCheck(ast)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			ir, err := mir.FromAST(ast.Root, env)
+			env, ir, err := typing.TypeCheck(ast)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -147,12 +142,7 @@ func BenchmarkExecutableCreation(b *testing.B) {
 			b.Fatal(err)
 		}
 
-		env, err := typing.TypeCheck(ast)
-		if err != nil {
-			b.Fatal(err)
-		}
-
-		ir, err := mir.FromAST(ast.Root, env)
+		env, ir, err := typing.TypeCheck(ast)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -218,12 +208,7 @@ func TestExamples(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			env, err := typing.TypeCheck(ast)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			ir, err := mir.FromAST(ast.Root, env)
+			env, ir, err := typing.TypeCheck(ast)
 			if err != nil {
 				t.Fatal(err)
 			}

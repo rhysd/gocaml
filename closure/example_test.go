@@ -34,18 +34,14 @@ func Example() {
 		panic(err)
 	}
 
-	// Type analysis
-	env, err := typing.TypeCheck(ast)
+	// Type analysis and convert AST into MIR instruction block
+	env, block, err := typing.TypeCheck(ast)
 	if err != nil {
 		// Type error detected
 		panic(err)
 	}
 
-	// Convert AST into MIR instruction block
-	block, err := mir.FromAST(ast.Root, env)
-	if err != nil {
-		panic(err)
-	}
+	// Eliminate redundant refs
 	mir.ElimRefs(block, env)
 
 	// Closure transform.

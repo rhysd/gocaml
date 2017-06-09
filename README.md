@@ -475,7 +475,7 @@ println_bool arr.(8);
 (* Make an array with 1, 2 and 3 elements *)
 let lit = [| 1; 2; 3 |] in
 
-(* Ouput: 2 *)
+(* Output: 2 *)
 println_int lit.(1);
 
 (* Output: 3 *)

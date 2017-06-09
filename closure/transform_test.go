@@ -361,11 +361,7 @@ func TestClosureTransform(t *testing.T) {
 			if err = alpha.Transform(ast.Root); err != nil {
 				t.Fatal(err)
 			}
-			env, err := typing.TypeCheck(ast)
-			if err != nil {
-				t.Fatal(err)
-			}
-			ir, err := mir.FromAST(ast.Root, env)
+			env, ir, err := typing.TypeCheck(ast)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -506,11 +502,7 @@ func TestClosureCaptureInInsn(t *testing.T) {
 	if err = alpha.Transform(ast.Root); err != nil {
 		t.Fatal(err)
 	}
-	env, err := typing.TypeCheck(ast)
-	if err != nil {
-		t.Fatal(err)
-	}
-	ir, err := mir.FromAST(ast.Root, env)
+	env, ir, err := typing.TypeCheck(ast)
 	if err != nil {
 		t.Fatal(err)
 	}

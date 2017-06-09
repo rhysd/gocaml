@@ -21,7 +21,7 @@ func TestResolvedSymbols(t *testing.T) {
 		panic(ast.Root)
 	}
 
-	env, err := TypeCheck(ast)
+	env, _, err := TypeCheck(ast)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +64,7 @@ func TestTypeCheckMinCamlTests(t *testing.T) {
 				panic(err)
 			}
 
-			_, err = TypeCheck(ast)
+			_, _, err = TypeCheck(ast)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -81,7 +81,7 @@ func TestProgramRootTypeIsUnit(t *testing.T) {
 		panic(ast.Root)
 	}
 
-	_, err = TypeCheck(ast)
+	_, _, err = TypeCheck(ast)
 	if err == nil {
 		t.Fatalf("Type check must raise an error when root type of program is not ()")
 	}
@@ -100,7 +100,7 @@ func TestTypeCheckFail(t *testing.T) {
 		panic(ast.Root)
 	}
 
-	_, err = TypeCheck(ast)
+	_, _, err = TypeCheck(ast)
 	if err == nil {
 		t.Fatalf("Type check must raise a type error")
 	}
@@ -115,7 +115,7 @@ func TestDerefNoneTypes(t *testing.T) {
 		panic(ast.Root)
 	}
 
-	env, err := TypeCheck(ast)
+	env, _, err := TypeCheck(ast)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,7 +141,7 @@ func TestDerefEmptyArray(t *testing.T) {
 		panic(ast.Root)
 	}
 
-	env, err := TypeCheck(ast)
+	env, _, err := TypeCheck(ast)
 	if err != nil {
 		t.Fatal(err)
 	}

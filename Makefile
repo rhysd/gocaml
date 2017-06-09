@@ -16,11 +16,11 @@ SRCS := \
 	typing/infer.go \
 	typing/node_to_type.go \
 	typing/type_check.go \
+	typing/to_mir.go \
 	alpha/transform.go \
 	alpha/mapping.go \
 	mir/val.go \
 	mir/block.go \
-	mir/from_ast.go \
 	mir/printer.go \
 	mir/elim_ref.go \
 	mir/program.go \
@@ -57,10 +57,9 @@ TESTS := \
 	typing/infer_test.go \
 	typing/deref_test.go \
 	typing/node_to_type_test.go \
+	typing/to_mir_test.go \
 	typing/type_check_test.go \
-	mir/example_test.go \
 	mir/block_test.go \
-	mir/from_ast_test.go \
 	mir/elim_ref_test.go \
 	mir/program_test.go \
 	codegen/example_test.go \

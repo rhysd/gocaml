@@ -10,7 +10,7 @@ import (
 
 // Inferer is a visitor to infer types in the AST
 type Inferer struct {
-	env  *Env
+	Env  *Env
 	conv *nodeTypeConv
 }
 
@@ -179,24 +179,24 @@ func (inf *Inferer) infer(e ast.Expr) (Type, error) {
 			return nil, locerr.NotefAt(n.Body.Pos(), err, "Type of variable '%s'", n.Symbol.DisplayName)
 		}
 
-		inf.env.Table[n.Symbol.Name] = bound
+		inf.Env.Table[n.Symbol.Name] = bound
 		return inf.infer(n.Body)
 	case *ast.VarRef:
-		if t, ok := inf.env.Table[n.Symbol.Name]; ok {
+		if t, ok := inf.Env.Table[n.Symbol.Name]; ok {
 			return t, nil
 		}
-		if t, ok := inf.env.Externals[n.Symbol.Name]; ok {
+		if t, ok := inf.Env.Externals[n.Symbol.Name]; ok {
 			return t, nil
 		}
 		// Assume as free variable. If free variable's type is not identified,
 		// It falls into compilation error
 		t := &Var{}
-		inf.env.Externals[n.Symbol.DisplayName] = t
+		inf.Env.Externals[n.Symbol.DisplayName] = t
 		return t, nil
 	case *ast.LetRec:
 		f := &Var{}
 		// Need to register function here because of recursive functions
-		inf.env.Table[n.Func.Symbol.Name] = f
+		inf.Env.Table[n.Func.Symbol.Name] = f
 
 		// Register parameters of function as variables to table
 		params := make([]Type, len(n.Func.Params))
@@ -211,7 +211,7 @@ func (inf *Inferer) infer(e ast.Expr) (Type, error) {
 			} else {
 				t = &Var{}
 			}
-			inf.env.Table[p.Ident.Name] = t
+			inf.Env.Table[p.Ident.Name] = t
 			params[i] = t
 		}
 
@@ -298,14 +298,14 @@ func (inf *Inferer) infer(e ast.Expr) (Type, error) {
 				return nil, locerr.ErrorfIn(n.Type.Pos(), n.Type.End(), "Type error: Mismatch numbers of elements of specified tuple type and symbols in 'let (...)' expression: %d vs %d", len(tpl.Elems), len(n.Symbols))
 			}
 			for i, sym := range n.Symbols {
-				inf.env.Table[sym.Name] = tpl.Elems[i]
+				inf.Env.Table[sym.Name] = tpl.Elems[i]
 			}
 		} else {
 			elems := make([]Type, len(n.Symbols))
 			for i, sym := range n.Symbols {
 				// Bound elements' types are unknown in this point
 				v := &Var{}
-				inf.env.Table[sym.Name] = v
+				inf.Env.Table[sym.Name] = v
 				elems[i] = v
 			}
 			t = &Tuple{Elems: elems}
@@ -369,7 +369,7 @@ func (inf *Inferer) infer(e ast.Expr) (Type, error) {
 			t := &Array{&Var{}}
 			// Type of empty ast.ArrayLit can only be determined top-down direction
 			// type inference.
-			inf.env.TypeHints[n] = t
+			inf.Env.TypeHints[n] = t
 			return t, nil
 		}
 		elem, err := inf.infer(n.Elems[0])
@@ -395,7 +395,7 @@ func (inf *Inferer) infer(e ast.Expr) (Type, error) {
 	case *ast.None:
 		t := &Option{&Var{}}
 		// Type of ast.None can only be determined top-down direction type inference.
-		inf.env.TypeHints[n] = t
+		inf.Env.TypeHints[n] = t
 		return t, nil
 	case *ast.Match:
 		elem := &Var{}
@@ -404,7 +404,7 @@ func (inf *Inferer) infer(e ast.Expr) (Type, error) {
 			return nil, err
 		}
 
-		inf.env.Table[n.SomeIdent.Name] = elem
+		inf.Env.Table[n.SomeIdent.Name] = elem
 		some, err := inf.infer(n.IfSome)
 		if err != nil {
 			return nil, err
@@ -458,5 +458,5 @@ func (inferer *Inferer) Infer(parsed *ast.AST) error {
 	// While dereferencing type variables in table, we can detect type variables
 	// which does not have exact type and raise an error for that.
 	// External variables must be well-typed also.
-	return derefTypeVars(inferer.env, parsed.Root)
+	return derefTypeVars(inferer.Env, parsed.Root)
 }

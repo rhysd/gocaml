@@ -1,8 +1,9 @@
-package mir
+package typing
 
 import (
 	"fmt"
 	"github.com/rhysd/gocaml/ast"
+	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/types"
 	"github.com/rhysd/locerr"
 )
@@ -20,7 +21,7 @@ func (e *emitter) genID() string {
 	return fmt.Sprintf("$k%d", e.count)
 }
 
-func (e *emitter) typeOf(i *Insn) types.Type {
+func (e *emitter) typeOf(i *mir.Insn) types.Type {
 	t, ok := e.types.Table[i.Ident]
 	if !ok {
 		panic(fmt.Sprintf("Type for '%s' not found for %v (bug)", i.Ident, *i))
@@ -36,14 +37,14 @@ func (e *emitter) semanticError(msg string, node ast.Expr) {
 	e.err = e.err.NoteAt(node.Pos(), msg)
 }
 
-func (e *emitter) emitBinaryInsn(op OperatorKind, lhs ast.Expr, rhs ast.Expr) (types.Type, Val, *Insn) {
+func (e *emitter) emitBinaryInsn(op mir.OperatorKind, lhs ast.Expr, rhs ast.Expr) (types.Type, mir.Val, *mir.Insn) {
 	l := e.emitInsn(lhs)
 	r := e.emitInsn(rhs)
 	r.Append(l)
-	return e.typeOf(l), &Binary{op, l.Ident, r.Ident}, r
+	return e.typeOf(l), &mir.Binary{op, l.Ident, r.Ident}, r
 }
 
-func (e *emitter) emitLetInsn(node *ast.Let) *Insn {
+func (e *emitter) emitLetInsn(node *ast.Let) *mir.Insn {
 	// Note:
 	// Instroduce shortcut about symbol to reduce number of instruction nodes.
 	//
@@ -67,7 +68,7 @@ func (e *emitter) emitLetInsn(node *ast.Let) *Insn {
 	return body
 }
 
-func (e *emitter) emitFunInsn(node *ast.LetRec) *Insn {
+func (e *emitter) emitFunInsn(node *ast.LetRec) *mir.Insn {
 	name := node.Func.Symbol.Name
 
 	ty, ok := e.types.Table[name]
@@ -83,26 +84,26 @@ func (e *emitter) emitFunInsn(node *ast.LetRec) *Insn {
 
 	blk, _ := e.emitBlock(fmt.Sprintf("body (%s)", name), node.Func.Body)
 
-	val := &Fun{
+	val := &mir.Fun{
 		params,
 		blk,
 		false,
 	}
 
 	e.types.Table[name] = ty
-	insn := NewInsn(name, val, node.Pos())
+	insn := mir.NewInsn(name, val, node.Pos())
 
 	body := e.emitInsn(node.Body)
 	body.Append(insn)
 	return body
 }
 
-func (e *emitter) emitMatchInsn(node *ast.Match) (types.Type, Val, *Insn) {
+func (e *emitter) emitMatchInsn(node *ast.Match) (types.Type, mir.Val, *mir.Insn) {
 	pos := node.Pos()
 	matched := e.emitInsn(node.Target)
 	id := e.genID()
 	e.types.Table[id] = types.BoolType
-	cond := Concat(NewInsn(id, &IsSome{matched.Ident}, pos), matched)
+	cond := mir.Concat(mir.NewInsn(id, &mir.IsSome{matched.Ident}, pos), matched)
 
 	matchedTy, ok := e.types.Table[matched.Ident].(*types.Option)
 	if !ok {
@@ -111,16 +112,16 @@ func (e *emitter) emitMatchInsn(node *ast.Match) (types.Type, Val, *Insn) {
 	name := node.SomeIdent.Name
 	e.types.Table[name] = matchedTy.Elem
 
-	derefInsn := NewInsn(name, &DerefSome{matched.Ident}, pos)
+	derefInsn := mir.NewInsn(name, &mir.DerefSome{matched.Ident}, pos)
 	someBlk, _ := e.emitBlock("then", node.IfSome)
 	someBlk.Prepend(derefInsn)
 
 	noneBlk, armTy := e.emitBlock("else", node.IfNone)
 
-	return armTy, &If{cond.Ident, someBlk, noneBlk}, cond
+	return armTy, &mir.If{cond.Ident, someBlk, noneBlk}, cond
 }
 
-func (e *emitter) emitLetTupleInsn(node *ast.LetTuple) *Insn {
+func (e *emitter) emitLetTupleInsn(node *ast.LetTuple) *mir.Insn {
 	if len(node.Symbols) == 0 {
 		panic("LetTuple node must contain at least one symbol")
 	}
@@ -135,9 +136,9 @@ func (e *emitter) emitLetTupleInsn(node *ast.LetTuple) *Insn {
 	for i, sym := range node.Symbols {
 		name := sym.Name
 		e.types.Table[name] = boundTy.Elems[i]
-		insn = Concat(NewInsn(
+		insn = mir.Concat(mir.NewInsn(
 			name,
-			&TplLoad{
+			&mir.TplLoad{
 				From:  bound.Ident,
 				Index: i,
 			},
@@ -150,102 +151,102 @@ func (e *emitter) emitLetTupleInsn(node *ast.LetTuple) *Insn {
 	return body
 }
 
-func (e *emitter) emitLessInsn(kind OperatorKind, lhs, rhs, parent ast.Expr) (types.Type, Val, *Insn) {
+func (e *emitter) emitLessInsn(kind mir.OperatorKind, lhs, rhs, parent ast.Expr) (types.Type, mir.Val, *mir.Insn) {
 	operand, val, prev := e.emitBinaryInsn(kind, lhs, rhs)
 	// Note:
 	// This type constraint may be useful for type inference. But current HM type inference algorithm cannot
 	// handle a union type. In this context, the operand should be `int | float`
 	switch operand.(type) {
 	case *types.Unit, *types.Bool, *types.String, *types.Fun, *types.Tuple, *types.Array, *types.Option:
-		e.semanticError(fmt.Sprintf("'%s' can't be compared with operator '%s'", operand.String(), OpTable[kind]), parent)
+		e.semanticError(fmt.Sprintf("'%s' can't be compared with operator '%s'", operand.String(), mir.OpTable[kind]), parent)
 	}
 	return types.BoolType, val, prev
 }
 
-func (e *emitter) emitEqInsn(kind OperatorKind, lhs, rhs, parent ast.Expr) (types.Type, Val, *Insn) {
+func (e *emitter) emitEqInsn(kind mir.OperatorKind, lhs, rhs, parent ast.Expr) (types.Type, mir.Val, *mir.Insn) {
 	operand, val, prev := e.emitBinaryInsn(kind, lhs, rhs)
 	// Note:
 	// This type constraint may be useful for type inference. But current HM type inference algorithm cannot
 	// handle a union type. In this context, the operand should be `() | bool | int | float | fun<R, TS...> | tuple<Args...>`
 	if _, ok := operand.(*types.Array); ok {
-		e.semanticError(fmt.Sprintf("'%s' can't be compared with operator '%s'", operand.String(), OpTable[kind]), parent)
+		e.semanticError(fmt.Sprintf("'%s' can't be compared with operator '%s'", operand.String(), mir.OpTable[kind]), parent)
 	}
 	return types.BoolType, val, prev
 }
 
-func (e *emitter) emitInsn(node ast.Expr) *Insn {
-	var prev *Insn = nil
-	var val Val
+func (e *emitter) emitInsn(node ast.Expr) *mir.Insn {
+	var prev *mir.Insn
+	var val mir.Val
 	var ty types.Type
 
 	switch n := node.(type) {
 	case *ast.Unit:
 		ty = types.UnitType
-		val = UnitVal
+		val = mir.UnitVal
 	case *ast.Bool:
 		ty = types.BoolType
-		val = &Bool{n.Value}
+		val = &mir.Bool{n.Value}
 	case *ast.Int:
 		ty = types.IntType
-		val = &Int{n.Value}
+		val = &mir.Int{n.Value}
 	case *ast.Float:
 		ty = types.FloatType
-		val = &Float{n.Value}
+		val = &mir.Float{n.Value}
 	case *ast.String:
 		ty = types.StringType
-		val = &String{n.Value}
+		val = &mir.String{n.Value}
 	case *ast.Not:
 		i := e.emitInsn(n.Child)
-		ty, val = e.typeOf(i), &Unary{NOT, i.Ident}
+		ty, val = e.typeOf(i), &mir.Unary{mir.NOT, i.Ident}
 		prev = i
 	case *ast.Neg:
 		i := e.emitInsn(n.Child)
-		ty, val = e.typeOf(i), &Unary{NEG, i.Ident}
+		ty, val = e.typeOf(i), &mir.Unary{mir.NEG, i.Ident}
 		prev = i
 	case *ast.FNeg:
 		i := e.emitInsn(n.Child)
-		ty, val = e.typeOf(i), &Unary{FNEG, i.Ident}
+		ty, val = e.typeOf(i), &mir.Unary{mir.FNEG, i.Ident}
 		prev = i
 	case *ast.Add:
-		ty, val, prev = e.emitBinaryInsn(ADD, n.Left, n.Right)
+		ty, val, prev = e.emitBinaryInsn(mir.ADD, n.Left, n.Right)
 	case *ast.Sub:
-		ty, val, prev = e.emitBinaryInsn(SUB, n.Left, n.Right)
+		ty, val, prev = e.emitBinaryInsn(mir.SUB, n.Left, n.Right)
 	case *ast.Mul:
-		ty, val, prev = e.emitBinaryInsn(MUL, n.Left, n.Right)
+		ty, val, prev = e.emitBinaryInsn(mir.MUL, n.Left, n.Right)
 	case *ast.Div:
-		ty, val, prev = e.emitBinaryInsn(DIV, n.Left, n.Right)
+		ty, val, prev = e.emitBinaryInsn(mir.DIV, n.Left, n.Right)
 	case *ast.Mod:
-		ty, val, prev = e.emitBinaryInsn(MOD, n.Left, n.Right)
+		ty, val, prev = e.emitBinaryInsn(mir.MOD, n.Left, n.Right)
 	case *ast.FAdd:
-		ty, val, prev = e.emitBinaryInsn(FADD, n.Left, n.Right)
+		ty, val, prev = e.emitBinaryInsn(mir.FADD, n.Left, n.Right)
 	case *ast.FSub:
-		ty, val, prev = e.emitBinaryInsn(FSUB, n.Left, n.Right)
+		ty, val, prev = e.emitBinaryInsn(mir.FSUB, n.Left, n.Right)
 	case *ast.FMul:
-		ty, val, prev = e.emitBinaryInsn(FMUL, n.Left, n.Right)
+		ty, val, prev = e.emitBinaryInsn(mir.FMUL, n.Left, n.Right)
 	case *ast.FDiv:
-		ty, val, prev = e.emitBinaryInsn(FDIV, n.Left, n.Right)
+		ty, val, prev = e.emitBinaryInsn(mir.FDIV, n.Left, n.Right)
 	case *ast.Less:
-		ty, val, prev = e.emitLessInsn(LT, n.Left, n.Right, n)
+		ty, val, prev = e.emitLessInsn(mir.LT, n.Left, n.Right, n)
 	case *ast.LessEq:
-		ty, val, prev = e.emitLessInsn(LTE, n.Left, n.Right, n)
+		ty, val, prev = e.emitLessInsn(mir.LTE, n.Left, n.Right, n)
 	case *ast.Greater:
-		ty, val, prev = e.emitLessInsn(GT, n.Left, n.Right, n)
+		ty, val, prev = e.emitLessInsn(mir.GT, n.Left, n.Right, n)
 	case *ast.GreaterEq:
-		ty, val, prev = e.emitLessInsn(GTE, n.Left, n.Right, n)
+		ty, val, prev = e.emitLessInsn(mir.GTE, n.Left, n.Right, n)
 	case *ast.And:
-		ty, val, prev = e.emitBinaryInsn(AND, n.Left, n.Right)
+		ty, val, prev = e.emitBinaryInsn(mir.AND, n.Left, n.Right)
 	case *ast.Or:
-		ty, val, prev = e.emitBinaryInsn(OR, n.Left, n.Right)
+		ty, val, prev = e.emitBinaryInsn(mir.OR, n.Left, n.Right)
 	case *ast.Eq:
-		ty, val, prev = e.emitEqInsn(EQ, n.Left, n.Right, n)
+		ty, val, prev = e.emitEqInsn(mir.EQ, n.Left, n.Right, n)
 	case *ast.NotEq:
-		ty, val, prev = e.emitEqInsn(NEQ, n.Left, n.Right, n)
+		ty, val, prev = e.emitEqInsn(mir.NEQ, n.Left, n.Right, n)
 	case *ast.If:
 		prev = e.emitInsn(n.Cond)
 		thenBlk, t := e.emitBlock("then", n.Then)
 		elseBlk, _ := e.emitBlock("else", n.Else)
 		ty = t
-		val = &If{
+		val = &mir.If{
 			prev.Ident,
 			thenBlk,
 			elseBlk,
@@ -255,10 +256,10 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 	case *ast.VarRef:
 		if t, ok := e.types.Table[n.Symbol.Name]; ok {
 			ty = t
-			val = &Ref{n.Symbol.Name}
+			val = &mir.Ref{n.Symbol.Name}
 		} else if t, ok := e.types.Externals[n.Symbol.Name]; ok {
 			ty = t
-			val = &XRef{n.Symbol.Name}
+			val = &mir.XRef{n.Symbol.Name}
 		} else {
 			panic(fmt.Sprintf("Unknown identifier %s", n.Symbol.Name))
 		}
@@ -274,7 +275,7 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 			args = append(args, arg.Ident)
 			prev = arg
 		}
-		val = &App{callee.Ident, args, DIRECT_CALL}
+		val = &mir.App{callee.Ident, args, mir.DIRECT_CALL}
 		f, ok := e.typeOf(callee).(*types.Fun)
 		if !ok {
 			panic(fmt.Sprintf("Callee of Apply node is not typed as function!: %s", e.typeOf(callee).String()))
@@ -295,7 +296,7 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 			prev = i
 		}
 		ty = &types.Tuple{elemTypes}
-		val = &Tuple{elems}
+		val = &mir.Tuple{elems}
 	case *ast.ArrayLit:
 		if len(n.Elems) == 0 {
 			// Cannot know the type of empty array by bottom-up deduction. So we need to depend on
@@ -305,7 +306,7 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 			if !ok {
 				panic("Type of empty array literal is unknown")
 			}
-			val = &ArrLit{}
+			val = &mir.ArrLit{}
 			break
 		}
 		elems := make([]string, 0, len(n.Elems))
@@ -316,7 +317,7 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 			prev = i
 		}
 		ty = &types.Array{e.typeOf(prev)}
-		val = &ArrLit{elems}
+		val = &mir.ArrLit{elems}
 	case *ast.LetTuple:
 		return e.emitLetTupleInsn(n)
 	case *ast.ArrayCreate:
@@ -325,7 +326,7 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		elem.Append(size)
 		prev = elem
 		ty = &types.Array{e.typeOf(elem)}
-		val = &Array{size.Ident, elem.Ident}
+		val = &mir.Array{size.Ident, elem.Ident}
 	case *ast.Get:
 		array := e.emitInsn(n.Array)
 		arrayTy, ok := e.typeOf(array).(*types.Array)
@@ -336,7 +337,7 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		index.Append(array)
 		prev = index
 		ty = arrayTy.Elem
-		val = &ArrLoad{array.Ident, index.Ident}
+		val = &mir.ArrLoad{array.Ident, index.Ident}
 	case *ast.Put:
 		array := e.emitInsn(n.Array)
 		arrayTy, ok := e.typeOf(array).(*types.Array)
@@ -349,12 +350,12 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		rhs.Append(index)
 		prev = rhs
 		ty = arrayTy.Elem
-		val = &ArrStore{array.Ident, index.Ident, rhs.Ident}
+		val = &mir.ArrStore{array.Ident, index.Ident, rhs.Ident}
 	case *ast.ArraySize:
 		array := e.emitInsn(n.Target)
 		prev = array
 		ty = types.IntType
-		val = &ArrLen{array.Ident}
+		val = &mir.ArrLen{array.Ident}
 	case *ast.Some:
 		child := e.emitInsn(n.Child)
 		prev = child
@@ -363,14 +364,14 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 			panic("Child type for 'Some' value is unknown")
 		}
 		ty = &types.Option{childTy}
-		val = &Some{child.Ident}
+		val = &mir.Some{child.Ident}
 	case *ast.None:
 		var ok bool
 		ty, ok = e.types.TypeHints[n]
 		if !ok {
 			panic("Type of 'None' value is unknown")
 		}
-		val = NoneVal
+		val = mir.NoneVal
 	case *ast.Match:
 		ty, val, prev = e.emitMatchInsn(n)
 	case *ast.Typed:
@@ -385,20 +386,21 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 	}
 	id := e.genID()
 	e.types.Table[id] = ty
-	return Concat(NewInsn(id, val, node.Pos()), prev)
+	return mir.Concat(mir.NewInsn(id, val, node.Pos()), prev)
 }
 
-// Return Block instance and its type
-func (e *emitter) emitBlock(name string, node ast.Expr) (*Block, types.Type) {
+// Returns mir.Block instance and its type
+func (e *emitter) emitBlock(name string, node ast.Expr) (*mir.Block, types.Type) {
 	lastInsn := e.emitInsn(node)
-	firstInsn := Reverse(lastInsn)
+	firstInsn := mir.Reverse(lastInsn)
 	// emitInsn() emits instructions in descending order.
 	// Reverse the order to iterate instractions ascending order.
-	return NewBlock(name, firstInsn, lastInsn), e.typeOf(lastInsn)
+	return mir.NewBlock(name, firstInsn, lastInsn), e.typeOf(lastInsn)
 }
 
-func FromAST(root ast.Expr, types *types.Env) (*Block, error) {
-	e := &emitter{0, types, nil}
+// Convert given AST into MIR with type environment
+func ToMIR(root ast.Expr, env *types.Env) (*mir.Block, error) {
+	e := &emitter{0, env, nil}
 	b, _ := e.emitBlock("program", root)
 	if e.err != nil {
 		return nil, e.err.Note("Semantics error while MIR generation")
