@@ -3,7 +3,7 @@ SRCS := \
 	ast/node.go \
 	ast/printer.go \
 	ast/visitor.go \
-	compiler/compiler.go \
+	driver/driver.go \
 	lexer/lexer.go \
 	parser/grammar.go \
 	parser/parser.go \
@@ -44,7 +44,7 @@ TESTS := \
 	ast/printer_test.go \
 	closure/example_test.go \
 	closure/transform_test.go \
-	compiler/example_test.go \
+	driver/example_test.go \
 	lexer/example_test.go \
 	lexer/lexer_test.go \
 	parser/example_test.go \

@@ -1,6 +1,7 @@
-package compiler
+package driver
 
 import (
+	"fmt"
 	"github.com/rhysd/locerr"
 	"path/filepath"
 )
@@ -14,22 +15,22 @@ func Example() {
 		panic(err)
 	}
 
-	c := Compiler{}
+	d := Driver{}
 
 	// Show list of tokens
-	c.PrintTokens(src)
+	d.PrintTokens(src)
 
 	// Show AST nodes
-	c.PrintAST(src)
+	d.PrintAST(src)
 
 	// Parse file into AST
-	ast, err := c.Parse(src)
+	ast, err := d.Parse(src)
 	if err != nil {
 		panic(err)
 	}
 
 	// Do semantic analysis (type check and inference)
-	env, err := c.SemanticAnalysis(ast)
+	env, err := d.SemanticAnalysis(ast)
 	if err != nil {
 		panic(err)
 	}
@@ -37,5 +38,22 @@ func Example() {
 	// Show environment of type analysis
 	env.Dump()
 
-	// TODO: LLVM IR code generation
+	// Show LLVM IR for the source
+	ir, err := d.EmitLLVMIR(src)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(ir)
+
+	// Show native assembly code for the source
+	asm, err := d.EmitAsm(src)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(asm)
+
+	// Compile the source into an executable
+	if err := d.Compile(src); err != nil {
+		panic(err)
+	}
 }

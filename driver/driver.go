@@ -1,5 +1,6 @@
-// Package compiler provides a compiler function for GoCaml codes.
-package compiler
+// Package driver is amediator to glue all packages for GoCaqml. provides a compiler function for GoCaml codes.
+// It provides compiler functinalities for GoCaml.
+package driver
 
 import (
 	"fmt"
@@ -27,8 +28,8 @@ const (
 	O3
 )
 
-// Compiler instance to compile GoCaml code into other representations.
-type Compiler struct {
+// Driver instance to compile GoCaml code into other representations.
+type Driver struct {
 	Optimization OptLevel
 	LinkFlags    string
 	TargetTriple string
@@ -36,7 +37,7 @@ type Compiler struct {
 }
 
 // PrintTokens returns the lexed tokens for a source code.
-func (c *Compiler) Lex(src *locerr.Source) chan token.Token {
+func (d *Driver) Lex(src *locerr.Source) chan token.Token {
 	l := lexer.NewLexer(src)
 	l.Error = func(msg string, pos locerr.Pos) {
 		err := locerr.ErrorAt(pos, msg)
@@ -48,8 +49,8 @@ func (c *Compiler) Lex(src *locerr.Source) chan token.Token {
 }
 
 // PrintTokens show list of tokens lexed.
-func (c *Compiler) PrintTokens(src *locerr.Source) {
-	tokens := c.Lex(src)
+func (d *Driver) PrintTokens(src *locerr.Source) {
+	tokens := d.Lex(src)
 	for {
 		select {
 		case t := <-tokens:
@@ -63,8 +64,8 @@ func (c *Compiler) PrintTokens(src *locerr.Source) {
 }
 
 // Parse parses the source and returns the parsed AST.
-func (c *Compiler) Parse(src *locerr.Source) (*ast.AST, error) {
-	tokens := c.Lex(src)
+func (d *Driver) Parse(src *locerr.Source) (*ast.AST, error) {
+	tokens := d.Lex(src)
 	ast, err := parser.Parse(tokens)
 
 	if err != nil {
@@ -77,8 +78,8 @@ func (c *Compiler) Parse(src *locerr.Source) (*ast.AST, error) {
 }
 
 // PrintAST outputs AST structure to stdout.
-func (c *Compiler) PrintAST(src *locerr.Source) {
-	a, err := c.Parse(src)
+func (d *Driver) PrintAST(src *locerr.Source) {
+	a, err := d.Parse(src)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		return
@@ -88,7 +89,7 @@ func (c *Compiler) PrintAST(src *locerr.Source) {
 
 // SemanticAnalysis checks types and symbol duplicates.
 // It returns the result of type analysis or an error.
-func (c *Compiler) SemanticAnalysis(a *ast.AST) (*typing.Env, error) {
+func (d *Driver) SemanticAnalysis(a *ast.AST) (*typing.Env, error) {
 	if err := alpha.Transform(a.Root); err != nil {
 		return nil, err
 	}
@@ -100,12 +101,12 @@ func (c *Compiler) SemanticAnalysis(a *ast.AST) (*typing.Env, error) {
 }
 
 // EmitGCIL emits GCIL tree representation.
-func (c *Compiler) EmitGCIL(src *locerr.Source) (*gcil.Program, *typing.Env, error) {
-	ast, err := c.Parse(src)
+func (d *Driver) EmitGCIL(src *locerr.Source) (*gcil.Program, *typing.Env, error) {
+	ast, err := d.Parse(src)
 	if err != nil {
 		return nil, nil, err
 	}
-	env, err := c.SemanticAnalysis(ast)
+	env, err := d.SemanticAnalysis(ast)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -118,14 +119,14 @@ func (c *Compiler) EmitGCIL(src *locerr.Source) (*gcil.Program, *typing.Env, err
 	return prog, env, nil
 }
 
-func (c *Compiler) emitterFromSource(src *locerr.Source) (*codegen.Emitter, error) {
-	prog, env, err := c.EmitGCIL(src)
+func (d *Driver) emitterFromSource(src *locerr.Source) (*codegen.Emitter, error) {
+	prog, env, err := d.EmitGCIL(src)
 	if err != nil {
 		return nil, err
 	}
 
 	level := codegen.OptimizeDefault
-	switch c.Optimization {
+	switch d.Optimization {
 	case O0:
 		level = codegen.OptimizeNone
 	case O1:
@@ -133,13 +134,13 @@ func (c *Compiler) emitterFromSource(src *locerr.Source) (*codegen.Emitter, erro
 	case O3:
 		level = codegen.OptimizeAggressive
 	}
-	opts := codegen.EmitOptions{level, c.TargetTriple, c.LinkFlags, c.DebugInfo}
+	opts := codegen.EmitOptions{level, d.TargetTriple, d.LinkFlags, d.DebugInfo}
 
 	return codegen.NewEmitter(prog, env, src, opts)
 }
 
-func (c *Compiler) EmitObjFile(src *locerr.Source) error {
-	emitter, err := c.emitterFromSource(src)
+func (d *Driver) EmitObjFile(src *locerr.Source) error {
+	emitter, err := d.emitterFromSource(src)
 	if err != nil {
 		return err
 	}
@@ -153,8 +154,8 @@ func (c *Compiler) EmitObjFile(src *locerr.Source) error {
 	return ioutil.WriteFile(filename, obj, 0666)
 }
 
-func (c *Compiler) EmitLLVMIR(src *locerr.Source) (string, error) {
-	emitter, err := c.emitterFromSource(src)
+func (d *Driver) EmitLLVMIR(src *locerr.Source) (string, error) {
+	emitter, err := d.emitterFromSource(src)
 	if err != nil {
 		return "", err
 	}
@@ -164,8 +165,8 @@ func (c *Compiler) EmitLLVMIR(src *locerr.Source) (string, error) {
 	return emitter.EmitLLVMIR(), nil
 }
 
-func (c *Compiler) EmitAsm(src *locerr.Source) (string, error) {
-	emitter, err := c.emitterFromSource(src)
+func (d *Driver) EmitAsm(src *locerr.Source) (string, error) {
+	emitter, err := d.emitterFromSource(src)
 	if err != nil {
 		return "", err
 	}
@@ -175,8 +176,8 @@ func (c *Compiler) EmitAsm(src *locerr.Source) (string, error) {
 	return emitter.EmitAsm()
 }
 
-func (c *Compiler) Compile(source *locerr.Source) error {
-	emitter, err := c.emitterFromSource(source)
+func (d *Driver) Compile(source *locerr.Source) error {
+	emitter, err := d.emitterFromSource(source)
 	if err != nil {
 		return err
 	}

@@ -16,7 +16,7 @@ type Unit struct {
 }
 
 func (t *Unit) String() string {
-	return "()"
+	return "unit"
 }
 
 type Bool struct {

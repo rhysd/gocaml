@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/rhysd/gocaml/codegen"
-	"github.com/rhysd/gocaml/compiler"
+	"github.com/rhysd/gocaml/driver"
 	"github.com/rhysd/locerr"
 	"os"
 )
@@ -38,21 +38,21 @@ func usage() {
 	flag.PrintDefaults()
 }
 
-func getOptLevel() compiler.OptLevel {
+func getOptLevel() driver.OptLevel {
 	switch *opt {
 	case 0:
-		return compiler.O0
+		return driver.O0
 	case 1:
-		return compiler.O1
+		return driver.O1
 	case 2:
-		return compiler.O2
+		return driver.O2
 	case 3:
-		return compiler.O3
+		return driver.O3
 	default:
 		if *llvm {
-			return compiler.O0
+			return driver.O0
 		}
-		return compiler.O2
+		return driver.O2
 	}
 }
 
@@ -86,7 +86,7 @@ func main() {
 		os.Exit(4)
 	}
 
-	c := compiler.Compiler{
+	d := driver.Driver{
 		Optimization: getOptLevel(),
 		TargetTriple: *target,
 		LinkFlags:    *ldflags,
@@ -95,37 +95,37 @@ func main() {
 
 	switch {
 	case *showTokens:
-		c.PrintTokens(src)
+		d.PrintTokens(src)
 	case *showAST:
-		c.PrintAST(src)
+		d.PrintAST(src)
 	case *showGCIL:
-		prog, env, err := c.EmitGCIL(src)
+		prog, env, err := d.EmitGCIL(src)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(4)
 		}
 		prog.Println(os.Stdout, env)
 	case *llvm:
-		ir, err := c.EmitLLVMIR(src)
+		ir, err := d.EmitLLVMIR(src)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(4)
 		}
 		fmt.Println(ir)
 	case *asm:
-		asm, err := c.EmitAsm(src)
+		asm, err := d.EmitAsm(src)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(4)
 		}
 		fmt.Println(asm)
 	case *obj:
-		if err := c.EmitObjFile(src); err != nil {
+		if err := d.EmitObjFile(src); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(4)
 		}
 	default:
-		if err := c.Compile(src); err != nil {
+		if err := d.Compile(src); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(4)
 		}

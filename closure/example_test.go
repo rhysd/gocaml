@@ -93,6 +93,6 @@ func Example() {
 	// $k31 = int 3 ; type=int
 	// $k32 = int 10 ; type=int
 	// $k33 = app ack$t1 $k31,$k32 ; type=int
-	// $k34 = appx print_int $k33 ; type=()
+	// $k34 = appx print_int $k33 ; type=unit
 	// END: program
 }

@@ -27,7 +27,7 @@ func TestEmitInsn(t *testing.T) {
 		{
 			"unit",
 			"()",
-			[]string{"unit ; type=()"},
+			[]string{"unit ; type=unit"},
 		},
 		{
 			"float",
@@ -346,7 +346,7 @@ func TestEmitInsn(t *testing.T) {
 			"empty array literal",
 			"print_int [| |].(0)",
 			[]string{
-				"xref print_int ; type=int -> ()",
+				"xref print_int ; type=int -> unit",
 				"arrlit  ; type=int array",
 			},
 		},
@@ -405,7 +405,7 @@ func TestSemanticError(t *testing.T) {
 		{
 			what:     "unit is invalid for operator '<'",
 			code:     "() < ()",
-			expected: "'()' can't be compared with operator '<'",
+			expected: "'unit' can't be compared with operator '<'",
 		},
 		{
 			what:     "tuple is invalid for operator '<'",
