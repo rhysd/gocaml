@@ -2,7 +2,7 @@ package closure
 
 import (
 	"fmt"
-	"github.com/rhysd/gocaml/gcil"
+	"github.com/rhysd/gocaml/mir"
 )
 
 type freeVarsGatherer struct {
@@ -14,7 +14,7 @@ func (fvg *freeVarsGatherer) add(name string) {
 	fvg.found[name] = struct{}{}
 }
 
-func (fvg *freeVarsGatherer) exploreBlock(block *gcil.Block) {
+func (fvg *freeVarsGatherer) exploreBlock(block *mir.Block) {
 	// Traverse instructions in the block in reverse order.
 	// First and last instructions are NOP, so skipped.
 	for i := block.Bottom.Prev; i.Prev != nil; i = i.Prev {
@@ -22,7 +22,7 @@ func (fvg *freeVarsGatherer) exploreBlock(block *gcil.Block) {
 	}
 }
 
-func (fvg *freeVarsGatherer) exploreTillTheEnd(insn *gcil.Insn) {
+func (fvg *freeVarsGatherer) exploreTillTheEnd(insn *mir.Insn) {
 	end := insn
 	for end.Next.Next != nil {
 		// Find the last instruction before NOP
@@ -33,61 +33,61 @@ func (fvg *freeVarsGatherer) exploreTillTheEnd(insn *gcil.Insn) {
 	}
 }
 
-func (fvg *freeVarsGatherer) exploreInsn(insn *gcil.Insn) {
+func (fvg *freeVarsGatherer) exploreInsn(insn *mir.Insn) {
 	switch val := insn.Val.(type) {
-	case *gcil.Unary:
+	case *mir.Unary:
 		fvg.add(val.Child)
-	case *gcil.Binary:
+	case *mir.Binary:
 		fvg.add(val.Lhs)
 		fvg.add(val.Rhs)
-	case *gcil.Ref:
+	case *mir.Ref:
 		fvg.add(val.Ident)
-	case *gcil.If:
+	case *mir.If:
 		fvg.add(val.Cond)
 		fvg.exploreBlock(val.Then)
 		fvg.exploreBlock(val.Else)
-	case *gcil.App:
+	case *mir.App:
 		// Should not add val.Callee to free variables if it is not a closure
 		// because a normal function is treated as label, not a variable
 		// (label is a constant).
 		// `_, ok := fvg.transform.closures[val.Callee]; ok` cannot be used
 		// because callee may be a function variable, which also must be treated
 		// as closure call.
-		if _, ok := fvg.transform.knownFuns[val.Callee]; !ok && val.Kind != gcil.EXTERNAL_CALL {
+		if _, ok := fvg.transform.knownFuns[val.Callee]; !ok && val.Kind != mir.EXTERNAL_CALL {
 			fvg.add(val.Callee)
 		}
 		for _, a := range val.Args {
 			fvg.add(a)
 		}
-	case *gcil.Tuple:
+	case *mir.Tuple:
 		for _, e := range val.Elems {
 			fvg.add(e)
 		}
-	case *gcil.Array:
+	case *mir.Array:
 		fvg.add(val.Size)
 		fvg.add(val.Elem)
-	case *gcil.ArrLit:
+	case *mir.ArrLit:
 		for _, e := range val.Elems {
 			fvg.add(e)
 		}
-	case *gcil.TplLoad:
+	case *mir.TplLoad:
 		fvg.add(val.From)
-	case *gcil.ArrLoad:
+	case *mir.ArrLoad:
 		fvg.add(val.From)
 		fvg.add(val.Index)
-	case *gcil.ArrStore:
+	case *mir.ArrStore:
 		fvg.add(val.To)
 		fvg.add(val.Index)
 		fvg.add(val.Rhs)
-	case *gcil.ArrLen:
+	case *mir.ArrLen:
 		fvg.add(val.Array)
-	case *gcil.Some:
+	case *mir.Some:
 		fvg.add(val.Elem)
-	case *gcil.IsSome:
+	case *mir.IsSome:
 		fvg.add(val.OptVal)
-	case *gcil.DerefSome:
+	case *mir.DerefSome:
 		fvg.add(val.SomeVal)
-	case *gcil.Fun:
+	case *mir.Fun:
 		make, ok := fvg.transform.replacedFuns[insn]
 		if !ok {
 			panic(fmt.Sprintf("Visiting function '%s' for gathering free vars is not visit by transformWithKFO: %v", insn.Ident, val))
@@ -108,7 +108,7 @@ func (fvg *freeVarsGatherer) exploreInsn(insn *gcil.Insn) {
 			fvg.add(v)
 		}
 		delete(fvg.found, make.Fun)
-	case *gcil.MakeCls:
+	case *mir.MakeCls:
 		panic("unreachable")
 	}
 
@@ -118,13 +118,13 @@ func (fvg *freeVarsGatherer) exploreInsn(insn *gcil.Insn) {
 	delete(fvg.found, insn.Ident)
 }
 
-func gatherFreeVars(block *gcil.Block, trans *transformWithKFO) nameSet {
+func gatherFreeVars(block *mir.Block, trans *transformWithKFO) nameSet {
 	v := &freeVarsGatherer{map[string]struct{}{}, trans}
 	v.exploreBlock(block)
 	return v.found
 }
 
-func gatherFreeVarsTillTheEnd(insn *gcil.Insn, trans *transformWithKFO) nameSet {
+func gatherFreeVarsTillTheEnd(insn *mir.Insn, trans *transformWithKFO) nameSet {
 	v := &freeVarsGatherer{map[string]struct{}{}, trans}
 	v.exploreTillTheEnd(insn)
 	return v.found

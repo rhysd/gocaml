@@ -2,25 +2,25 @@ package codegen
 
 import (
 	"fmt"
-	"github.com/rhysd/gocaml/gcil"
+	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/typing"
 	"llvm.org/llvm/bindings/go/llvm"
 )
 
-func getOpCmpPredicate(op gcil.OperatorKind) (llvm.IntPredicate, llvm.FloatPredicate, string) {
+func getOpCmpPredicate(op mir.OperatorKind) (llvm.IntPredicate, llvm.FloatPredicate, string) {
 	switch op {
-	case gcil.LT:
+	case mir.LT:
 		// SLT = Signed Less Than, OLT = Ordered and Less Than
 		return llvm.IntSLT, llvm.FloatOLT, "less"
-	case gcil.LTE:
+	case mir.LTE:
 		return llvm.IntSLE, llvm.FloatOLE, "lesseq"
-	case gcil.GT:
+	case mir.GT:
 		return llvm.IntSGT, llvm.FloatOGT, "greater"
-	case gcil.GTE:
+	case mir.GTE:
 		return llvm.IntSGE, llvm.FloatOGE, "greatereq"
-	case gcil.EQ:
+	case mir.EQ:
 		return llvm.IntEQ, llvm.FloatOEQ, "eql"
-	case gcil.NEQ:
+	case mir.NEQ:
 		return llvm.IntNE, llvm.FloatONE, "neq"
 	default:
 		panic("unreachable")
@@ -97,14 +97,14 @@ func (b *blockBuilder) buildAlloca(t llvm.Type, name string) llvm.Value {
 	return alloca
 }
 
-func (b *blockBuilder) buildEq(ty typing.Type, bin *gcil.Binary, lhs, rhs llvm.Value) llvm.Value {
+func (b *blockBuilder) buildEq(ty typing.Type, bin *mir.Binary, lhs, rhs llvm.Value) llvm.Value {
 	icmp, fcmp, name := getOpCmpPredicate(bin.Op)
 
 	switch ty := ty.(type) {
 	case *typing.Unit:
 		// `() = ()` is always true and `() <> ()` will never be true.
 		i := uint64(1)
-		if bin.Op == gcil.NEQ {
+		if bin.Op == mir.NEQ {
 			i = 0
 		}
 		return llvm.ConstInt(b.typeBuilder.boolT, i, false /*sign extend*/)
@@ -119,7 +119,7 @@ func (b *blockBuilder) buildEq(ty typing.Type, bin *gcil.Binary, lhs, rhs llvm.V
 		}
 		cmp := b.builder.CreateCall(eqlFun, []llvm.Value{lhs, rhs}, "")
 		i := uint64(1)
-		if bin.Op == gcil.NEQ {
+		if bin.Op == mir.NEQ {
 			i = 0
 		}
 		return b.builder.CreateICmp(llvm.IntEQ, cmp, llvm.ConstInt(b.typeBuilder.boolT, i, false /*signed*/), "eql.str")
@@ -153,7 +153,7 @@ func (b *blockBuilder) buildEq(ty typing.Type, bin *gcil.Binary, lhs, rhs llvm.V
 	}
 }
 
-func (b *blockBuilder) buildLess(val *gcil.Binary, lhs, rhs llvm.Value) llvm.Value {
+func (b *blockBuilder) buildLess(val *mir.Binary, lhs, rhs llvm.Value) llvm.Value {
 	lty := b.typeOf(val.Lhs)
 	ipred, fpred, name := getOpCmpPredicate(val.Op)
 	switch lty.(type) {
@@ -166,7 +166,7 @@ func (b *blockBuilder) buildLess(val *gcil.Binary, lhs, rhs llvm.Value) llvm.Val
 	}
 }
 
-func (b *blockBuilder) buildEqOption(ty *typing.Option, bin *gcil.Binary, lhs, rhs llvm.Value) llvm.Value {
+func (b *blockBuilder) buildEqOption(ty *typing.Option, bin *mir.Binary, lhs, rhs llvm.Value) llvm.Value {
 	tyVal := b.typeBuilder.buildOption(ty)
 	lhsIsSome := b.buildIsSome(lhs, tyVal, ty)
 	rhsIsSome := b.buildIsSome(rhs, tyVal, ty)
@@ -192,7 +192,7 @@ func (b *blockBuilder) buildEqOption(ty *typing.Option, bin *gcil.Binary, lhs, r
 	b.builder.SetInsertPointAtEnd(elseBlk)
 	// Either lhs or rhs is Some(v).
 	elseEqVal := b.builder.CreateOr(lhsIsSome, rhsIsSome, "")
-	if bin.Op == gcil.EQ {
+	if bin.Op == mir.EQ {
 		elseEqVal = b.builder.CreateNot(elseEqVal, "")
 	}
 	b.builder.CreateBr(endBlk)
@@ -243,7 +243,7 @@ func (b *blockBuilder) buildDerefSome(optVal llvm.Value, ty *typing.Option) llvm
 		v := b.builder.CreateLShr(optVal, one, "")
 		// Truncate to the same size bits
 		v = b.builder.CreateTrunc(v, llvm.IntType(64), "")
-		return b.builder.CreateBitCast(v, b.typeBuilder.convertGCIL(ty.Elem), "derefsome")
+		return b.builder.CreateBitCast(v, b.typeBuilder.fromMIR(ty.Elem), "derefsome")
 	case *typing.Bool:
 		// shift 1 bit to squash a flag
 		one := llvm.ConstInt(llvm.IntType(2), 1, false /*signed*/)
@@ -259,21 +259,21 @@ func (b *blockBuilder) buildDerefSome(optVal llvm.Value, ty *typing.Option) llvm
 	}
 }
 
-func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
+func (b *blockBuilder) buildVal(ident string, val mir.Val) llvm.Value {
 	switch val := val.(type) {
-	case *gcil.Unit:
+	case *mir.Unit:
 		return b.unitVal
-	case *gcil.Bool:
+	case *mir.Bool:
 		c := uint64(1)
 		if !val.Const {
 			c = 0
 		}
 		return llvm.ConstInt(b.typeBuilder.boolT, c, false /*sign extend*/)
-	case *gcil.Int:
+	case *mir.Int:
 		return llvm.ConstInt(b.typeBuilder.intT, uint64(val.Const), true /*sign extend*/)
-	case *gcil.Float:
+	case *mir.Float:
 		return llvm.ConstFloat(b.typeBuilder.floatT, val.Const)
-	case *gcil.String:
+	case *mir.String:
 		strVal := b.buildAlloca(b.typeBuilder.stringT, "")
 
 		charsVal := b.builder.CreateGlobalStringPtr(val.Const, "")
@@ -285,64 +285,64 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		b.builder.CreateStore(sizeVal, sizePtr)
 
 		return b.builder.CreateLoad(strVal, "str")
-	case *gcil.Unary:
+	case *mir.Unary:
 		child := b.resolve(val.Child)
 		switch val.Op {
-		case gcil.NEG:
+		case mir.NEG:
 			return b.builder.CreateNeg(child, "neg")
-		case gcil.FNEG:
+		case mir.FNEG:
 			return b.builder.CreateFNeg(child, "fneg")
-		case gcil.NOT:
+		case mir.NOT:
 			return b.builder.CreateNot(child, "not")
 		default:
 			panic("unreachable")
 		}
-	case *gcil.Binary:
+	case *mir.Binary:
 		lhs := b.resolve(val.Lhs)
 		rhs := b.resolve(val.Rhs)
 		switch val.Op {
-		case gcil.ADD:
+		case mir.ADD:
 			return b.builder.CreateAdd(lhs, rhs, "add")
-		case gcil.SUB:
+		case mir.SUB:
 			return b.builder.CreateSub(lhs, rhs, "sub")
-		case gcil.MUL:
+		case mir.MUL:
 			return b.builder.CreateMul(lhs, rhs, "mul")
-		case gcil.DIV:
+		case mir.DIV:
 			return b.builder.CreateSDiv(lhs, rhs, "div")
-		case gcil.MOD:
+		case mir.MOD:
 			return b.builder.CreateSRem(lhs, rhs, "mod")
-		case gcil.FADD:
+		case mir.FADD:
 			return b.builder.CreateFAdd(lhs, rhs, "fadd")
-		case gcil.FSUB:
+		case mir.FSUB:
 			return b.builder.CreateFSub(lhs, rhs, "fsub")
-		case gcil.FMUL:
+		case mir.FMUL:
 			return b.builder.CreateFMul(lhs, rhs, "fmul")
-		case gcil.FDIV:
+		case mir.FDIV:
 			return b.builder.CreateFDiv(lhs, rhs, "fdiv")
-		case gcil.LT, gcil.LTE, gcil.GT, gcil.GTE:
+		case mir.LT, mir.LTE, mir.GT, mir.GTE:
 			return b.buildLess(val, lhs, rhs)
-		case gcil.EQ, gcil.NEQ:
+		case mir.EQ, mir.NEQ:
 			return b.buildEq(b.typeOf(val.Lhs), val, lhs, rhs)
-		case gcil.AND:
+		case mir.AND:
 			return b.builder.CreateAnd(lhs, rhs, "andl")
-		case gcil.OR:
+		case mir.OR:
 			return b.builder.CreateOr(lhs, rhs, "orl")
 		default:
 			panic("unreachable")
 		}
-	case *gcil.Ref:
+	case *mir.Ref:
 		reg, ok := b.registers[val.Ident]
 		if !ok {
 			panic("Value not found for ref: " + val.Ident)
 		}
 		return reg
-	case *gcil.If:
+	case *mir.If:
 		parent := b.builder.GetInsertBlock().Parent()
 		thenBlock := llvm.AddBasicBlock(parent, "if.then")
 		elseBlock := llvm.AddBasicBlock(parent, "if.else")
 		endBlock := llvm.AddBasicBlock(parent, "if.end")
 
-		ty := b.typeBuilder.convertGCIL(b.typeOf(ident))
+		ty := b.typeBuilder.fromMIR(b.typeOf(ident))
 		cond := b.resolve(val.Cond)
 		b.builder.CreateCondBr(cond, thenBlock, elseBlock)
 
@@ -362,26 +362,26 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		phi := b.builder.CreatePHI(ty, "if.merge")
 		phi.AddIncoming([]llvm.Value{thenVal, elseVal}, []llvm.BasicBlock{thenLastBlock, elseLastBlock})
 		return phi
-	case *gcil.Fun:
+	case *mir.Fun:
 		panic("unreachable because IR was closure-transformed")
-	case *gcil.App:
+	case *mir.App:
 		argsLen := len(val.Args)
-		if val.Kind == gcil.CLOSURE_CALL {
+		if val.Kind == mir.CLOSURE_CALL {
 			argsLen++
 		}
 		argVals := make([]llvm.Value, 0, argsLen)
 
 		table := b.funcTable
-		if val.Kind == gcil.EXTERNAL_CALL {
+		if val.Kind == mir.EXTERNAL_CALL {
 			table = b.globalTable
 		}
 		// Find function pointer for invoking a function directly
 		funVal, funFound := table[val.Callee]
-		if !funFound && val.Kind != gcil.CLOSURE_CALL {
+		if !funFound && val.Kind != mir.CLOSURE_CALL {
 			panic("Value for function is not found in table: " + val.Callee)
 		}
 
-		if val.Kind == gcil.CLOSURE_CALL {
+		if val.Kind == mir.CLOSURE_CALL {
 			closureVal := b.resolve(val.Callee)
 
 			// Extract function pointer from closure instance if callee does not indicates well-known function
@@ -406,11 +406,11 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 			ret = b.unitVal
 		}
 		return ret
-	case *gcil.Tuple:
+	case *mir.Tuple:
 		// Note:
 		// Type of tuple is a pointer to struct. To obtain the value for tuple, we need underlying
 		// struct type because 'alloca' instruction returns the pointer to allocated memory.
-		ptrTy := b.typeBuilder.convertGCIL(b.typeOf(ident))
+		ptrTy := b.typeBuilder.fromMIR(b.typeOf(ident))
 		allocTy := ptrTy.ElementType()
 
 		ptr := b.buildMalloc(allocTy, ident)
@@ -420,7 +420,7 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 			b.builder.CreateStore(v, p)
 		}
 		return ptr
-	case *gcil.Array:
+	case *mir.Array:
 		t, ok := b.typeOf(ident).(*typing.Array)
 		if !ok {
 			panic("Type of array instruction is not array")
@@ -428,8 +428,8 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 
 		// Copy second argument to all elements of allocated array
 		// Initialize array object {ptr, size}
-		elemTy := b.typeBuilder.convertGCIL(t.Elem)
-		arr := llvm.Undef(b.typeBuilder.convertGCIL(t))
+		elemTy := b.typeBuilder.fromMIR(t.Elem)
+		arr := llvm.Undef(b.typeBuilder.fromMIR(t))
 
 		sizeVal := b.resolve(val.Size)
 		arrVal := b.buildArrayMalloc(elemTy, sizeVal, "array.ptr")
@@ -467,13 +467,13 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		// Set size value
 		arr = b.builder.CreateInsertValue(arr, sizeVal, 1, "")
 		return arr
-	case *gcil.ArrLit:
+	case *mir.ArrLit:
 		t, ok := b.typeOf(ident).(*typing.Array)
 		if !ok {
 			panic("Type of arrlit instruction is not array")
 		}
 
-		arr := llvm.Undef(b.typeBuilder.convertGCIL(t))
+		arr := llvm.Undef(b.typeBuilder.fromMIR(t))
 		sizeVal := llvm.ConstInt(b.typeBuilder.intT, uint64(len(val.Elems)), false /*signed*/)
 		arr = b.builder.CreateInsertValue(arr, sizeVal, 1, "")
 
@@ -481,7 +481,7 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 			return arr
 		}
 
-		elemTy := b.typeBuilder.convertGCIL(t.Elem)
+		elemTy := b.typeBuilder.fromMIR(t.Elem)
 		arrPtr := b.buildArrayMalloc(elemTy, sizeVal, "array.ptr")
 		arr = b.builder.CreateInsertValue(arr, arrPtr, 0, "")
 
@@ -493,17 +493,17 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		}
 
 		return arr
-	case *gcil.TplLoad:
+	case *mir.TplLoad:
 		from := b.resolve(val.From)
 		p := b.builder.CreateStructGEP(from, val.Index, "")
 		return b.builder.CreateLoad(p, "tplload")
-	case *gcil.ArrLoad:
+	case *mir.ArrLoad:
 		fromVal := b.resolve(val.From)
 		idxVal := b.resolve(val.Index)
 		arrPtr := b.builder.CreateExtractValue(fromVal, 0, "")
 		elemPtr := b.builder.CreateInBoundsGEP(arrPtr, []llvm.Value{idxVal}, "")
 		return b.builder.CreateLoad(elemPtr, "arrload")
-	case *gcil.ArrStore:
+	case *mir.ArrStore:
 		toVal := b.resolve(val.To)
 		idxVal := b.resolve(val.Index)
 		rhsVal := b.resolve(val.Rhs)
@@ -511,10 +511,10 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		elemPtr := b.builder.CreateInBoundsGEP(arrPtr, []llvm.Value{idxVal}, "")
 		b.builder.CreateStore(rhsVal, elemPtr)
 		return b.unitVal
-	case *gcil.ArrLen:
+	case *mir.ArrLen:
 		fromVal := b.resolve(val.Array)
 		return b.builder.CreateExtractValue(fromVal, 1, "arrsize")
-	case *gcil.XRef:
+	case *mir.XRef:
 		ty, ok := b.env.Externals[val.Ident]
 		if !ok {
 			panic("Type for external value not found: " + val.Ident)
@@ -537,7 +537,7 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		funPtr := b.builder.CreateStructGEP(alloc, 0, "")
 		b.builder.CreateStore(funVal, funPtr)
 		return b.builder.CreateLoad(alloc, val.Ident+".cls")
-	case *gcil.MakeCls:
+	case *mir.MakeCls:
 		closure, ok := b.closures[val.Fun]
 		if !ok {
 			panic("Closure for function not found: " + val.Fun)
@@ -577,7 +577,7 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		castedVal := b.builder.CreateBitCast(closureVal, castedTy, "")
 
 		return b.builder.CreateLoad(castedVal, fmt.Sprintf("closure.%s", val.Fun))
-	case *gcil.Some:
+	case *mir.Some:
 		elemVal := b.resolve(val.Elem)
 		ty, ok := b.typeOf(ident).(*typing.Option)
 		if !ok {
@@ -611,7 +611,7 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		default:
 			panic("unreachable")
 		}
-	case *gcil.None:
+	case *mir.None:
 		ty, ok := b.typeOf(ident).(*typing.Option)
 		if !ok {
 			panic("Type of None is not an option type: " + b.typeOf(ident).String())
@@ -635,28 +635,28 @@ func (b *blockBuilder) buildVal(ident string, val gcil.Val) llvm.Value {
 		default:
 			panic("unreachable")
 		}
-	case *gcil.IsSome:
+	case *mir.IsSome:
 		optVal := b.resolve(val.OptVal)
 		ty, ok := b.typeOf(val.OptVal).(*typing.Option)
 		if !ok {
 			panic("Type of IsSome is not an option type: " + b.typeOf(val.OptVal).String())
 		}
 		return b.buildIsSome(optVal, b.typeBuilder.buildOption(ty), ty)
-	case *gcil.DerefSome:
+	case *mir.DerefSome:
 		optVal := b.resolve(val.SomeVal)
 		ty, ok := b.typeOf(val.SomeVal).(*typing.Option)
 		if !ok {
 			panic("Type of DerefSome is not an option type: " + b.typeOf(val.SomeVal).String())
 		}
 		return b.buildDerefSome(optVal, ty)
-	case *gcil.NOP:
+	case *mir.NOP:
 		panic("unreachable")
 	default:
 		panic("unreachable")
 	}
 }
 
-func (b *blockBuilder) buildInsn(insn *gcil.Insn) llvm.Value {
+func (b *blockBuilder) buildInsn(insn *mir.Insn) llvm.Value {
 	if b.debug != nil {
 		b.debug.setLocation(b.builder, insn.Pos)
 	}
@@ -665,7 +665,7 @@ func (b *blockBuilder) buildInsn(insn *gcil.Insn) llvm.Value {
 	return v
 }
 
-func (b *blockBuilder) buildBlock(block *gcil.Block) llvm.Value {
+func (b *blockBuilder) buildBlock(block *mir.Block) llvm.Value {
 	i := block.Top.Next
 	for {
 		v := b.buildInsn(i)

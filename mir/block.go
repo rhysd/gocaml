@@ -1,25 +1,25 @@
-// Package gcil provides definition of GCIL and converter from AST.
+// Package mir provides definition of MIR and converter from AST.
 //
-// GCIL is an abbreviation of GoCaml Intermediate Language.
+// MIR is an abbreviation of GoCaml Intermediate Language.
 // It's an original intermediate language to fill the gap between machine code and
 // syntax tree.
-// GCIL is a SSA form and K-normalized, and has high-level type information.
+// MIR is a SSA form and K-normalized, and has high-level type information.
 //
 // It discards many things from syntax tree because it's no longer needed.
 // For example, position of nodes, display name of symbols and nested tree structure are discarded.
 //
-// GCIL consists of block (basic block), instruction and value.
+// MIR consists of block (basic block), instruction and value.
 // There is a one root block. Block contains sequence of instructions.
 // Instruction contains a bound identifier name and its value.
 // Some value (`if`, `fun`, ...) contains recursive blocks.
 //
 // Please see spec file in the gocaml repository.
 //
-// https://github.com/rhysd/gocaml/blob/master/gcil/README.md
+// https://github.com/rhysd/gocaml/blob/master/mir/README.md
 //
 // You can see its string representation by command
 //
-//		gocaml -gcil test.ml
+//		gocaml -mir test.ml
 //
 // e.g.
 //
@@ -50,7 +50,7 @@
 //		  else:
 //		    $k15 = unit
 //
-package gcil
+package mir
 
 import (
 	"github.com/rhysd/locerr"

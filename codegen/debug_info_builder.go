@@ -39,7 +39,7 @@ func newSizeTable(types *typeBuilder, data llvm.TargetData) *sizeTable {
 }
 
 func (sizes *sizeTable) calcSize(t typing.Type) sizeEntry {
-	ty := sizes.typeBuilder.convertGCIL(t)
+	ty := sizes.typeBuilder.fromMIR(t)
 	if _, ok := t.(*typing.Tuple); ok {
 		// Tuple is managed by GC with pointer. What we want is size of actual allocated type, not a pointer.
 		ty = ty.ElementType()

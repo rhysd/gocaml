@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/closure"
-	"github.com/rhysd/gocaml/gcil"
+	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/typing"
@@ -42,14 +42,14 @@ func Example() {
 		panic(err)
 	}
 
-	// Convert AST into GCIL instruction block
-	block, err := gcil.FromAST(ast.Root, env)
+	// Convert AST into MIR instruction block
+	block, err := mir.FromAST(ast.Root, env)
 	if err != nil {
 		panic(err)
 	}
-	gcil.ElimRefs(block, env)
+	mir.ElimRefs(block, env)
 
-	// Create GCIL compilation unit
+	// Create MIR compilation unit
 	program := closure.Transform(block)
 
 	// Make options to emit the result
@@ -59,8 +59,8 @@ func Example() {
 		DebugInfo:    true,                        // Add debug information to the result or not
 	}
 
-	// Emitter object, which compiles GCIL to LLVM IR and emits assembly, object file or executable
-	// In factory function, given GCIL code is already converted to LLVM IR
+	// Emitter object, which compiles MIR to LLVM IR and emits assembly, object file or executable
+	// In factory function, given MIR code is already converted to LLVM IR
 	emitter, err := NewEmitter(program, env, src, options)
 	if err != nil {
 		panic(err)
@@ -82,7 +82,7 @@ func Example() {
 	}
 	fmt.Println("Assembly:\n" + asm)
 
-	// Emit object file contents as bytes (GCIL -> LLVM IR -> object file)
+	// Emit object file contents as bytes (MIR -> LLVM IR -> object file)
 	object, err := emitter.EmitObject()
 	if err != nil {
 		panic(err)
@@ -91,7 +91,7 @@ func Example() {
 
 	// Emit executable file as "a.out". This is the final result we want!
 	// It links the object file and runtime with a linker.
-	// (GCIL -> LLVM IR -> assembly -> object -> executable)
+	// (MIR -> LLVM IR -> assembly -> object -> executable)
 	if err := emitter.EmitExecutable("a.out"); err != nil {
 		panic(err)
 	}

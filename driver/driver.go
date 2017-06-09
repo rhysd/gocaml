@@ -8,8 +8,8 @@ import (
 	"github.com/rhysd/gocaml/ast"
 	"github.com/rhysd/gocaml/closure"
 	"github.com/rhysd/gocaml/codegen"
-	"github.com/rhysd/gocaml/gcil"
 	"github.com/rhysd/gocaml/lexer"
+	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/gocaml/typing"
@@ -66,15 +66,7 @@ func (d *Driver) PrintTokens(src *locerr.Source) {
 // Parse parses the source and returns the parsed AST.
 func (d *Driver) Parse(src *locerr.Source) (*ast.AST, error) {
 	tokens := d.Lex(src)
-	ast, err := parser.Parse(tokens)
-
-	if err != nil {
-		return nil, err
-	}
-
-	ast.File = src // TODO
-
-	return ast, nil
+	return parser.Parse(tokens)
 }
 
 // PrintAST outputs AST structure to stdout.
@@ -100,8 +92,8 @@ func (d *Driver) SemanticAnalysis(a *ast.AST) (*typing.Env, error) {
 	return env, nil
 }
 
-// EmitGCIL emits GCIL tree representation.
-func (d *Driver) EmitGCIL(src *locerr.Source) (*gcil.Program, *typing.Env, error) {
+// EmitMIR emits MIR tree representation.
+func (d *Driver) EmitMIR(src *locerr.Source) (*mir.Program, *typing.Env, error) {
 	ast, err := d.Parse(src)
 	if err != nil {
 		return nil, nil, err
@@ -110,17 +102,17 @@ func (d *Driver) EmitGCIL(src *locerr.Source) (*gcil.Program, *typing.Env, error
 	if err != nil {
 		return nil, nil, err
 	}
-	ir, err := gcil.FromAST(ast.Root, env)
+	ir, err := mir.FromAST(ast.Root, env)
 	if err != nil {
 		return nil, nil, err
 	}
-	gcil.ElimRefs(ir, env)
+	mir.ElimRefs(ir, env)
 	prog := closure.Transform(ir)
 	return prog, env, nil
 }
 
 func (d *Driver) emitterFromSource(src *locerr.Source) (*codegen.Emitter, error) {
-	prog, env, err := d.EmitGCIL(src)
+	prog, env, err := d.EmitMIR(src)
 	if err != nil {
 		return nil, err
 	}

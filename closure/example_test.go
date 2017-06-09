@@ -2,7 +2,7 @@ package closure
 
 import (
 	"github.com/rhysd/gocaml/alpha"
-	"github.com/rhysd/gocaml/gcil"
+	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/typing"
@@ -41,12 +41,12 @@ func Example() {
 		panic(err)
 	}
 
-	// Convert AST into GCIL instruction block
-	block, err := gcil.FromAST(ast.Root, env)
+	// Convert AST into MIR instruction block
+	block, err := mir.FromAST(ast.Root, env)
 	if err != nil {
 		panic(err)
 	}
-	gcil.ElimRefs(block, env)
+	mir.ElimRefs(block, env)
 
 	// Closure transform.
 	// Move all nested function to toplevel with resolving closures and known
@@ -56,7 +56,7 @@ func Example() {
 	// information.
 	program := Transform(block)
 
-	// For debug purpose, you can show GCIL representation after conversion
+	// For debug purpose, you can show MIR representation after conversion
 	program.Println(os.Stdout, env)
 	// Output:
 	// ack$t1 = recfun x$t2,y$t3 ; type=int -> int -> int

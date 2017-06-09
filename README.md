@@ -30,8 +30,8 @@ You can see [more examples][examples]. (e.g. [Brainfxxk interpreter][Brainfxxk i
 - [x] Parser with [goyacc][] -> ([doc][parser doc])
 - [x] Alpha transform ([doc][alpha transform doc])
 - [x] Type inference (Hindley Milner monomorphic type system) -> ([doc][typing doc])
-- [x] GoCaml intermediate language (GCIL) ([doc][gcil doc])
-- [x] K normalization from AST into GCIL ([doc][gcil doc])
+- [x] mid-level intermediate representation (MIR) ([doc][mir doc])
+- [x] K normalization from AST into MIR ([doc][mir doc])
 - [x] Closure transform ([doc][closure doc])
 - [x] Code generation (LLVM IR, assembly, object, executable) using [LLVM][] ([doc][codegen doc])
 - [x] LLVM IR level optimization passes
@@ -677,7 +677,7 @@ Flags:
   -externals
     	Display external symbols
   -g	Compile with debug information
-  -gcil
+  -mir
     	Emit GoCaml Intermediate Language representation to stdout
   -help
     	Show this help
@@ -880,7 +880,7 @@ $ gcc -m32 -lgc source.o ./runtime/gocamlrt.a
 [parser doc]: https://godoc.org/github.com/rhysd/gocaml/parser
 [typing doc]: https://godoc.org/github.com/rhysd/gocaml/typing
 [alpha transform doc]: https://godoc.org/github.com/rhysd/gocaml/alpha
-[gcil doc]: https://godoc.org/github.com/rhysd/gocaml/gcil
+[mir doc]: https://godoc.org/github.com/rhysd/gocaml/mir
 [closure doc]: https://godoc.org/github.com/rhysd/gocaml/closure
 [codegen doc]: https://godoc.org/github.com/rhysd/gocaml/codegen
 [Boehm GC]: https://github.com/ivmai/bdwgc

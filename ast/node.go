@@ -38,8 +38,11 @@ import (
 
 type AST struct {
 	Root      Expr
-	File      *locerr.Source
 	TypeDecls []*TypeDecl
+}
+
+func (a *AST) File() *locerr.Source {
+	return a.Root.Pos().File
 }
 
 // Expr is an interface for node of GoCaml AST.

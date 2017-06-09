@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/closure"
-	"github.com/rhysd/gocaml/gcil"
+	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/typing"
@@ -72,11 +72,11 @@ func TestExecutable(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			ir, err := gcil.FromAST(ast.Root, env)
+			ir, err := mir.FromAST(ast.Root, env)
 			if err != nil {
 				t.Fatal(err)
 			}
-			gcil.ElimRefs(ir, env)
+			mir.ElimRefs(ir, env)
 			prog := closure.Transform(ir)
 
 			opts := EmitOptions{OptimizeDefault, "", "", true}
@@ -152,11 +152,11 @@ func BenchmarkExecutableCreation(b *testing.B) {
 			b.Fatal(err)
 		}
 
-		ir, err := gcil.FromAST(ast.Root, env)
+		ir, err := mir.FromAST(ast.Root, env)
 		if err != nil {
 			b.Fatal(err)
 		}
-		gcil.ElimRefs(ir, env)
+		mir.ElimRefs(ir, env)
 		prog := closure.Transform(ir)
 
 		opts := EmitOptions{OptimizeDefault, "", "", true}
@@ -223,11 +223,11 @@ func TestExamples(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			ir, err := gcil.FromAST(ast.Root, env)
+			ir, err := mir.FromAST(ast.Root, env)
 			if err != nil {
 				t.Fatal(err)
 			}
-			gcil.ElimRefs(ir, env)
+			mir.ElimRefs(ir, env)
 			prog := closure.Transform(ir)
 
 			opts := EmitOptions{OptimizeDefault, "", "", true}

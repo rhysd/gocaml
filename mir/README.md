@@ -1,15 +1,15 @@
-Language Spec of GoCaml Intermediate Language
-=============================================
+Language Spec of Mid-Level Intermediate Representation
+======================================================
 
-GCIL (GoCaml Intermediate Language) is an IL for GoCaml. It is SSA and K-normalized form, low-layer representation of GoCaml code converted from AST. It maintains high level type information for high-level optimizations.
+MIR (mid-level intermediate representation) is an IR for GoCaml. It is SSA and K-normalized form, low-layer representation of GoCaml code converted from AST. It maintains high level type information for high-level optimizations.
 
-You can see the string representation of GCIL from command line.
+You can see the string representation of MIR from command line.
 
 ```
-gocaml -gcil test.ml
+gocaml -mir test.ml
 ```
 
-GCIL consists of basic blocks. Since MinCaml program has only one expression as root of AST, GCIL has one root basic block as program.
+MIR consists of basic blocks. Since MinCaml program has only one expression as root of AST, MIR has one root basic block as program.
 
 ```
 BEGIN: program
@@ -21,7 +21,7 @@ END: program
 
 Basic block has a list of instructions to execute. Instructions are run sequentially.
 
-GCIL is an SSA and K-normalized form. So one instruction contains one assignment and one operation.
+MIR is an SSA and K-normalized form. So one instruction contains one assignment and one operation.
 
 ```
 var = operation

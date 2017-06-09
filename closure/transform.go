@@ -1,4 +1,4 @@
-// Package closure provides closure transform for GCIL representation.
+// Package closure provides closure transform for MIR representation.
 //
 // Closure transform is a process to move all functions to toplevel of program.
 // If a function does not contain any free variables, it can be moved to toplevel simply.
@@ -21,7 +21,7 @@ package closure
 
 import (
 	"fmt"
-	"github.com/rhysd/gocaml/gcil"
+	"github.com/rhysd/gocaml/mir"
 	"sort"
 )
 
@@ -39,8 +39,8 @@ func (set nameSet) toSortedArray() []string {
 // Do closure transform with known functions optimization
 type transformWithKFO struct {
 	knownFuns            nameSet
-	replacedFuns         map[*gcil.Insn]*gcil.MakeCls // nil means simply removing the function
-	closures             gcil.Closures                // Mapping function name to free variables
+	replacedFuns         map[*mir.Insn]*mir.MakeCls // nil means simply removing the function
+	closures             mir.Closures                // Mapping function name to free variables
 	closureBlockFreeVars map[string]nameSet           // Known free variables of closures' blocks
 }
 
@@ -49,7 +49,7 @@ func (trans *transformWithKFO) duplicate() *transformWithKFO {
 	for k := range trans.knownFuns {
 		known[k] = struct{}{}
 	}
-	funs := make(map[*gcil.Insn]*gcil.MakeCls, len(trans.replacedFuns))
+	funs := make(map[*mir.Insn]*mir.MakeCls, len(trans.replacedFuns))
 	for f, v := range trans.replacedFuns {
 		funs[f] = v
 	}
@@ -69,19 +69,19 @@ func (trans *transformWithKFO) duplicate() *transformWithKFO {
 	}
 }
 
-func (trans *transformWithKFO) block(block *gcil.Block) {
+func (trans *transformWithKFO) block(block *mir.Block) {
 	// Skip first NOP instruction
 	trans.insn(block.Top.Next)
 }
 
-func (trans *transformWithKFO) insn(insn *gcil.Insn) {
+func (trans *transformWithKFO) insn(insn *mir.Insn) {
 	if insn.Next == nil {
 		// Reaches bottom of the block
 		return
 	}
 
 	switch val := insn.Val.(type) {
-	case *gcil.Fun:
+	case *mir.Fun:
 		// Assume the function is not a closure and try to transform its body
 		dup := trans.duplicate()
 		dup.knownFuns[insn.Ident] = struct{}{}
@@ -123,7 +123,7 @@ func (trans *transformWithKFO) insn(insn *gcil.Insn) {
 		}
 		trans.closureBlockFreeVars[insn.Ident] = fv
 
-		var replaced *gcil.MakeCls = nil
+		var replaced *mir.MakeCls = nil
 		if _, ok := fv[insn.Ident]; ok {
 			vars, ok := trans.closures[insn.Ident]
 			if !ok {
@@ -135,10 +135,10 @@ func (trans *transformWithKFO) insn(insn *gcil.Insn) {
 				delete(trans.knownFuns, insn.Ident)
 			}
 			// If the function is referred from somewhere, we need to  make a closure.
-			replaced = &gcil.MakeCls{vars, insn.Ident}
+			replaced = &mir.MakeCls{vars, insn.Ident}
 		}
 		trans.replacedFuns[insn] = replaced
-	case *gcil.If:
+	case *mir.If:
 		trans.block(val.Then)
 		trans.block(val.Else)
 		trans.insn(insn.Next)
@@ -151,19 +151,19 @@ func (trans *transformWithKFO) insn(insn *gcil.Insn) {
 // The result is a representation of the program. It contains toplevel functions,
 // entry point and closure information.
 // All nested function was moved to toplevel.
-func Transform(ir *gcil.Block) *gcil.Program {
+func Transform(ir *mir.Block) *mir.Program {
 	t := &transformWithKFO{
 		map[string]struct{}{},
-		map[*gcil.Insn]*gcil.MakeCls{},
+		map[*mir.Insn]*mir.MakeCls{},
 		map[string][]string{},
 		map[string]nameSet{},
 	}
 	t.block(ir)
 
 	// Move all functions to toplevel and put closure instance if needed
-	toplevel := gcil.NewToplevel()
+	toplevel := mir.NewToplevel()
 	for insn, make := range t.replacedFuns {
-		f, ok := insn.Val.(*gcil.Fun)
+		f, ok := insn.Val.(*mir.Fun)
 		if !ok {
 			panic(fmt.Sprintf("Replaced function '%s' is actually not a function: %v", insn.Ident, insn.Val))
 		}
@@ -178,7 +178,7 @@ func Transform(ir *gcil.Block) *gcil.Program {
 		}
 	}
 
-	prog := &gcil.Program{toplevel, t.closures, ir}
+	prog := &mir.Program{toplevel, t.closures, ir}
 	doPostProcess(prog)
 	return prog
 }

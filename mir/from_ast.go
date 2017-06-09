@@ -1,4 +1,4 @@
-package gcil
+package mir
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"github.com/rhysd/locerr"
 )
 
-// Convert AST into GCIL with K-Normalization
+// Convert AST into MIR with K-Normalization
 
 type emitter struct {
 	count uint
@@ -401,7 +401,7 @@ func FromAST(root ast.Expr, types *typing.Env) (*Block, error) {
 	e := &emitter{0, types, nil}
 	b, _ := e.emitBlock("program", root)
 	if e.err != nil {
-		return nil, e.err.Note("Semantics error while GCIL generation")
+		return nil, e.err.Note("Semantics error while MIR generation")
 	}
 	return b, nil
 }

@@ -62,7 +62,7 @@ func (b *typeBuilder) buildClosureCaptures(name string, closure []string) llvm.T
 		if !ok {
 			panic(fmt.Sprintf("Type of capture '%s' not found!", capture))
 		}
-		fields = append(fields, b.convertGCIL(t))
+		fields = append(fields, b.fromMIR(t))
 	}
 
 	captures := b.context.StructType(fields, false /*packed*/)
@@ -71,7 +71,7 @@ func (b *typeBuilder) buildClosureCaptures(name string, closure []string) llvm.T
 }
 
 func (b *typeBuilder) buildExternalFun(from *typing.Fun) llvm.Type {
-	ret := b.convertGCIL(from.Ret)
+	ret := b.fromMIR(from.Ret)
 	if ret == b.unitT {
 		// If return type of external function is unit, use void instead of unit
 		// because external function (usually written in C) does not have unit type.
@@ -80,17 +80,17 @@ func (b *typeBuilder) buildExternalFun(from *typing.Fun) llvm.Type {
 	}
 	params := make([]llvm.Type, 0, len(from.Params))
 	for _, p := range from.Params {
-		params = append(params, b.convertGCIL(p))
+		params = append(params, b.fromMIR(p))
 	}
 	return llvm.FunctionType(ret, params, false /*varargs*/)
 }
 
 func (b *typeBuilder) buildExternalClosure(from *typing.Fun) llvm.Type {
-	ret := b.convertGCIL(from.Ret)
+	ret := b.fromMIR(from.Ret)
 	params := make([]llvm.Type, 0, len(from.Params)+1)
 	params = append(params, b.voidPtrT)
 	for _, p := range from.Params {
-		params = append(params, b.convertGCIL(p))
+		params = append(params, b.fromMIR(p))
 	}
 	return llvm.FunctionType(ret, params, false /*varargs*/)
 }
@@ -99,7 +99,7 @@ func (b *typeBuilder) buildExternalClosure(from *typing.Fun) llvm.Type {
 // Function type is basically closure type. Only when applying function directly
 // or applying external function, callee should not be closure.
 func (b *typeBuilder) buildFun(from *typing.Fun, known bool) llvm.Type {
-	ret := b.convertGCIL(from.Ret)
+	ret := b.fromMIR(from.Ret)
 	l := len(from.Params)
 	if !known {
 		l++
@@ -109,7 +109,7 @@ func (b *typeBuilder) buildFun(from *typing.Fun, known bool) llvm.Type {
 		params = append(params, b.voidPtrT) // Closure
 	}
 	for _, p := range from.Params {
-		params = append(params, b.convertGCIL(p))
+		params = append(params, b.fromMIR(p))
 	}
 	return llvm.FunctionType(ret, params, false /*varargs*/)
 }
@@ -131,7 +131,7 @@ func (b *typeBuilder) buildOption(ty *typing.Option) llvm.Type {
 		return b.optFloatT
 	case *typing.String, *typing.Fun, *typing.Tuple, *typing.Array:
 		// Represents 'None' value with NULL pointer
-		return b.convertGCIL(elem)
+		return b.fromMIR(elem)
 	case *typing.Option:
 		elems := []llvm.Type{
 			b.boolT,
@@ -149,7 +149,7 @@ func (b *typeBuilder) buildOption(ty *typing.Option) llvm.Type {
 	}
 }
 
-func (b *typeBuilder) convertGCIL(from typing.Type) llvm.Type {
+func (b *typeBuilder) fromMIR(from typing.Type) llvm.Type {
 	switch ty := from.(type) {
 	case *typing.Unit:
 		return b.unitT
@@ -169,12 +169,12 @@ func (b *typeBuilder) convertGCIL(from typing.Type) llvm.Type {
 	case *typing.Tuple:
 		elems := make([]llvm.Type, 0, len(ty.Elems))
 		for _, e := range ty.Elems {
-			elems = append(elems, b.convertGCIL(e))
+			elems = append(elems, b.fromMIR(e))
 		}
 		return llvm.PointerType(b.context.StructType(elems, false /*packed*/), 0 /*address space*/)
 	case *typing.Array:
 		return b.context.StructType([]llvm.Type{
-			llvm.PointerType(b.convertGCIL(ty.Elem), 0 /*address space*/),
+			llvm.PointerType(b.fromMIR(ty.Elem), 0 /*address space*/),
 			// size
 			b.intT,
 		}, false /*packed*/)

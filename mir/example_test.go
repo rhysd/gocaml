@@ -1,4 +1,4 @@
-package gcil
+package mir
 
 import (
 	"github.com/rhysd/gocaml/alpha"
@@ -40,7 +40,7 @@ func Example() {
 		panic(err)
 	}
 
-	// Convert AST into GCIL instruction block
+	// Convert AST into MIR instruction block
 	// Returned block represents the root block of program
 	block, err := FromAST(ast.Root, env)
 	if err != nil {

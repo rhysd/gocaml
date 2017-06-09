@@ -17,12 +17,12 @@ SRCS := \
 	typing/node_to_type.go \
 	alpha/transform.go \
 	alpha/mapping.go \
-	gcil/val.go \
-	gcil/block.go \
-	gcil/from_ast.go \
-	gcil/printer.go \
-	gcil/elim_ref.go \
-	gcil/program.go \
+	mir/val.go \
+	mir/block.go \
+	mir/from_ast.go \
+	mir/printer.go \
+	mir/elim_ref.go \
+	mir/program.go \
 	closure/transform.go \
 	closure/freevars.go \
 	closure/post_process.go \
@@ -55,11 +55,11 @@ TESTS := \
 	typing/infer_test.go \
 	typing/deref_test.go \
 	typing/node_to_type_test.go \
-	gcil/example_test.go \
-	gcil/block_test.go \
-	gcil/from_ast_test.go \
-	gcil/elim_ref_test.go \
-	gcil/program_test.go \
+	mir/example_test.go \
+	mir/block_test.go \
+	mir/from_ast_test.go \
+	mir/elim_ref_test.go \
+	mir/program_test.go \
 	codegen/example_test.go \
 	codegen/executable_test.go \
 	codegen/linker_test.go \
@@ -89,7 +89,7 @@ test: $(TESTS)
 
 cover.out: $(TESTS)
 	go get github.com/haya14busa/goverage
-	goverage -coverprofile=cover.out -covermode=count ./alpha ./ast ./gcil ./closure ./lexer ./parser ./token ./typing ./codegen ./common
+	goverage -coverprofile=cover.out -covermode=count ./alpha ./ast ./mir ./closure ./lexer ./parser ./token ./typing ./codegen ./common
 
 cov: cover.out
 	go get golang.org/x/tools/cmd/cover

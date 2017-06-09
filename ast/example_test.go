@@ -28,28 +28,25 @@ func Example() {
 
 	// AST which usually comes from parser.Parse() function.
 	rootOfAST := &Let{
-		LetToken: &token.Token{},
+		LetToken: &token.Token{File: src},
 		Symbol:   NewSymbol("test"),
 		Bound: &Int{
-			Token: &token.Token{},
+			Token: &token.Token{File: src},
 			Value: 42,
 		},
 		Body: &Add{
 			Left: &VarRef{
-				Token:  &token.Token{},
+				Token:  &token.Token{File: src},
 				Symbol: NewSymbol("test"),
 			},
 			Right: &Float{
-				Token: &token.Token{},
+				Token: &token.Token{File: src},
 				Value: 3.14,
 			},
 		},
 	}
 
-	ast := &AST{
-		File: src,
-		Root: rootOfAST,
-	}
+	ast := &AST{Root: rootOfAST}
 
 	// Apply visitor to root node of AST
 	v := &numAllNodes{0}

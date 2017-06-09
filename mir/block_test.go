@@ -1,4 +1,4 @@
-package gcil
+package mir
 
 import (
 	"github.com/rhysd/locerr"

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/rhysd/gocaml/alpha"
-	"github.com/rhysd/gocaml/gcil"
+	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/typing"
@@ -365,11 +365,11 @@ func TestClosureTransform(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			ir, err := gcil.FromAST(ast.Root, env)
+			ir, err := mir.FromAST(ast.Root, env)
 			if err != nil {
 				t.Fatal(err)
 			}
-			gcil.ElimRefs(ir, env)
+			mir.ElimRefs(ir, env)
 			prog := Transform(ir)
 
 			if len(tc.closures) != len(prog.Closures) {
@@ -510,11 +510,11 @@ func TestClosureCaptureInInsn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ir, err := gcil.FromAST(ast.Root, env)
+	ir, err := mir.FromAST(ast.Root, env)
 	if err != nil {
 		t.Fatal(err)
 	}
-	gcil.ElimRefs(ir, env)
+	mir.ElimRefs(ir, env)
 	prog := Transform(ir)
 
 	c, ok := prog.Closures["func$t19"]

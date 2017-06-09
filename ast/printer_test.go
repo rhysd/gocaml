@@ -235,7 +235,6 @@ func TestPrintAST(t *testing.T) {
 
 	ast := &AST{
 		Root: root,
-		File: s,
 		TypeDecls: []*TypeDecl{
 			{
 				tok,

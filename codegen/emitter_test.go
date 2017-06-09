@@ -3,7 +3,7 @@ package codegen
 import (
 	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/closure"
-	"github.com/rhysd/gocaml/gcil"
+	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/typing"
@@ -29,11 +29,11 @@ func testCreateEmitter(code string, optimize OptLevel, debug bool) (e *Emitter, 
 	if err != nil {
 		return
 	}
-	ir, err := gcil.FromAST(ast.Root, env)
+	ir, err := mir.FromAST(ast.Root, env)
 	if err != nil {
 		return
 	}
-	gcil.ElimRefs(ir, env)
+	mir.ElimRefs(ir, env)
 	prog := closure.Transform(ir)
 	opts := EmitOptions{optimize, "", "", debug}
 	e, err = NewEmitter(prog, env, s, opts)

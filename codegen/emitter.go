@@ -1,12 +1,12 @@
 // Package codegen provides code generation of GoCaml language.
 //
-// GCIL compilation unit is compiled to an LLVM IR, an assembly, an object then finally linked to an executable.
+// MIR compilation unit is compiled to an LLVM IR, an assembly, an object then finally linked to an executable.
 // You can add many optimizations and debug information (DWARF).
 package codegen
 
 import (
 	"fmt"
-	"github.com/rhysd/gocaml/gcil"
+	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/typing"
 	"github.com/rhysd/locerr"
 	"io/ioutil"
@@ -51,7 +51,7 @@ type EmitOptions struct {
 // Emitter object to emit LLVM IR, object file, assembly or executable.
 type Emitter struct {
 	EmitOptions
-	GCIL     *gcil.Program
+	MIR     *mir.Program
 	Env      *typing.Env
 	Source   *locerr.Source
 	Module   llvm.Module
@@ -152,7 +152,7 @@ func (emitter *Emitter) EmitExecutable(executable string) (err error) {
 }
 
 // Creates new emitter object.
-func NewEmitter(prog *gcil.Program, env *typing.Env, src *locerr.Source, opts EmitOptions) (*Emitter, error) {
+func NewEmitter(prog *mir.Program, env *typing.Env, src *locerr.Source, opts EmitOptions) (*Emitter, error) {
 	builder, err := newModuleBuilder(env, src, opts)
 	if err != nil {
 		return nil, err

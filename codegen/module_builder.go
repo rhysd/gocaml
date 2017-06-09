@@ -2,7 +2,7 @@ package codegen
 
 import (
 	"fmt"
-	"github.com/rhysd/gocaml/gcil"
+	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/typing"
 	"github.com/rhysd/locerr"
 	"llvm.org/llvm/bindings/go/llvm"
@@ -20,7 +20,7 @@ type moduleBuilder struct {
 	attributes  map[string]llvm.Attribute
 	globalTable map[string]llvm.Value
 	funcTable   map[string]llvm.Value
-	closures    gcil.Closures
+	closures    mir.Closures
 }
 
 func createAttributeTable(ctx llvm.Context) map[string]llvm.Attribute {
@@ -191,14 +191,14 @@ func (b *moduleBuilder) buildExternalDecl(name string, from typing.Type) {
 		val.AddFunctionAttr(b.attributes["disable-tail-calls"])
 		b.globalTable[name] = val
 	default:
-		t := b.typeBuilder.convertGCIL(from)
+		t := b.typeBuilder.fromMIR(from)
 		v := llvm.AddGlobal(b.module, t, name)
 		v.SetLinkage(llvm.ExternalLinkage)
 		b.globalTable[name] = v
 	}
 }
 
-func (b *moduleBuilder) buildFuncDecl(insn gcil.FunInsn) {
+func (b *moduleBuilder) buildFuncDecl(insn mir.FunInsn) {
 	name := insn.Name
 	_, isClosure := b.closures[name]
 	found, ok := b.env.Table[name]
@@ -237,7 +237,7 @@ func (b *moduleBuilder) buildFuncDecl(insn gcil.FunInsn) {
 	b.funcTable[name] = v
 }
 
-func (b *moduleBuilder) buildFunBody(insn gcil.FunInsn) {
+func (b *moduleBuilder) buildFunBody(insn mir.FunInsn) {
 	name := insn.Name
 	fun := insn.Val
 	funVal, ok := b.funcTable[name]
@@ -315,7 +315,7 @@ func (b *moduleBuilder) buildFunBody(insn gcil.FunInsn) {
 	}
 }
 
-func (b *moduleBuilder) buildMain(entry *gcil.Block) {
+func (b *moduleBuilder) buildMain(entry *mir.Block) {
 	int32T := b.context.Int32Type()
 	t := llvm.FunctionType(int32T, []llvm.Type{}, false /*varargs*/)
 	funVal := llvm.AddFunction(b.module, "__gocaml_main", t)
@@ -362,7 +362,7 @@ func (b *moduleBuilder) buildLibgcFuncDecls() {
 	b.globalTable["GC_malloc"] = v
 }
 
-func (b *moduleBuilder) build(prog *gcil.Program) error {
+func (b *moduleBuilder) build(prog *mir.Program) error {
 	// Note:
 	// Currently global variables are external symbols only.
 	b.globalTable = make(map[string]llvm.Value, len(b.env.Externals)+1 /* 1 = libgc functions */)
