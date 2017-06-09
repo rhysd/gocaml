@@ -1,7 +1,7 @@
-package typing
+package types
 
 func builtinPopulatedTable() map[string]Type {
-	table := map[string]Type{
+	return map[string]Type{
 		"argv":                       &Array{StringType},
 		"print_int":                  &Fun{UnitType, []Type{IntType}},
 		"print_bool":                 &Fun{UnitType, []Type{BoolType}},
@@ -38,5 +38,4 @@ func builtinPopulatedTable() map[string]Type {
 		"enable_garbage_collection":  &Fun{UnitType, []Type{UnitType}},
 		"disable_garbage_collection": &Fun{UnitType, []Type{UnitType}},
 	}
-	return table
 }

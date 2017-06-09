@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/rhysd/gocaml/ast"
 	"github.com/rhysd/gocaml/common"
+	. "github.com/rhysd/gocaml/types"
 	"github.com/rhysd/locerr"
 )
 
@@ -458,13 +459,4 @@ func (inferer *Inferer) Infer(parsed *ast.AST) error {
 	// which does not have exact type and raise an error for that.
 	// External variables must be well-typed also.
 	return derefTypeVars(inferer.env, parsed.Root)
-}
-
-// TypeInferernce applies type inference and returns a type environment as the result
-func TypeInferernce(parsed *ast.AST) (*Env, error) {
-	inferer := NewInferer()
-	if err := inferer.Infer(parsed); err != nil {
-		return nil, locerr.NoteAt(parsed.Root.Pos(), err, "Type inference failed")
-	}
-	return inferer.env, nil
 }

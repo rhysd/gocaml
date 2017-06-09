@@ -2,13 +2,13 @@ package codegen
 
 import (
 	"fmt"
-	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/gocaml/types"
 	"llvm.org/llvm/bindings/go/llvm"
 )
 
 type typeBuilder struct {
 	context   llvm.Context
-	env       *typing.Env
+	env       *types.Env
 	unitT     llvm.Type
 	intT      llvm.Type
 	floatT    llvm.Type
@@ -23,7 +23,7 @@ type typeBuilder struct {
 	captures  map[string]llvm.Type
 }
 
-func newTypeBuilder(ctx llvm.Context, intPtrTy llvm.Type, env *typing.Env) *typeBuilder {
+func newTypeBuilder(ctx llvm.Context, intPtrTy llvm.Type, env *types.Env) *typeBuilder {
 	integer := ctx.Int64Type()
 	unit := ctx.StructCreateNamed("gocaml.unit")
 	unit.StructSetBody([]llvm.Type{}, false /*packed*/)
@@ -70,7 +70,7 @@ func (b *typeBuilder) buildClosureCaptures(name string, closure []string) llvm.T
 	return captures
 }
 
-func (b *typeBuilder) buildExternalFun(from *typing.Fun) llvm.Type {
+func (b *typeBuilder) buildExternalFun(from *types.Fun) llvm.Type {
 	ret := b.fromMIR(from.Ret)
 	if ret == b.unitT {
 		// If return type of external function is unit, use void instead of unit
@@ -85,7 +85,7 @@ func (b *typeBuilder) buildExternalFun(from *typing.Fun) llvm.Type {
 	return llvm.FunctionType(ret, params, false /*varargs*/)
 }
 
-func (b *typeBuilder) buildExternalClosure(from *typing.Fun) llvm.Type {
+func (b *typeBuilder) buildExternalClosure(from *types.Fun) llvm.Type {
 	ret := b.fromMIR(from.Ret)
 	params := make([]llvm.Type, 0, len(from.Params)+1)
 	params = append(params, b.voidPtrT)
@@ -98,7 +98,7 @@ func (b *typeBuilder) buildExternalClosure(from *typing.Fun) llvm.Type {
 // Note:
 // Function type is basically closure type. Only when applying function directly
 // or applying external function, callee should not be closure.
-func (b *typeBuilder) buildFun(from *typing.Fun, known bool) llvm.Type {
+func (b *typeBuilder) buildFun(from *types.Fun, known bool) llvm.Type {
 	ret := b.fromMIR(from.Ret)
 	l := len(from.Params)
 	if !known {
@@ -116,29 +116,29 @@ func (b *typeBuilder) buildFun(from *typing.Fun, known bool) llvm.Type {
 
 // Creates closure type for the specified function ignoring capture fields
 // This function is used for retrieving function pointer from i8* closure value.
-func (b *typeBuilder) buildClosure(ty *typing.Fun) llvm.Type {
+func (b *typeBuilder) buildClosure(ty *types.Fun) llvm.Type {
 	funPtr := llvm.PointerType(b.buildFun(ty, false), 0 /*address space*/)
 	return b.context.StructType([]llvm.Type{funPtr, b.voidPtrT}, false /*packed*/)
 }
 
-func (b *typeBuilder) buildOption(ty *typing.Option) llvm.Type {
+func (b *typeBuilder) buildOption(ty *types.Option) llvm.Type {
 	switch elem := ty.Elem.(type) {
-	case *typing.Int:
+	case *types.Int:
 		return b.optIntT
-	case *typing.Bool:
+	case *types.Bool:
 		return b.optBoolT
-	case *typing.Float:
+	case *types.Float:
 		return b.optFloatT
-	case *typing.String, *typing.Fun, *typing.Tuple, *typing.Array:
+	case *types.String, *types.Fun, *types.Tuple, *types.Array:
 		// Represents 'None' value with NULL pointer
 		return b.fromMIR(elem)
-	case *typing.Option:
+	case *types.Option:
 		elems := []llvm.Type{
 			b.boolT,
 			b.buildOption(elem),
 		}
 		return b.context.StructType(elems, false /*packed*/)
-	case *typing.Unit:
+	case *types.Unit:
 		elems := []llvm.Type{
 			b.boolT,
 			b.unitT,
@@ -149,38 +149,38 @@ func (b *typeBuilder) buildOption(ty *typing.Option) llvm.Type {
 	}
 }
 
-func (b *typeBuilder) fromMIR(from typing.Type) llvm.Type {
+func (b *typeBuilder) fromMIR(from types.Type) llvm.Type {
 	switch ty := from.(type) {
-	case *typing.Unit:
+	case *types.Unit:
 		return b.unitT
-	case *typing.Bool:
+	case *types.Bool:
 		return b.boolT
-	case *typing.Int:
+	case *types.Int:
 		return b.intT
-	case *typing.Float:
+	case *types.Float:
 		return b.floatT
-	case *typing.String:
+	case *types.String:
 		return b.stringT
-	case *typing.Fun:
+	case *types.Fun:
 		// Function type which occurs in normal expression's type is always closure because
 		// function type variable is always closure. Normal function pointer never occurs in value context.
 		// It must be a callee of direct function call (optimized by known function optimization).
 		return b.buildClosure(ty)
-	case *typing.Tuple:
+	case *types.Tuple:
 		elems := make([]llvm.Type, 0, len(ty.Elems))
 		for _, e := range ty.Elems {
 			elems = append(elems, b.fromMIR(e))
 		}
 		return llvm.PointerType(b.context.StructType(elems, false /*packed*/), 0 /*address space*/)
-	case *typing.Array:
+	case *types.Array:
 		return b.context.StructType([]llvm.Type{
 			llvm.PointerType(b.fromMIR(ty.Elem), 0 /*address space*/),
 			// size
 			b.intT,
 		}, false /*packed*/)
-	case *typing.Option:
+	case *types.Option:
 		return b.buildOption(ty)
-	case *typing.Var:
+	case *types.Var:
 		panic("unreachable")
 	default:
 		panic("unreachable")

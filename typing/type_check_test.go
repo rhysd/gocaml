@@ -1,15 +1,12 @@
 package typing
 
 import (
-	"bytes"
-	"fmt"
 	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
+	"github.com/rhysd/gocaml/types"
 	"github.com/rhysd/locerr"
-	"io"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -24,19 +21,19 @@ func TestResolvedSymbols(t *testing.T) {
 		panic(ast.Root)
 	}
 
-	env, err := TypeInferernce(ast)
+	env, err := TypeCheck(ast)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, ok := env.Table["x"]; !ok {
-		t.Errorf("'x' was not resolved as internal symbol: %v", env.Table)
+		t.Error("'x' was not resolved as internal symbol:", env.Table)
 	}
 	if _, ok := env.Externals["y"]; !ok {
-		t.Errorf("'y' was not resolved as external symbol: %v", env.Externals)
+		t.Error("'y' was not resolved as external symbol:", env.Externals)
 	}
 }
 
-func TestTypeCheckOK(t *testing.T) {
+func TestTypeCheckMinCamlTests(t *testing.T) {
 	testdir := filepath.FromSlash("../testdata/from-mincaml/")
 	files, err := ioutil.ReadDir(testdir)
 	if err != nil {
@@ -49,7 +46,7 @@ func TestTypeCheckOK(t *testing.T) {
 			continue
 		}
 
-		t.Run(fmt.Sprintf("Infer types successfully: %s", n), func(t *testing.T) {
+		t.Run("from-mincaml:"+n, func(t *testing.T) {
 			s, err := locerr.NewSourceFromFile(n)
 			if err != nil {
 				panic(err)
@@ -67,7 +64,7 @@ func TestTypeCheckOK(t *testing.T) {
 				panic(err)
 			}
 
-			_, err = TypeInferernce(ast)
+			_, err = TypeCheck(ast)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -84,7 +81,7 @@ func TestProgramRootTypeIsUnit(t *testing.T) {
 		panic(ast.Root)
 	}
 
-	_, err = TypeInferernce(ast)
+	_, err = TypeCheck(ast)
 	if err == nil {
 		t.Fatalf("Type check must raise an error when root type of program is not ()")
 	}
@@ -103,47 +100,9 @@ func TestTypeCheckFail(t *testing.T) {
 		panic(ast.Root)
 	}
 
-	_, err = TypeInferernce(ast)
+	_, err = TypeCheck(ast)
 	if err == nil {
 		t.Fatalf("Type check must raise a type error")
-	}
-}
-
-func TestDumpResult(t *testing.T) {
-	s := locerr.NewDummySource("let x = 42 in x + y; ()")
-	l := lexer.NewLexer(s)
-	go l.Lex()
-	ast, err := parser.Parse(l.Tokens)
-	if err != nil {
-		panic(ast.Root)
-	}
-
-	env, err := TypeInferernce(ast)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	old := os.Stdout
-	r, w, _ := os.Pipe()
-	os.Stdout = w
-
-	env.Dump()
-
-	ch := make(chan string)
-	go func() {
-		var buf bytes.Buffer
-		io.Copy(&buf, r)
-		ch <- buf.String()
-	}()
-	w.Close()
-	os.Stdout = old
-
-	out := <-ch
-	if !strings.HasPrefix(out, "Variables:\n") {
-		t.Errorf("Output does not contain internal symbols table: %s", out)
-	}
-	if !strings.Contains(out, "External Variables:\n") {
-		t.Errorf("Output does not contain external symbols table: %s", out)
 	}
 }
 
@@ -156,7 +115,7 @@ func TestDerefNoneTypes(t *testing.T) {
 		panic(ast.Root)
 	}
 
-	env, err := TypeInferernce(ast)
+	env, err := TypeCheck(ast)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,7 +125,7 @@ func TestDerefNoneTypes(t *testing.T) {
 	}
 
 	for _, h := range env.TypeHints {
-		v, ok := h.(*Option).Elem.(*Var)
+		v, ok := h.(*types.Option).Elem.(*types.Var)
 		if ok {
 			t.Errorf("Element type of 'None' value was not dereferenced: %s", v.String())
 		}
@@ -182,7 +141,7 @@ func TestDerefEmptyArray(t *testing.T) {
 		panic(ast.Root)
 	}
 
-	env, err := TypeInferernce(ast)
+	env, err := TypeCheck(ast)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -192,7 +151,7 @@ func TestDerefEmptyArray(t *testing.T) {
 	}
 
 	for _, h := range env.TypeHints {
-		v, ok := h.(*Array).Elem.(*Var)
+		v, ok := h.(*types.Array).Elem.(*types.Var)
 		if ok {
 			t.Errorf("Element type of 'None' value was not dereferenced: %s", v.String())
 		}

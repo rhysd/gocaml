@@ -108,7 +108,7 @@ func TestEliminatingRef(t *testing.T) {
 			if err = alpha.Transform(ast.Root); err != nil {
 				t.Fatal(err)
 			}
-			env, err := typing.TypeInferernce(ast)
+			env, err := typing.TypeCheck(ast)
 			if err != nil {
 				t.Fatal(err)
 			}

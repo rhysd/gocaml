@@ -33,7 +33,7 @@ func Example() {
 	// Apply type inference. After this, all symbols in AST should have exact
 	// types. It also checks types are valid and all types are determined by
 	// inference. It returns a type environment object as the result.
-	env, err := TypeInferernce(ast)
+	env, err := TypeCheck(ast)
 	if err != nil {
 		// Type error detected
 		panic(err)

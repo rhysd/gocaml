@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/rhysd/gocaml/alpha"
-	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/lexer"
+	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/typing"
 	"github.com/rhysd/locerr"
@@ -361,7 +361,7 @@ func TestClosureTransform(t *testing.T) {
 			if err = alpha.Transform(ast.Root); err != nil {
 				t.Fatal(err)
 			}
-			env, err := typing.TypeInferernce(ast)
+			env, err := typing.TypeCheck(ast)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -506,7 +506,7 @@ func TestClosureCaptureInInsn(t *testing.T) {
 	if err = alpha.Transform(ast.Root); err != nil {
 		t.Fatal(err)
 	}
-	env, err := typing.TypeInferernce(ast)
+	env, err := typing.TypeCheck(ast)
 	if err != nil {
 		t.Fatal(err)
 	}

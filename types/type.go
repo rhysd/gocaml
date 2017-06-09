@@ -1,4 +1,4 @@
-package typing
+package types
 
 import (
 	"fmt"
@@ -52,20 +52,20 @@ type Fun struct {
 	Params []Type
 }
 
+func funElemTy(t Type) string {
+	if f, ok := t.(*Fun); ok {
+		return fmt.Sprintf("(%s)", f.String())
+	} else {
+		return t.String()
+	}
+}
+
 func (t *Fun) String() string {
 	ss := make([]string, 0, len(t.Params)+1)
 	for _, p := range t.Params {
-		if f, ok := p.(*Fun); ok {
-			ss = append(ss, fmt.Sprintf("(%s)", f.String()))
-		} else {
-			ss = append(ss, p.String())
-		}
+		ss = append(ss, funElemTy(p))
 	}
-	if f, ok := t.Ret.(*Fun); ok {
-		ss = append(ss, fmt.Sprintf("(%s)", f.String()))
-	} else {
-		ss = append(ss, t.Ret.String())
-	}
+	ss = append(ss, funElemTy(t.Ret))
 	return strings.Join(ss, " -> ")
 }
 
@@ -76,7 +76,11 @@ type Tuple struct {
 func (t *Tuple) String() string {
 	elems := make([]string, len(t.Elems))
 	for i, e := range t.Elems {
-		elems[i] = e.String()
+		if tpl, ok := e.(*Tuple); ok {
+			elems[i] = fmt.Sprintf("(%s)", tpl.String())
+		} else {
+			elems[i] = e.String()
+		}
 	}
 	return strings.Join(elems, " * ")
 }

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/closure"
-	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/lexer"
+	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/typing"
 	"github.com/rhysd/locerr"
@@ -36,7 +36,7 @@ func Example() {
 	}
 
 	// Type analysis
-	env, err := typing.TypeInferernce(ast)
+	env, err := typing.TypeCheck(ast)
 	if err != nil {
 		// Type error detected
 		panic(err)

@@ -8,13 +8,14 @@ SRCS := \
 	parser/grammar.go \
 	parser/parser.go \
 	token/token.go \
-	typing/env.go \
+	types/builtins.go \
+	types/env.go \
+	types/type.go \
 	typing/unify.go \
 	typing/deref.go \
 	typing/infer.go \
-	typing/type.go \
-	typing/builtins.go \
 	typing/node_to_type.go \
+	typing/type_check.go \
 	alpha/transform.go \
 	alpha/mapping.go \
 	mir/val.go \
@@ -50,11 +51,13 @@ TESTS := \
 	parser/example_test.go \
 	parser/parser_test.go \
 	token/token_test.go \
-	typing/env_test.go \
+	types/env_test.go \
+	types/type_test.go \
 	typing/example_test.go \
 	typing/infer_test.go \
 	typing/deref_test.go \
 	typing/node_to_type_test.go \
+	typing/type_check_test.go \
 	mir/example_test.go \
 	mir/block_test.go \
 	mir/from_ast_test.go \

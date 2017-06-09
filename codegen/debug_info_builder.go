@@ -1,7 +1,7 @@
 package codegen
 
 import (
-	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/gocaml/types"
 	"github.com/rhysd/locerr"
 	"llvm.org/llvm/bindings/go/llvm"
 	"path/filepath"
@@ -13,34 +13,34 @@ type sizeEntry struct {
 }
 
 type sizeTable struct {
-	table       map[typing.Type]sizeEntry
+	table       map[types.Type]sizeEntry
 	data        llvm.TargetData
 	typeBuilder *typeBuilder
 	ptrSize     sizeEntry
 	stringSize  sizeEntry
 }
 
-func newSizeTable(types *typeBuilder, data llvm.TargetData) *sizeTable {
+func newSizeTable(tb *typeBuilder, data llvm.TargetData) *sizeTable {
 	ptrSize := sizeEntry{
-		data.TypeSizeInBits(types.voidPtrT),
-		uint32(data.ABITypeAlignment(types.voidPtrT) * 8),
+		data.TypeSizeInBits(tb.voidPtrT),
+		uint32(data.ABITypeAlignment(tb.voidPtrT) * 8),
 	}
 	stringSize := sizeEntry{
-		data.TypeSizeInBits(types.stringT),
-		uint32(data.ABITypeAlignment(types.stringT) * 8),
+		data.TypeSizeInBits(tb.stringT),
+		uint32(data.ABITypeAlignment(tb.stringT) * 8),
 	}
 	return &sizeTable{
-		map[typing.Type]sizeEntry{},
+		map[types.Type]sizeEntry{},
 		data,
-		types,
+		tb,
 		ptrSize,
 		stringSize,
 	}
 }
 
-func (sizes *sizeTable) calcSize(t typing.Type) sizeEntry {
+func (sizes *sizeTable) calcSize(t types.Type) sizeEntry {
 	ty := sizes.typeBuilder.fromMIR(t)
-	if _, ok := t.(*typing.Tuple); ok {
+	if _, ok := t.(*types.Tuple); ok {
 		// Tuple is managed by GC with pointer. What we want is size of actual allocated type, not a pointer.
 		ty = ty.ElementType()
 	}
@@ -51,14 +51,14 @@ func (sizes *sizeTable) calcSize(t typing.Type) sizeEntry {
 	return s
 }
 
-func (sizes *sizeTable) sizeOf(ty typing.Type) sizeEntry {
+func (sizes *sizeTable) sizeOf(ty types.Type) sizeEntry {
 	if s, ok := sizes.table[ty]; ok {
 		return s
 	}
 	return sizes.calcSize(ty)
 }
 
-func (sizes *sizeTable) allocInBitsOf(ty typing.Type) uint64 {
+func (sizes *sizeTable) allocInBitsOf(ty types.Type) uint64 {
 	return sizes.sizeOf(ty).allocInBits
 }
 
@@ -119,14 +119,14 @@ func newDebugInfoBuilder(module llvm.Module, file *locerr.Source, tb *typeBuilde
 				SizeInBits: target.TypeSizeInBits(tb.context.Int8Type()),
 				Encoding:   llvm.DW_ATE_signed,
 			}), "chars"),
-			d.basicTypeInfo(typing.IntType, llvm.DW_ATE_signed),
+			d.basicTypeInfo(types.IntType, llvm.DW_ATE_signed),
 		},
 	})
 
 	return d, nil
 }
 
-func (d *debugInfoBuilder) basicTypeInfo(ty typing.Type, enc llvm.DwarfTypeEncoding) llvm.Metadata {
+func (d *debugInfoBuilder) basicTypeInfo(ty types.Type, enc llvm.DwarfTypeEncoding) llvm.Metadata {
 	return d.builder.CreateBasicType(llvm.DIBasicType{
 		Name:       ty.String(),
 		SizeInBits: d.sizes.allocInBitsOf(ty),
@@ -134,7 +134,7 @@ func (d *debugInfoBuilder) basicTypeInfo(ty typing.Type, enc llvm.DwarfTypeEncod
 	})
 }
 
-func (d *debugInfoBuilder) closureTypeInfo(ty *typing.Fun) llvm.Metadata {
+func (d *debugInfoBuilder) closureTypeInfo(ty *types.Fun) llvm.Metadata {
 	funPtr := d.pointerOf(d.funcTypeInfo(ty, true), "")
 	size := d.sizes.sizeOf(ty)
 	return d.builder.CreateStructType(d.compileUnit, llvm.DIStructType{
@@ -146,7 +146,7 @@ func (d *debugInfoBuilder) closureTypeInfo(ty *typing.Fun) llvm.Metadata {
 	})
 }
 
-func (d *debugInfoBuilder) funcTypeInfo(ty *typing.Fun, isClosure bool) llvm.Metadata {
+func (d *debugInfoBuilder) funcTypeInfo(ty *types.Fun, isClosure bool) llvm.Metadata {
 	length := len(ty.Params) + 1
 	if isClosure {
 		length++
@@ -177,17 +177,17 @@ func (d *debugInfoBuilder) pointerOf(pointee llvm.Metadata, name string) llvm.Me
 	})
 }
 
-func (d *debugInfoBuilder) typeInfo(ty typing.Type) llvm.Metadata {
+func (d *debugInfoBuilder) typeInfo(ty types.Type) llvm.Metadata {
 	switch ty := ty.(type) {
-	case *typing.Int:
+	case *types.Int:
 		return d.basicTypeInfo(ty, llvm.DW_ATE_signed)
-	case *typing.Bool:
+	case *types.Bool:
 		return d.basicTypeInfo(ty, llvm.DW_ATE_boolean)
-	case *typing.Float:
+	case *types.Float:
 		return d.basicTypeInfo(ty, llvm.DW_ATE_float)
-	case *typing.String:
+	case *types.String:
 		return d.stringInfo
-	case *typing.Unit:
+	case *types.Unit:
 		size := d.sizes.sizeOf(ty)
 		return d.builder.CreateStructType(d.compileUnit, llvm.DIStructType{
 			Name:        "()",
@@ -196,11 +196,11 @@ func (d *debugInfoBuilder) typeInfo(ty typing.Type) llvm.Metadata {
 			AlignInBits: size.alignInBits,
 			Elements:    []llvm.Metadata{},
 		})
-	case *typing.Fun:
+	case *types.Fun:
 		return d.closureTypeInfo(ty)
-	case *typing.Array:
+	case *types.Array:
 		size := d.sizes.sizeOf(ty)
-		elems := []llvm.Metadata{d.pointerOf(d.typeInfo(ty.Elem), ""), d.basicTypeInfo(typing.IntType, llvm.DW_ATE_signed)}
+		elems := []llvm.Metadata{d.pointerOf(d.typeInfo(ty.Elem), ""), d.basicTypeInfo(types.IntType, llvm.DW_ATE_signed)}
 		return d.builder.CreateStructType(d.compileUnit, llvm.DIStructType{
 			Name:        ty.String(),
 			File:        d.file,
@@ -208,7 +208,7 @@ func (d *debugInfoBuilder) typeInfo(ty typing.Type) llvm.Metadata {
 			AlignInBits: size.alignInBits,
 			Elements:    elems,
 		})
-	case *typing.Tuple:
+	case *types.Tuple:
 		size := d.sizes.sizeOf(ty)
 		elems := make([]llvm.Metadata, 0, len(ty.Elems))
 		for _, e := range ty.Elems {
@@ -223,13 +223,13 @@ func (d *debugInfoBuilder) typeInfo(ty typing.Type) llvm.Metadata {
 			Elements:    elems,
 		})
 		return d.pointerOf(allocated, name)
-	case *typing.Option:
+	case *types.Option:
 		switch ty := ty.Elem.(type) {
-		case *typing.Int, *typing.Bool, *typing.Float:
+		case *types.Int, *types.Bool, *types.Float:
 			return d.basicTypeInfo(ty, llvm.DW_ATE_unsigned)
-		case *typing.String, *typing.Fun, *typing.Array, *typing.Tuple:
+		case *types.String, *types.Fun, *types.Array, *types.Tuple:
 			return d.typeInfo(ty)
-		case *typing.Option, *typing.Unit:
+		case *types.Option, *types.Unit:
 			size := d.sizes.sizeOf(ty)
 			elems := []llvm.Metadata{
 				d.basicTypeInfo(ty, llvm.DW_ATE_boolean),
@@ -267,7 +267,7 @@ func (d *debugInfoBuilder) setMainFuncInfo(mainfun llvm.Value, line int) {
 	d.scope = meta
 }
 
-func (d *debugInfoBuilder) setFuncInfo(funptr llvm.Value, ty *typing.Fun, line int, isClosure bool) {
+func (d *debugInfoBuilder) setFuncInfo(funptr llvm.Value, ty *types.Fun, line int, isClosure bool) {
 	// Note:
 	// All functions are at toplevel, so any function will be never nested in others.
 	name := funptr.Name()

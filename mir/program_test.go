@@ -2,7 +2,7 @@ package mir
 
 import (
 	"bytes"
-	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/gocaml/types"
 	"github.com/rhysd/locerr"
 	"strings"
 	"testing"
@@ -17,8 +17,8 @@ func TestDump(t *testing.T) {
 		}),
 	}
 
-	env := typing.NewEnv()
-	env.Table["$k1"] = typing.UnitType
+	env := types.NewEnv()
+	env.Table["$k1"] = types.UnitType
 
 	var buf bytes.Buffer
 	prog.Dump(&buf, env)

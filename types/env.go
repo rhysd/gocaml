@@ -1,5 +1,5 @@
 // Package typing provides type inference logic for GoCaml.
-package typing
+package types
 
 import (
 	"fmt"

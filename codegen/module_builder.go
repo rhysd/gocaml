@@ -3,14 +3,14 @@ package codegen
 import (
 	"fmt"
 	"github.com/rhysd/gocaml/mir"
-	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/gocaml/types"
 	"github.com/rhysd/locerr"
 	"llvm.org/llvm/bindings/go/llvm"
 )
 
 type moduleBuilder struct {
 	module      llvm.Module
-	env         *typing.Env
+	env         *types.Env
 	machine     llvm.TargetMachine
 	targetData  llvm.TargetData
 	context     llvm.Context
@@ -52,7 +52,7 @@ func createAttributeTable(ctx llvm.Context) map[string]llvm.Attribute {
 	return attrs
 }
 
-func newModuleBuilder(env *typing.Env, file *locerr.Source, opts EmitOptions) (*moduleBuilder, error) {
+func newModuleBuilder(env *types.Env, file *locerr.Source, opts EmitOptions) (*moduleBuilder, error) {
 	triple := opts.Triple
 	if triple == "" {
 		triple = llvm.DefaultTargetTriple()
@@ -133,7 +133,7 @@ func (b *moduleBuilder) dispose() {
 // This is necessary when the external symbol function is used as a variable.
 // In GoCaml, all function variable falls back into closure value.
 // External symbol function should also be closure in the case.
-func (b *moduleBuilder) buildExternalClosureWrapper(funName string, ty *typing.Fun) llvm.Value {
+func (b *moduleBuilder) buildExternalClosureWrapper(funName string, ty *types.Fun) llvm.Value {
 	name := funName + "$closure"
 	if f, ok := b.funcTable[name]; ok {
 		return f
@@ -169,7 +169,7 @@ func (b *moduleBuilder) buildExternalClosureWrapper(funName string, ty *typing.F
 		args = append(args, val.Param(i+1))
 	}
 	ret := b.builder.CreateCall(extFunVal, args, "")
-	if ty.Ret == typing.UnitType {
+	if ty.Ret == types.UnitType {
 		// When the external function returns void
 		ret = llvm.ConstNamedStruct(b.typeBuilder.unitT, []llvm.Value{})
 	}
@@ -179,11 +179,11 @@ func (b *moduleBuilder) buildExternalClosureWrapper(funName string, ty *typing.F
 	return val
 }
 
-func (b *moduleBuilder) buildExternalDecl(name string, from typing.Type) {
+func (b *moduleBuilder) buildExternalDecl(name string, from types.Type) {
 	switch ty := from.(type) {
-	case *typing.Var:
+	case *types.Var:
 		panic("unreachable") // because type variables are dereferenced at type analysis
-	case *typing.Fun:
+	case *types.Fun:
 		// Make a declaration for the external symbol function
 		tyVal := b.typeBuilder.buildExternalFun(ty)
 		val := llvm.AddFunction(b.module, name, tyVal)
@@ -206,7 +206,7 @@ func (b *moduleBuilder) buildFuncDecl(insn mir.FunInsn) {
 		panic(fmt.Sprintf("Type not found for function '%s'", name))
 	}
 
-	ty, ok := found.(*typing.Fun)
+	ty, ok := found.(*types.Fun)
 	if !ok {
 		panic(fmt.Sprintf("Type of function '%s' is not a function type: %s", name, found.String()))
 	}
@@ -262,7 +262,7 @@ func (b *moduleBuilder) buildFunBody(insn mir.FunInsn) {
 	}
 
 	if b.debug != nil {
-		ty, ok := b.env.Table[name].(*typing.Fun)
+		ty, ok := b.env.Table[name].(*types.Fun)
 		if !ok {
 			panic("Type for function definition not found: " + name)
 		}

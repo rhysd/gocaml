@@ -2,7 +2,7 @@ package mir
 
 import (
 	"fmt"
-	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/gocaml/types"
 	"github.com/rhysd/locerr"
 	"io"
 	"strings"
@@ -33,7 +33,7 @@ type Program struct {
 	Entry    *Block
 }
 
-func (prog *Program) PrintToplevels(out io.Writer, env *typing.Env) {
+func (prog *Program) PrintToplevels(out io.Writer, env *types.Env) {
 	p := printer{env, out, ""}
 	for n, f := range prog.Toplevel {
 		p.printlnInsn(NewInsn(n, f.Val, f.Pos))
@@ -41,7 +41,7 @@ func (prog *Program) PrintToplevels(out io.Writer, env *typing.Env) {
 	}
 }
 
-func (prog *Program) Dump(out io.Writer, env *typing.Env) {
+func (prog *Program) Dump(out io.Writer, env *types.Env) {
 	fmt.Fprintf(out, "[TOPLEVELS (%d)]\n", len(prog.Toplevel))
 	prog.PrintToplevels(out, env)
 
@@ -55,7 +55,7 @@ func (prog *Program) Dump(out io.Writer, env *typing.Env) {
 	prog.Entry.Println(out, env)
 }
 
-func (prog *Program) Println(out io.Writer, env *typing.Env) {
+func (prog *Program) Println(out io.Writer, env *types.Env) {
 	prog.PrintToplevels(out, env)
 	prog.Entry.Println(out, env)
 }

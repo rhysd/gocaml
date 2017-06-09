@@ -2,6 +2,7 @@ package typing
 
 import (
 	"github.com/rhysd/gocaml/common"
+	. "github.com/rhysd/gocaml/types"
 	"github.com/rhysd/locerr"
 )
 

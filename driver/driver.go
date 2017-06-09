@@ -12,6 +12,7 @@ import (
 	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/token"
+	"github.com/rhysd/gocaml/types"
 	"github.com/rhysd/gocaml/typing"
 	"github.com/rhysd/locerr"
 	"io/ioutil"
@@ -81,11 +82,11 @@ func (d *Driver) PrintAST(src *locerr.Source) {
 
 // SemanticAnalysis checks types and symbol duplicates.
 // It returns the result of type analysis or an error.
-func (d *Driver) SemanticAnalysis(a *ast.AST) (*typing.Env, error) {
+func (d *Driver) SemanticAnalysis(a *ast.AST) (*types.Env, error) {
 	if err := alpha.Transform(a.Root); err != nil {
 		return nil, err
 	}
-	env, err := typing.TypeInferernce(a)
+	env, err := typing.TypeCheck(a)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +94,7 @@ func (d *Driver) SemanticAnalysis(a *ast.AST) (*typing.Env, error) {
 }
 
 // EmitMIR emits MIR tree representation.
-func (d *Driver) EmitMIR(src *locerr.Source) (*mir.Program, *typing.Env, error) {
+func (d *Driver) EmitMIR(src *locerr.Source) (*mir.Program, *types.Env, error) {
 	ast, err := d.Parse(src)
 	if err != nil {
 		return nil, nil, err

@@ -1,7 +1,7 @@
 package mir
 
 import (
-	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/gocaml/types"
 )
 
 type refEntry struct {
@@ -12,10 +12,10 @@ type refEntry struct {
 type elimRef struct {
 	refs  map[string]refEntry
 	xrefs map[string]refEntry
-	types *typing.Env
+	types *types.Env
 }
 
-func newElimRef(types *typing.Env) *elimRef {
+func newElimRef(types *types.Env) *elimRef {
 	return &elimRef{
 		map[string]refEntry{},
 		map[string]refEntry{},
@@ -110,7 +110,7 @@ func (elim *elimRef) block(block *Block) {
 // This optimization needs to be executed before closure transform because
 // functions referenced by variable must be a closure. So it is important
 // to remove unnecessary references to functions here.
-func ElimRefs(b *Block, env *typing.Env) {
+func ElimRefs(b *Block, env *types.Env) {
 	e := newElimRef(env)
 	e.block(b)
 }

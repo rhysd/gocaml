@@ -3,7 +3,7 @@ package mir
 import (
 	"fmt"
 	"github.com/rhysd/gocaml/ast"
-	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/gocaml/types"
 	"github.com/rhysd/locerr"
 )
 
@@ -11,7 +11,7 @@ import (
 
 type emitter struct {
 	count uint
-	types *typing.Env
+	types *types.Env
 	err   *locerr.Error
 }
 
@@ -20,7 +20,7 @@ func (e *emitter) genID() string {
 	return fmt.Sprintf("$k%d", e.count)
 }
 
-func (e *emitter) typeOf(i *Insn) typing.Type {
+func (e *emitter) typeOf(i *Insn) types.Type {
 	t, ok := e.types.Table[i.Ident]
 	if !ok {
 		panic(fmt.Sprintf("Type for '%s' not found for %v (bug)", i.Ident, *i))
@@ -36,7 +36,7 @@ func (e *emitter) semanticError(msg string, node ast.Expr) {
 	e.err = e.err.NoteAt(node.Pos(), msg)
 }
 
-func (e *emitter) emitBinaryInsn(op OperatorKind, lhs ast.Expr, rhs ast.Expr) (typing.Type, Val, *Insn) {
+func (e *emitter) emitBinaryInsn(op OperatorKind, lhs ast.Expr, rhs ast.Expr) (types.Type, Val, *Insn) {
 	l := e.emitInsn(lhs)
 	r := e.emitInsn(rhs)
 	r.Append(l)
@@ -97,14 +97,14 @@ func (e *emitter) emitFunInsn(node *ast.LetRec) *Insn {
 	return body
 }
 
-func (e *emitter) emitMatchInsn(node *ast.Match) (typing.Type, Val, *Insn) {
+func (e *emitter) emitMatchInsn(node *ast.Match) (types.Type, Val, *Insn) {
 	pos := node.Pos()
 	matched := e.emitInsn(node.Target)
 	id := e.genID()
-	e.types.Table[id] = typing.BoolType
+	e.types.Table[id] = types.BoolType
 	cond := Concat(NewInsn(id, &IsSome{matched.Ident}, pos), matched)
 
-	matchedTy, ok := e.types.Table[matched.Ident].(*typing.Option)
+	matchedTy, ok := e.types.Table[matched.Ident].(*types.Option)
 	if !ok {
 		panic("Type of 'match' expression target not found")
 	}
@@ -126,7 +126,7 @@ func (e *emitter) emitLetTupleInsn(node *ast.LetTuple) *Insn {
 	}
 
 	bound := e.emitInsn(node.Bound)
-	boundTy, ok := e.typeOf(bound).(*typing.Tuple)
+	boundTy, ok := e.typeOf(bound).(*types.Tuple)
 	if !ok {
 		panic("LetTuple node does not bound symbols to tuple value")
 	}
@@ -150,49 +150,49 @@ func (e *emitter) emitLetTupleInsn(node *ast.LetTuple) *Insn {
 	return body
 }
 
-func (e *emitter) emitLessInsn(kind OperatorKind, lhs, rhs, parent ast.Expr) (typing.Type, Val, *Insn) {
+func (e *emitter) emitLessInsn(kind OperatorKind, lhs, rhs, parent ast.Expr) (types.Type, Val, *Insn) {
 	operand, val, prev := e.emitBinaryInsn(kind, lhs, rhs)
 	// Note:
 	// This type constraint may be useful for type inference. But current HM type inference algorithm cannot
 	// handle a union type. In this context, the operand should be `int | float`
 	switch operand.(type) {
-	case *typing.Unit, *typing.Bool, *typing.String, *typing.Fun, *typing.Tuple, *typing.Array, *typing.Option:
+	case *types.Unit, *types.Bool, *types.String, *types.Fun, *types.Tuple, *types.Array, *types.Option:
 		e.semanticError(fmt.Sprintf("'%s' can't be compared with operator '%s'", operand.String(), OpTable[kind]), parent)
 	}
-	return typing.BoolType, val, prev
+	return types.BoolType, val, prev
 }
 
-func (e *emitter) emitEqInsn(kind OperatorKind, lhs, rhs, parent ast.Expr) (typing.Type, Val, *Insn) {
+func (e *emitter) emitEqInsn(kind OperatorKind, lhs, rhs, parent ast.Expr) (types.Type, Val, *Insn) {
 	operand, val, prev := e.emitBinaryInsn(kind, lhs, rhs)
 	// Note:
 	// This type constraint may be useful for type inference. But current HM type inference algorithm cannot
 	// handle a union type. In this context, the operand should be `() | bool | int | float | fun<R, TS...> | tuple<Args...>`
-	if _, ok := operand.(*typing.Array); ok {
+	if _, ok := operand.(*types.Array); ok {
 		e.semanticError(fmt.Sprintf("'%s' can't be compared with operator '%s'", operand.String(), OpTable[kind]), parent)
 	}
-	return typing.BoolType, val, prev
+	return types.BoolType, val, prev
 }
 
 func (e *emitter) emitInsn(node ast.Expr) *Insn {
 	var prev *Insn = nil
 	var val Val
-	var ty typing.Type
+	var ty types.Type
 
 	switch n := node.(type) {
 	case *ast.Unit:
-		ty = typing.UnitType
+		ty = types.UnitType
 		val = UnitVal
 	case *ast.Bool:
-		ty = typing.BoolType
+		ty = types.BoolType
 		val = &Bool{n.Value}
 	case *ast.Int:
-		ty = typing.IntType
+		ty = types.IntType
 		val = &Int{n.Value}
 	case *ast.Float:
-		ty = typing.FloatType
+		ty = types.FloatType
 		val = &Float{n.Value}
 	case *ast.String:
-		ty = typing.StringType
+		ty = types.StringType
 		val = &String{n.Value}
 	case *ast.Not:
 		i := e.emitInsn(n.Child)
@@ -275,7 +275,7 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 			prev = arg
 		}
 		val = &App{callee.Ident, args, DIRECT_CALL}
-		f, ok := e.typeOf(callee).(*typing.Fun)
+		f, ok := e.typeOf(callee).(*types.Fun)
 		if !ok {
 			panic(fmt.Sprintf("Callee of Apply node is not typed as function!: %s", e.typeOf(callee).String()))
 		}
@@ -286,15 +286,15 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 			panic("Tuple must not be empty!")
 		}
 		elems := make([]string, 0, len)
-		types := make([]typing.Type, 0, len)
+		elemTypes := make([]types.Type, 0, len)
 		for _, elem := range n.Elems {
 			i := e.emitInsn(elem)
 			i.Append(prev)
 			elems = append(elems, i.Ident)
-			types = append(types, e.typeOf(i))
+			elemTypes = append(elemTypes, e.typeOf(i))
 			prev = i
 		}
-		ty = &typing.Tuple{types}
+		ty = &types.Tuple{elemTypes}
 		val = &Tuple{elems}
 	case *ast.ArrayLit:
 		if len(n.Elems) == 0 {
@@ -315,7 +315,7 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 			elems = append(elems, i.Ident)
 			prev = i
 		}
-		ty = &typing.Array{e.typeOf(prev)}
+		ty = &types.Array{e.typeOf(prev)}
 		val = &ArrLit{elems}
 	case *ast.LetTuple:
 		return e.emitLetTupleInsn(n)
@@ -324,11 +324,11 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		elem := e.emitInsn(n.Elem)
 		elem.Append(size)
 		prev = elem
-		ty = &typing.Array{e.typeOf(elem)}
+		ty = &types.Array{e.typeOf(elem)}
 		val = &Array{size.Ident, elem.Ident}
 	case *ast.Get:
 		array := e.emitInsn(n.Array)
-		arrayTy, ok := e.typeOf(array).(*typing.Array)
+		arrayTy, ok := e.typeOf(array).(*types.Array)
 		if !ok {
 			panic("'Get' node does not access to array!")
 		}
@@ -339,7 +339,7 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		val = &ArrLoad{array.Ident, index.Ident}
 	case *ast.Put:
 		array := e.emitInsn(n.Array)
-		arrayTy, ok := e.typeOf(array).(*typing.Array)
+		arrayTy, ok := e.typeOf(array).(*types.Array)
 		if !ok {
 			panic("'Put' node does not access to array!")
 		}
@@ -353,7 +353,7 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 	case *ast.ArraySize:
 		array := e.emitInsn(n.Target)
 		prev = array
-		ty = typing.IntType
+		ty = types.IntType
 		val = &ArrLen{array.Ident}
 	case *ast.Some:
 		child := e.emitInsn(n.Child)
@@ -362,7 +362,7 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 		if !ok {
 			panic("Child type for 'Some' value is unknown")
 		}
-		ty = &typing.Option{childTy}
+		ty = &types.Option{childTy}
 		val = &Some{child.Ident}
 	case *ast.None:
 		var ok bool
@@ -389,7 +389,7 @@ func (e *emitter) emitInsn(node ast.Expr) *Insn {
 }
 
 // Return Block instance and its type
-func (e *emitter) emitBlock(name string, node ast.Expr) (*Block, typing.Type) {
+func (e *emitter) emitBlock(name string, node ast.Expr) (*Block, types.Type) {
 	lastInsn := e.emitInsn(node)
 	firstInsn := Reverse(lastInsn)
 	// emitInsn() emits instructions in descending order.
@@ -397,7 +397,7 @@ func (e *emitter) emitBlock(name string, node ast.Expr) (*Block, typing.Type) {
 	return NewBlock(name, firstInsn, lastInsn), e.typeOf(lastInsn)
 }
 
-func FromAST(root ast.Expr, types *typing.Env) (*Block, error) {
+func FromAST(root ast.Expr, types *types.Env) (*Block, error) {
 	e := &emitter{0, types, nil}
 	b, _ := e.emitBlock("program", root)
 	if e.err != nil {

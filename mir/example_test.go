@@ -34,7 +34,7 @@ func Example() {
 	}
 
 	// Type analysis
-	env, err := typing.TypeInferernce(ast)
+	env, err := typing.TypeCheck(ast)
 	if err != nil {
 		// Type error detected
 		panic(err)

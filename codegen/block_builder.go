@@ -3,7 +3,7 @@ package codegen
 import (
 	"fmt"
 	"github.com/rhysd/gocaml/mir"
-	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/gocaml/types"
 	"llvm.org/llvm/bindings/go/llvm"
 )
 
@@ -50,7 +50,7 @@ func (b *blockBuilder) resolve(ident string) llvm.Value {
 	panic("No value was found for identifier: " + ident)
 }
 
-func (b *blockBuilder) typeOf(ident string) typing.Type {
+func (b *blockBuilder) typeOf(ident string) types.Type {
 	if t, ok := b.env.Table[ident]; ok {
 		return t
 	}
@@ -97,22 +97,22 @@ func (b *blockBuilder) buildAlloca(t llvm.Type, name string) llvm.Value {
 	return alloca
 }
 
-func (b *blockBuilder) buildEq(ty typing.Type, bin *mir.Binary, lhs, rhs llvm.Value) llvm.Value {
+func (b *blockBuilder) buildEq(ty types.Type, bin *mir.Binary, lhs, rhs llvm.Value) llvm.Value {
 	icmp, fcmp, name := getOpCmpPredicate(bin.Op)
 
 	switch ty := ty.(type) {
-	case *typing.Unit:
+	case *types.Unit:
 		// `() = ()` is always true and `() <> ()` will never be true.
 		i := uint64(1)
 		if bin.Op == mir.NEQ {
 			i = 0
 		}
 		return llvm.ConstInt(b.typeBuilder.boolT, i, false /*sign extend*/)
-	case *typing.Bool, *typing.Int:
+	case *types.Bool, *types.Int:
 		return b.builder.CreateICmp(icmp, lhs, rhs, name)
-	case *typing.Float:
+	case *types.Float:
 		return b.builder.CreateFCmp(fcmp, lhs, rhs, name)
-	case *typing.String:
+	case *types.String:
 		eqlFun, ok := b.globalTable["__str_equal"]
 		if !ok {
 			panic("__str_equal() not found")
@@ -123,7 +123,7 @@ func (b *blockBuilder) buildEq(ty typing.Type, bin *mir.Binary, lhs, rhs llvm.Va
 			i = 0
 		}
 		return b.builder.CreateICmp(llvm.IntEQ, cmp, llvm.ConstInt(b.typeBuilder.boolT, i, false /*signed*/), "eql.str")
-	case *typing.Tuple:
+	case *types.Tuple:
 		cmp := llvm.Value{}
 		for i, elemTy := range ty.Elems {
 			l := b.builder.CreateLoad(b.builder.CreateStructGEP(lhs, i, "tpl.left"), "")
@@ -137,16 +137,16 @@ func (b *blockBuilder) buildEq(ty typing.Type, bin *mir.Binary, lhs, rhs llvm.Va
 		}
 		cmp.SetName(name + ".tpl")
 		return cmp
-	case *typing.Fun:
+	case *types.Fun:
 		// Note:
 		// The function instance must be a closure because all functions which is used
 		// as variable are treated as closure in closure-transform.
 		lfun := b.builder.CreateExtractValue(lhs, 0, "")
 		rfun := b.builder.CreateExtractValue(rhs, 0, "")
 		return b.builder.CreateICmp(icmp, lfun, rfun, name+".fun")
-	case *typing.Option:
+	case *types.Option:
 		return b.buildEqOption(ty, bin, lhs, rhs)
-	case *typing.Array:
+	case *types.Array:
 		panic("unreachable")
 	default:
 		panic("unreachable")
@@ -157,16 +157,16 @@ func (b *blockBuilder) buildLess(val *mir.Binary, lhs, rhs llvm.Value) llvm.Valu
 	lty := b.typeOf(val.Lhs)
 	ipred, fpred, name := getOpCmpPredicate(val.Op)
 	switch lty.(type) {
-	case *typing.Int:
+	case *types.Int:
 		return b.builder.CreateICmp(ipred, lhs, rhs, name)
-	case *typing.Float:
+	case *types.Float:
 		return b.builder.CreateFCmp(fpred, lhs, rhs, name)
 	default:
 		panic(fmt.Sprintf("Invalid type for '%s' operator: %s", name, lty.String()))
 	}
 }
 
-func (b *blockBuilder) buildEqOption(ty *typing.Option, bin *mir.Binary, lhs, rhs llvm.Value) llvm.Value {
+func (b *blockBuilder) buildEqOption(ty *types.Option, bin *mir.Binary, lhs, rhs llvm.Value) llvm.Value {
 	tyVal := b.typeBuilder.buildOption(ty)
 	lhsIsSome := b.buildIsSome(lhs, tyVal, ty)
 	rhsIsSome := b.buildIsSome(rhs, tyVal, ty)
@@ -203,20 +203,20 @@ func (b *blockBuilder) buildEqOption(ty *typing.Option, bin *mir.Binary, lhs, rh
 	return phi
 }
 
-func (b *blockBuilder) buildIsSome(optVal llvm.Value, tyVal llvm.Type, ty *typing.Option) llvm.Value {
+func (b *blockBuilder) buildIsSome(optVal llvm.Value, tyVal llvm.Type, ty *types.Option) llvm.Value {
 	switch ty.Elem.(type) {
-	case *typing.Int, *typing.Bool, *typing.Float:
+	case *types.Int, *types.Bool, *types.Float:
 		one := llvm.ConstInt(tyVal, 1, false /*signed*/)
 		// Extract flag value
 		flag := b.builder.CreateAnd(optVal, one, "")
 		// flag == 1 means that it contains a value
 		return b.builder.CreateICmp(llvm.IntEQ, flag, one, "issome")
-	case *typing.String, *typing.Fun, *typing.Array:
+	case *types.String, *types.Fun, *types.Array:
 		ptr := b.builder.CreateExtractValue(optVal, 0, "")
 		return b.builder.CreateNot(b.builder.CreateIsNull(ptr, ""), "issome")
-	case *typing.Tuple:
+	case *types.Tuple:
 		return b.builder.CreateNot(b.builder.CreateIsNull(optVal, ""), "issome")
-	case *typing.Option, *typing.Unit:
+	case *types.Option, *types.Unit:
 		flag := b.builder.CreateExtractValue(optVal, 0, "")
 		return b.builder.CreateICmp(
 			llvm.IntEQ,
@@ -229,30 +229,30 @@ func (b *blockBuilder) buildIsSome(optVal llvm.Value, tyVal llvm.Type, ty *typin
 	}
 }
 
-func (b *blockBuilder) buildDerefSome(optVal llvm.Value, ty *typing.Option) llvm.Value {
+func (b *blockBuilder) buildDerefSome(optVal llvm.Value, ty *types.Option) llvm.Value {
 	switch ty.Elem.(type) {
-	case *typing.Int:
+	case *types.Int:
 		// shift 1 bit to squash a flag
 		one := llvm.ConstInt(llvm.IntType(65), 1, false /*signed*/)
 		v := b.builder.CreateLShr(optVal, one, "")
 		// Truncate to the same size bits
 		return b.builder.CreateTrunc(v, b.typeBuilder.intT, "derefsome")
-	case *typing.Float:
+	case *types.Float:
 		// shift 1 bit to squash a flag
 		one := llvm.ConstInt(llvm.IntType(65), 1, false /*signed*/)
 		v := b.builder.CreateLShr(optVal, one, "")
 		// Truncate to the same size bits
 		v = b.builder.CreateTrunc(v, llvm.IntType(64), "")
 		return b.builder.CreateBitCast(v, b.typeBuilder.fromMIR(ty.Elem), "derefsome")
-	case *typing.Bool:
+	case *types.Bool:
 		// shift 1 bit to squash a flag
 		one := llvm.ConstInt(llvm.IntType(2), 1, false /*signed*/)
 		v := b.builder.CreateLShr(optVal, one, "")
 		// Truncate to the same size bits
 		return b.builder.CreateTrunc(v, b.typeBuilder.boolT, "derefsome")
-	case *typing.String, *typing.Fun, *typing.Array, *typing.Tuple:
+	case *types.String, *types.Fun, *types.Array, *types.Tuple:
 		return optVal
-	case *typing.Option, *typing.Unit:
+	case *types.Option, *types.Unit:
 		return b.builder.CreateExtractValue(optVal, 1, "derefsome")
 	default:
 		panic("unreachable")
@@ -421,7 +421,7 @@ func (b *blockBuilder) buildVal(ident string, val mir.Val) llvm.Value {
 		}
 		return ptr
 	case *mir.Array:
-		t, ok := b.typeOf(ident).(*typing.Array)
+		t, ok := b.typeOf(ident).(*types.Array)
 		if !ok {
 			panic("Type of array instruction is not array")
 		}
@@ -468,7 +468,7 @@ func (b *blockBuilder) buildVal(ident string, val mir.Val) llvm.Value {
 		arr = b.builder.CreateInsertValue(arr, sizeVal, 1, "")
 		return arr
 	case *mir.ArrLit:
-		t, ok := b.typeOf(ident).(*typing.Array)
+		t, ok := b.typeOf(ident).(*types.Array)
 		if !ok {
 			panic("Type of arrlit instruction is not array")
 		}
@@ -520,7 +520,7 @@ func (b *blockBuilder) buildVal(ident string, val mir.Val) llvm.Value {
 			panic("Type for external value not found: " + val.Ident)
 		}
 
-		funTy, ok := ty.(*typing.Fun)
+		funTy, ok := ty.(*types.Fun)
 		if !ok {
 			x, ok := b.globalTable[val.Ident]
 			if !ok {
@@ -543,7 +543,7 @@ func (b *blockBuilder) buildVal(ident string, val mir.Val) llvm.Value {
 			panic("Closure for function not found: " + val.Fun)
 		}
 
-		funcT, ok := b.env.Table[val.Fun].(*typing.Fun)
+		funcT, ok := b.env.Table[val.Fun].(*types.Fun)
 		if !ok {
 			panic(fmt.Sprintf("Type of function '%s' not found!", val.Fun))
 		}
@@ -579,13 +579,13 @@ func (b *blockBuilder) buildVal(ident string, val mir.Val) llvm.Value {
 		return b.builder.CreateLoad(castedVal, fmt.Sprintf("closure.%s", val.Fun))
 	case *mir.Some:
 		elemVal := b.resolve(val.Elem)
-		ty, ok := b.typeOf(ident).(*typing.Option)
+		ty, ok := b.typeOf(ident).(*types.Option)
 		if !ok {
 			panic("Type of Some is not an option type: " + b.typeOf(ident).String())
 		}
 
 		switch ty.Elem.(type) {
-		case *typing.Int, *typing.Bool:
+		case *types.Int, *types.Bool:
 			tyVal := b.typeBuilder.buildOption(ty)
 			// Extend 1 bit for flag
 			extended := b.builder.CreateZExt(elemVal, tyVal, "")
@@ -593,17 +593,17 @@ func (b *blockBuilder) buildVal(ident string, val mir.Val) llvm.Value {
 			shifted := b.builder.CreateShl(extended, llvm.ConstInt(tyVal, 1, false /*signed*/), "")
 			// Set flag to 1
 			return b.builder.CreateOr(shifted, llvm.ConstInt(tyVal, 1, false /*signed*/), "")
-		case *typing.Float:
+		case *types.Float:
 			// Similar to Int or Bool cases, but bitcast is required
 			tyVal := b.typeBuilder.buildOption(ty)
 			casted := b.builder.CreateBitCast(elemVal, llvm.Int64Type(), "")
 			extended := b.builder.CreateZExt(casted, tyVal, "")
 			shifted := b.builder.CreateShl(extended, llvm.ConstInt(tyVal, 1, false /*signed*/), "")
 			return b.builder.CreateOr(shifted, llvm.ConstInt(tyVal, 1, false /*signed*/), "")
-		case *typing.String, *typing.Fun, *typing.Array, *typing.Tuple:
+		case *types.String, *types.Fun, *types.Array, *types.Tuple:
 			// They use NULL pointer for 'None' value. So nothing to do to make 'Some' value.
 			return elemVal
-		case *typing.Option, *typing.Unit:
+		case *types.Option, *types.Unit:
 			v := llvm.Undef(b.typeBuilder.buildOption(ty))
 			v = b.builder.CreateInsertValue(v, llvm.ConstInt(b.typeBuilder.boolT, 1, false), 0, "some.flag")
 			v = b.builder.CreateInsertValue(v, elemVal, 1, "some.elem")
@@ -612,23 +612,23 @@ func (b *blockBuilder) buildVal(ident string, val mir.Val) llvm.Value {
 			panic("unreachable")
 		}
 	case *mir.None:
-		ty, ok := b.typeOf(ident).(*typing.Option)
+		ty, ok := b.typeOf(ident).(*types.Option)
 		if !ok {
 			panic("Type of None is not an option type: " + b.typeOf(ident).String())
 		}
 
 		tyVal := b.typeBuilder.buildOption(ty)
 		switch ty.Elem.(type) {
-		case *typing.Int, *typing.Bool, *typing.Float:
+		case *types.Int, *types.Bool, *types.Float:
 			return llvm.ConstInt(tyVal, 0, false)
-		case *typing.String, *typing.Fun, *typing.Array:
+		case *types.String, *types.Fun, *types.Array:
 			v := llvm.Undef(tyVal)
 			null := llvm.ConstPointerNull(tyVal.StructElementTypes()[0])
 			v = b.builder.CreateInsertValue(v, null, 0, "none.flag")
 			return v
-		case *typing.Tuple:
+		case *types.Tuple:
 			return llvm.ConstPointerNull(tyVal)
-		case *typing.Option, *typing.Unit:
+		case *types.Option, *types.Unit:
 			v := llvm.Undef(b.typeBuilder.buildOption(ty))
 			v = b.builder.CreateInsertValue(v, llvm.ConstInt(b.typeBuilder.boolT, 0, false), 0, "none.flag")
 			return v
@@ -637,14 +637,14 @@ func (b *blockBuilder) buildVal(ident string, val mir.Val) llvm.Value {
 		}
 	case *mir.IsSome:
 		optVal := b.resolve(val.OptVal)
-		ty, ok := b.typeOf(val.OptVal).(*typing.Option)
+		ty, ok := b.typeOf(val.OptVal).(*types.Option)
 		if !ok {
 			panic("Type of IsSome is not an option type: " + b.typeOf(val.OptVal).String())
 		}
 		return b.buildIsSome(optVal, b.typeBuilder.buildOption(ty), ty)
 	case *mir.DerefSome:
 		optVal := b.resolve(val.SomeVal)
-		ty, ok := b.typeOf(val.SomeVal).(*typing.Option)
+		ty, ok := b.typeOf(val.SomeVal).(*types.Option)
 		if !ok {
 			panic("Type of DerefSome is not an option type: " + b.typeOf(val.SomeVal).String())
 		}

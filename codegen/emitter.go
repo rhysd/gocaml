@@ -7,7 +7,7 @@ package codegen
 import (
 	"fmt"
 	"github.com/rhysd/gocaml/mir"
-	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/gocaml/types"
 	"github.com/rhysd/locerr"
 	"io/ioutil"
 	"llvm.org/llvm/bindings/go/llvm"
@@ -51,8 +51,8 @@ type EmitOptions struct {
 // Emitter object to emit LLVM IR, object file, assembly or executable.
 type Emitter struct {
 	EmitOptions
-	MIR     *mir.Program
-	Env      *typing.Env
+	MIR      *mir.Program
+	Env      *types.Env
 	Source   *locerr.Source
 	Module   llvm.Module
 	Machine  llvm.TargetMachine
@@ -152,7 +152,7 @@ func (emitter *Emitter) EmitExecutable(executable string) (err error) {
 }
 
 // Creates new emitter object.
-func NewEmitter(prog *mir.Program, env *typing.Env, src *locerr.Source, opts EmitOptions) (*Emitter, error) {
+func NewEmitter(prog *mir.Program, env *types.Env, src *locerr.Source, opts EmitOptions) (*Emitter, error) {
 	builder, err := newModuleBuilder(env, src, opts)
 	if err != nil {
 		return nil, err

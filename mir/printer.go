@@ -2,12 +2,12 @@ package mir
 
 import (
 	"fmt"
-	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/gocaml/types"
 	"io"
 )
 
 type printer struct {
-	types  *typing.Env
+	types  *types.Env
 	out    io.Writer
 	indent string
 }
@@ -46,7 +46,7 @@ func (p *printer) printlnBlock(b *Block) {
 	fmt.Fprintf(p.out, "%sEND: %s\n", p.indent, b.Name)
 }
 
-func (b *Block) Println(out io.Writer, types *typing.Env) {
+func (b *Block) Println(out io.Writer, types *types.Env) {
 	p := printer{
 		types,
 		out,
