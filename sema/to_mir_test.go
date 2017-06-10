@@ -352,9 +352,7 @@ func TestEmitInsn(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.what, func(t *testing.T) {
 			s := locerr.NewDummySource(fmt.Sprintf("%s; ()", tc.code))
-			l := syntax.NewLexer(s)
-			go l.Lex()
-			ast, err := syntax.Parse(l.Tokens)
+			ast, err := syntax.Parse(s)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -424,9 +422,7 @@ func TestSemanticError(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.what, func(t *testing.T) {
 			s := locerr.NewDummySource(fmt.Sprintf("%s; ()", tc.code))
-			l := syntax.NewLexer(s)
-			go l.Lex()
-			ast, err := syntax.Parse(l.Tokens)
+			ast, err := syntax.Parse(s)
 			if err != nil {
 				t.Fatal(err)
 			}

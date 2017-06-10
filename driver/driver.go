@@ -64,8 +64,7 @@ func (d *Driver) PrintTokens(src *locerr.Source) {
 
 // Parse parses the source and returns the parsed AST.
 func (d *Driver) Parse(src *locerr.Source) (*ast.AST, error) {
-	tokens := d.Lex(src)
-	return syntax.Parse(tokens)
+	return syntax.Parse(src)
 }
 
 // PrintAST outputs AST structure to stdout.

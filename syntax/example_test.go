@@ -50,12 +50,22 @@ func ExampleParse() {
 	lex := NewLexer(src)
 	go lex.Lex()
 
-	// Parse() takes channel of token which is usually given from lexer
+	// ParseTokens() takes channel of token which is usually given from lexer
 	// And returns the root of AST.
-	r, err := Parse(lex.Tokens)
+	tree, err := ParseTokens(lex.Tokens)
 	if err != nil {
 		// When parse failed
 		panic(err)
 	}
-	fmt.Printf("AST: %v\n", r)
+
+	fmt.Printf("AST: %v\n", tree)
+
+	// If you want to parse a source code into AST directly, simply call Parse() function.
+	tree, err = Parse(src)
+	if err != nil {
+		// When lexing or parsing failed
+		panic(err)
+	}
+
+	fmt.Printf("AST: %v\n", tree)
 }

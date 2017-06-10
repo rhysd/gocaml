@@ -18,10 +18,7 @@ func Example() {
 		panic(err)
 	}
 
-	lex := syntax.NewLexer(src)
-	go lex.Lex()
-
-	ast, err := syntax.Parse(lex.Tokens)
+	ast, err := syntax.Parse(src)
 	if err != nil {
 		// When parse failed
 		panic(err)

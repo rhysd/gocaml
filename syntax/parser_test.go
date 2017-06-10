@@ -32,10 +32,7 @@ func TestParseOK(t *testing.T) {
 					panic(err)
 				}
 
-				l := NewLexer(s)
-				go l.Lex()
-
-				root, err := Parse(l.Tokens)
+				root, err := Parse(s)
 				if err != nil {
 					t.Fatalf("Error on parsing %s: %s", f.Name(), err.Error())
 				}
@@ -69,9 +66,7 @@ func TestErrorHeuristic(t *testing.T) {
 		t.Run(tc.what, func(t *testing.T) {
 			for _, code := range tc.codes {
 				s := locerr.NewDummySource(code)
-				l := NewLexer(s)
-				go l.Lex()
-				_, err := Parse(l.Tokens)
+				_, err := Parse(s)
 				if err == nil {
 					t.Fatal("List literal must cause parse error:", code)
 				}
@@ -109,7 +104,7 @@ func TestParseInvalid(t *testing.T) {
 			c <- t
 		}
 	}()
-	r, err := Parse(c)
+	r, err := ParseTokens(c)
 	if err == nil {
 		t.Fatalf("Illegal token must raise an error but got %v", r)
 	}
@@ -137,7 +132,7 @@ func TestTooLargeIntLiteral(t *testing.T) {
 			c <- t
 		}
 	}()
-	r, err := Parse(c)
+	r, err := ParseTokens(c)
 	if err == nil {
 		t.Fatalf("Invalid int literal must raise an error but got %v", r)
 	}
@@ -168,7 +163,7 @@ func TestInvalidStringLiteral(t *testing.T) {
 			c <- t
 		}
 	}()
-	r, err := Parse(c)
+	r, err := ParseTokens(c)
 	if err == nil {
 		t.Fatalf("Invalid string literal must raise an error but got %v", r)
 	}
@@ -196,7 +191,7 @@ func TestTooLargeFloatLiteral(t *testing.T) {
 			c <- t
 		}
 	}()
-	r, err := Parse(c)
+	r, err := ParseTokens(c)
 	if err == nil {
 		t.Fatalf("Invalid int literal must raise an error but got %v", r)
 	}

@@ -14,9 +14,7 @@ import (
 
 func testCreateEmitter(code string, optimize OptLevel, debug bool) (e *Emitter, err error) {
 	s := locerr.NewDummySource(code)
-	l := syntax.NewLexer(s)
-	go l.Lex()
-	ast, err := syntax.Parse(l.Tokens)
+	ast, err := syntax.Parse(s)
 	if err != nil {
 		return
 	}

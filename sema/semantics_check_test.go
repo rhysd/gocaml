@@ -12,9 +12,7 @@ import (
 
 func TestResolvedSymbols(t *testing.T) {
 	s := locerr.NewDummySource("let x = 1 in x + y; ()")
-	l := syntax.NewLexer(s)
-	go l.Lex()
-	ast, err := syntax.Parse(l.Tokens)
+	ast, err := syntax.Parse(s)
 	if err != nil {
 		panic(ast.Root)
 	}
@@ -50,10 +48,7 @@ func TestTypeCheckMinCamlTests(t *testing.T) {
 				panic(err)
 			}
 
-			l := syntax.NewLexer(s)
-			go l.Lex()
-
-			ast, err := syntax.Parse(l.Tokens)
+			ast, err := syntax.Parse(s)
 			if err != nil {
 				panic(ast.Root)
 			}
@@ -68,9 +63,7 @@ func TestTypeCheckMinCamlTests(t *testing.T) {
 
 func TestProgramRootTypeIsUnit(t *testing.T) {
 	s := locerr.NewDummySource("42")
-	l := syntax.NewLexer(s)
-	go l.Lex()
-	ast, err := syntax.Parse(l.Tokens)
+	ast, err := syntax.Parse(s)
 	if err != nil {
 		panic(ast.Root)
 	}
@@ -87,9 +80,7 @@ func TestProgramRootTypeIsUnit(t *testing.T) {
 
 func TestTypeCheckFail(t *testing.T) {
 	s := locerr.NewDummySource("let x = 42 in x +. 3.14")
-	l := syntax.NewLexer(s)
-	go l.Lex()
-	ast, err := syntax.Parse(l.Tokens)
+	ast, err := syntax.Parse(s)
 	if err != nil {
 		panic(ast.Root)
 	}
@@ -102,9 +93,7 @@ func TestTypeCheckFail(t *testing.T) {
 
 func TestDerefNoneTypes(t *testing.T) {
 	s := locerr.NewDummySource("let rec f x = () in f (Some 42); f None; let a = None in f a")
-	l := syntax.NewLexer(s)
-	go l.Lex()
-	ast, err := syntax.Parse(l.Tokens)
+	ast, err := syntax.Parse(s)
 	if err != nil {
 		panic(ast.Root)
 	}
@@ -128,9 +117,7 @@ func TestDerefNoneTypes(t *testing.T) {
 
 func TestDerefEmptyArray(t *testing.T) {
 	s := locerr.NewDummySource("let a = [| |] in println_int a.(0)")
-	l := syntax.NewLexer(s)
-	go l.Lex()
-	ast, err := syntax.Parse(l.Tokens)
+	ast, err := syntax.Parse(s)
 	if err != nil {
 		panic(ast.Root)
 	}

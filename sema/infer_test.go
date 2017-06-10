@@ -22,9 +22,7 @@ func TestEdgeCases(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.what, func(t *testing.T) {
 			s := locerr.NewDummySource(tc.code)
-			l := syntax.NewLexer(s)
-			go l.Lex()
-			ast, err := syntax.Parse(l.Tokens)
+			ast, err := syntax.Parse(s)
 			if err != nil {
 				panic(err)
 			}
@@ -365,9 +363,7 @@ func TestUnificationFailure(t *testing.T) {
 	for _, testcase := range testcases {
 		t.Run(testcase.what, func(t *testing.T) {
 			s := locerr.NewDummySource(testcase.code)
-			l := syntax.NewLexer(s)
-			go l.Lex()
-			ast, err := syntax.Parse(l.Tokens)
+			ast, err := syntax.Parse(s)
 			if err != nil {
 				panic(err)
 			}
@@ -401,9 +397,7 @@ func TestInferSuccess(t *testing.T) {
 			if err != nil {
 				panic(err)
 			}
-			l := syntax.NewLexer(s)
-			go l.Lex()
-			ast, err := syntax.Parse(l.Tokens)
+			ast, err := syntax.Parse(s)
 			if err != nil {
 				t.Fatal(err)
 			}
