@@ -1,12 +1,10 @@
 package codegen
 
 import (
-	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/closure"
-	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/mir"
-	"github.com/rhysd/gocaml/parser"
-	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/gocaml/sema"
+	"github.com/rhysd/gocaml/syntax"
 	"github.com/rhysd/locerr"
 	"os"
 	"path/filepath"
@@ -16,20 +14,11 @@ import (
 
 func testCreateEmitter(code string, optimize OptLevel, debug bool) (e *Emitter, err error) {
 	s := locerr.NewDummySource(code)
-	l := lexer.NewLexer(s)
-	go l.Lex()
-	ast, err := parser.Parse(l.Tokens)
+	ast, err := syntax.Parse(s)
 	if err != nil {
 		return
 	}
-	if err = alpha.Transform(ast.Root); err != nil {
-		return
-	}
-	env, err := typing.TypeCheck(ast)
-	if err != nil {
-		return
-	}
-	ir, err := mir.FromAST(ast.Root, env)
+	env, ir, err := sema.SemanticsCheck(ast)
 	if err != nil {
 		return
 	}

@@ -1,13 +1,10 @@
-package mir
+package sema
 
 import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/rhysd/gocaml/alpha"
-	"github.com/rhysd/gocaml/lexer"
-	"github.com/rhysd/gocaml/parser"
-	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/gocaml/syntax"
 	"github.com/rhysd/locerr"
 	"strings"
 	"testing"
@@ -355,25 +352,23 @@ func TestEmitInsn(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.what, func(t *testing.T) {
 			s := locerr.NewDummySource(fmt.Sprintf("%s; ()", tc.code))
-			l := lexer.NewLexer(s)
-			go l.Lex()
-			ast, err := parser.Parse(l.Tokens)
+			ast, err := syntax.Parse(s)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err = alpha.Transform(ast.Root); err != nil {
+			if err = AlphaTransform(ast.Root); err != nil {
 				t.Fatal(err)
 			}
-			env, err := typing.TypeCheck(ast)
-			if err != nil {
+			inf := NewInferer()
+			if err := inf.Infer(ast); err != nil {
 				t.Fatal(err)
 			}
-			ir, err := FromAST(ast.Root, env)
+			ir, err := ToMIR(ast.Root, inf.Env)
 			if err != nil {
 				t.Fatal(err)
 			}
 			var buf bytes.Buffer
-			ir.Println(&buf, env)
+			ir.Println(&buf, inf.Env)
 			r := bufio.NewReader(&buf)
 			line, _, err := r.ReadLine()
 			if err != nil {
@@ -427,20 +422,18 @@ func TestSemanticError(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.what, func(t *testing.T) {
 			s := locerr.NewDummySource(fmt.Sprintf("%s; ()", tc.code))
-			l := lexer.NewLexer(s)
-			go l.Lex()
-			ast, err := parser.Parse(l.Tokens)
+			ast, err := syntax.Parse(s)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err = alpha.Transform(ast.Root); err != nil {
+			if err = AlphaTransform(ast.Root); err != nil {
 				t.Fatal(err)
 			}
-			env, err := typing.TypeCheck(ast)
-			if err != nil {
+			inf := NewInferer()
+			if err := inf.Infer(ast); err != nil {
 				t.Fatal(err)
 			}
-			_, err = FromAST(ast.Root, env)
+			_, err = ToMIR(ast.Root, inf.Env)
 			if err == nil {
 				t.Fatalf("Expected code '%s' to cause an error '%s' but actually there is no error", tc.code, tc.expected)
 			}

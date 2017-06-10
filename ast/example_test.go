@@ -26,7 +26,7 @@ func Example() {
 		panic(err)
 	}
 
-	// AST which usually comes from parser.Parse() function.
+	// AST which usually comes from syntax.Parse() function.
 	rootOfAST := &Let{
 		LetToken: &token.Token{File: src},
 		Symbol:   NewSymbol("test"),

@@ -1,4 +1,4 @@
-package alpha
+package sema
 
 import (
 	"github.com/rhysd/gocaml/ast"

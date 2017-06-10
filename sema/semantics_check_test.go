@@ -1,9 +1,7 @@
-package typing
+package sema
 
 import (
-	"github.com/rhysd/gocaml/alpha"
-	"github.com/rhysd/gocaml/lexer"
-	"github.com/rhysd/gocaml/parser"
+	"github.com/rhysd/gocaml/syntax"
 	"github.com/rhysd/gocaml/types"
 	"github.com/rhysd/locerr"
 	"io/ioutil"
@@ -14,19 +12,17 @@ import (
 
 func TestResolvedSymbols(t *testing.T) {
 	s := locerr.NewDummySource("let x = 1 in x + y; ()")
-	l := lexer.NewLexer(s)
-	go l.Lex()
-	ast, err := parser.Parse(l.Tokens)
+	ast, err := syntax.Parse(s)
 	if err != nil {
 		panic(ast.Root)
 	}
 
-	env, err := TypeCheck(ast)
+	env, _, err := SemanticsCheck(ast)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := env.Table["x"]; !ok {
-		t.Error("'x' was not resolved as internal symbol:", env.Table)
+	if _, ok := env.Table["x"]; ok {
+		t.Error("'x' was resolved as internal symbol:", env.Table)
 	}
 	if _, ok := env.Externals["y"]; !ok {
 		t.Error("'y' was not resolved as external symbol:", env.Externals)
@@ -52,19 +48,12 @@ func TestTypeCheckMinCamlTests(t *testing.T) {
 				panic(err)
 			}
 
-			l := lexer.NewLexer(s)
-			go l.Lex()
-
-			ast, err := parser.Parse(l.Tokens)
+			ast, err := syntax.Parse(s)
 			if err != nil {
 				panic(ast.Root)
 			}
 
-			if err = alpha.Transform(ast.Root); err != nil {
-				panic(err)
-			}
-
-			_, err = TypeCheck(ast)
+			_, _, err = SemanticsCheck(ast)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -74,14 +63,12 @@ func TestTypeCheckMinCamlTests(t *testing.T) {
 
 func TestProgramRootTypeIsUnit(t *testing.T) {
 	s := locerr.NewDummySource("42")
-	l := lexer.NewLexer(s)
-	go l.Lex()
-	ast, err := parser.Parse(l.Tokens)
+	ast, err := syntax.Parse(s)
 	if err != nil {
 		panic(ast.Root)
 	}
 
-	_, err = TypeCheck(ast)
+	_, _, err = SemanticsCheck(ast)
 	if err == nil {
 		t.Fatalf("Type check must raise an error when root type of program is not ()")
 	}
@@ -93,14 +80,12 @@ func TestProgramRootTypeIsUnit(t *testing.T) {
 
 func TestTypeCheckFail(t *testing.T) {
 	s := locerr.NewDummySource("let x = 42 in x +. 3.14")
-	l := lexer.NewLexer(s)
-	go l.Lex()
-	ast, err := parser.Parse(l.Tokens)
+	ast, err := syntax.Parse(s)
 	if err != nil {
 		panic(ast.Root)
 	}
 
-	_, err = TypeCheck(ast)
+	_, _, err = SemanticsCheck(ast)
 	if err == nil {
 		t.Fatalf("Type check must raise a type error")
 	}
@@ -108,14 +93,12 @@ func TestTypeCheckFail(t *testing.T) {
 
 func TestDerefNoneTypes(t *testing.T) {
 	s := locerr.NewDummySource("let rec f x = () in f (Some 42); f None; let a = None in f a")
-	l := lexer.NewLexer(s)
-	go l.Lex()
-	ast, err := parser.Parse(l.Tokens)
+	ast, err := syntax.Parse(s)
 	if err != nil {
 		panic(ast.Root)
 	}
 
-	env, err := TypeCheck(ast)
+	env, _, err := SemanticsCheck(ast)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,14 +117,12 @@ func TestDerefNoneTypes(t *testing.T) {
 
 func TestDerefEmptyArray(t *testing.T) {
 	s := locerr.NewDummySource("let a = [| |] in println_int a.(0)")
-	l := lexer.NewLexer(s)
-	go l.Lex()
-	ast, err := parser.Parse(l.Tokens)
+	ast, err := syntax.Parse(s)
 	if err != nil {
 		panic(ast.Root)
 	}
 
-	env, err := TypeCheck(ast)
+	env, _, err := SemanticsCheck(ast)
 	if err != nil {
 		t.Fatal(err)
 	}

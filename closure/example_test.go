@@ -1,11 +1,9 @@
 package closure
 
 import (
-	"github.com/rhysd/gocaml/alpha"
-	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/mir"
-	"github.com/rhysd/gocaml/parser"
-	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/gocaml/sema"
+	"github.com/rhysd/gocaml/syntax"
 	"github.com/rhysd/locerr"
 	"os"
 	"path/filepath"
@@ -19,33 +17,20 @@ func Example() {
 		panic(err)
 	}
 
-	lex := lexer.NewLexer(src)
-	go lex.Lex()
-
-	ast, err := parser.Parse(lex.Tokens)
+	ast, err := syntax.Parse(src)
 	if err != nil {
 		// When parse failed
 		panic(err)
 	}
 
-	// Run alpha transform against the root of AST
-	if err = alpha.Transform(ast.Root); err != nil {
-		// When some some duplicates found
-		panic(err)
-	}
-
-	// Type analysis
-	env, err := typing.TypeCheck(ast)
+	// Resolving symbols, type analysis and converting AST into MIR instruction block
+	env, block, err := sema.SemanticsCheck(ast)
 	if err != nil {
 		// Type error detected
 		panic(err)
 	}
 
-	// Convert AST into MIR instruction block
-	block, err := mir.FromAST(ast.Root, env)
-	if err != nil {
-		panic(err)
-	}
+	// Eliminate redundant refs
 	mir.ElimRefs(block, env)
 
 	// Closure transform.

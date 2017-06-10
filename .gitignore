@@ -1,7 +1,7 @@
 /gocaml
 /y.output
 /cover.out
-/parser/grammar.go
+/syntax/grammar.go
 /runtime/gocamlrt.o
 /runtime/gocamlrt.a
 /cpu.prof

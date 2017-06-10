@@ -1,5 +1,5 @@
-// Package parser provides a parsing function for GoCaml.
-package parser
+// Package syntax provides lexing and parsing from GoCaml source code into abstract syntax tree.
+package syntax
 
 import (
 	"github.com/rhysd/gocaml/ast"
@@ -58,9 +58,30 @@ func (l *pseudoLexer) Error(msg string) {
 	}
 }
 
-// Parse parses given tokens and returns parsed AST.
+func Parse(src *locerr.Source) (*ast.AST, error) {
+	var lexErr *locerr.Error
+	l := NewLexer(src)
+	l.Error = func(msg string, pos locerr.Pos) {
+		if lexErr == nil {
+			lexErr = locerr.ErrorAt(pos, msg)
+		} else {
+			lexErr = lexErr.NoteAt(pos, msg)
+		}
+	}
+	go l.Lex()
+	parsed, err := ParseTokens(l.Tokens)
+	if lexErr != nil {
+		return nil, lexErr.Note("Lexing source into tokens failed")
+	}
+	if err != nil {
+		return nil, err
+	}
+	return parsed, nil
+}
+
+// ParseTokens parses given tokens and returns parsed AST.
 // Tokens are passed via channel.
-func Parse(tokens chan token.Token) (*ast.AST, error) {
+func ParseTokens(tokens chan token.Token) (*ast.AST, error) {
 	yyErrorVerbose = true
 
 	l := &pseudoLexer{tokens: tokens}

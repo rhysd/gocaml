@@ -1,10 +1,8 @@
-package mir
+package sema
 
 import (
-	"github.com/rhysd/gocaml/alpha"
-	"github.com/rhysd/gocaml/lexer"
-	"github.com/rhysd/gocaml/parser"
-	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/gocaml/mir"
+	"github.com/rhysd/gocaml/syntax"
 	"github.com/rhysd/locerr"
 	"os"
 	"path/filepath"
@@ -18,43 +16,26 @@ func Example() {
 		panic(err)
 	}
 
-	lex := lexer.NewLexer(src)
-	go lex.Lex()
-
-	ast, err := parser.Parse(lex.Tokens)
+	ast, err := syntax.Parse(src)
 	if err != nil {
 		// When parse failed
 		panic(err)
 	}
 
-	// Run alpha transform against the root of AST
-	if err = alpha.Transform(ast.Root); err != nil {
-		// When some some duplicates found
-		panic(err)
-	}
-
-	// Type analysis
-	env, err := typing.TypeCheck(ast)
+	// Resolve symbols by alpha transform.
+	// Then apply type inference. After this, all symbols in AST should have exact types. It also checks
+	// types are valid and all types are determined by inference. It returns a type environment object
+	// and converted MIR as the result.
+	env, ir, err := SemanticsCheck(ast)
 	if err != nil {
 		// Type error detected
 		panic(err)
 	}
 
-	// Convert AST into MIR instruction block
-	// Returned block represents the root block of program
-	block, err := FromAST(ast.Root, env)
-	if err != nil {
-		panic(err)
-	}
+	// You can dump the type table
+	env.Dump()
 
-	// Instructions are represented as list of instructions.
-	// Block has pointers to access to the head and tail of the list.
-	//
-	_ = block.Top
-	_ = block.Bottom
-
-	// For debug purpose, .Println() method can output instruction sequences
-	block.Println(os.Stdout, env)
+	ir.Println(os.Stdout, env)
 	// Output:
 	// ack$t1 = recfun x$t2,y$t3 ; type=(int, int) -> int
 	//   BEGIN: body (ack$t1)
@@ -95,5 +76,5 @@ func Example() {
 
 	// Optimization for eliminate unnecessary 'ref' instructions and classify
 	// 'app' instruction for external function calls.
-	ElimRefs(block, env)
+	mir.ElimRefs(ir, env)
 }

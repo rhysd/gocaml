@@ -4,16 +4,14 @@ package driver
 
 import (
 	"fmt"
-	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/ast"
 	"github.com/rhysd/gocaml/closure"
 	"github.com/rhysd/gocaml/codegen"
-	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/mir"
-	"github.com/rhysd/gocaml/parser"
+	"github.com/rhysd/gocaml/sema"
+	"github.com/rhysd/gocaml/syntax"
 	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/gocaml/types"
-	"github.com/rhysd/gocaml/typing"
 	"github.com/rhysd/locerr"
 	"io/ioutil"
 	"os"
@@ -39,7 +37,7 @@ type Driver struct {
 
 // PrintTokens returns the lexed tokens for a source code.
 func (d *Driver) Lex(src *locerr.Source) chan token.Token {
-	l := lexer.NewLexer(src)
+	l := syntax.NewLexer(src)
 	l.Error = func(msg string, pos locerr.Pos) {
 		err := locerr.ErrorAt(pos, msg)
 		err.PrintToFile(os.Stderr)
@@ -66,8 +64,7 @@ func (d *Driver) PrintTokens(src *locerr.Source) {
 
 // Parse parses the source and returns the parsed AST.
 func (d *Driver) Parse(src *locerr.Source) (*ast.AST, error) {
-	tokens := d.Lex(src)
-	return parser.Parse(tokens)
+	return syntax.Parse(src)
 }
 
 // PrintAST outputs AST structure to stdout.
@@ -83,27 +80,23 @@ func (d *Driver) PrintAST(src *locerr.Source) {
 // SemanticAnalysis checks types and symbol duplicates.
 // It returns the result of type analysis or an error.
 func (d *Driver) SemanticAnalysis(a *ast.AST) (*types.Env, error) {
-	if err := alpha.Transform(a.Root); err != nil {
+	if err := sema.AlphaTransform(a.Root); err != nil {
 		return nil, err
 	}
-	env, err := typing.TypeCheck(a)
-	if err != nil {
+	inf := sema.NewInferer()
+	if err := inf.Infer(a); err != nil {
 		return nil, err
 	}
-	return env, nil
+	return inf.Env, nil
 }
 
 // EmitMIR emits MIR tree representation.
 func (d *Driver) EmitMIR(src *locerr.Source) (*mir.Program, *types.Env, error) {
-	ast, err := d.Parse(src)
+	parsed, err := d.Parse(src)
 	if err != nil {
 		return nil, nil, err
 	}
-	env, err := d.SemanticAnalysis(ast)
-	if err != nil {
-		return nil, nil, err
-	}
-	ir, err := mir.FromAST(ast.Root, env)
+	env, ir, err := sema.SemanticsCheck(parsed)
 	if err != nil {
 		return nil, nil, err
 	}

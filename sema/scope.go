@@ -1,26 +1,26 @@
-package alpha
+package sema
 
 import (
 	"github.com/rhysd/gocaml/ast"
 )
 
-type mapping struct {
-	parent *mapping
+type scope struct {
+	parent *scope
 	vars   map[string]*ast.Symbol
 }
 
-func newMapping(parent *mapping) *mapping {
-	return &mapping{
+func newMapping(parent *scope) *scope {
+	return &scope{
 		parent,
 		map[string]*ast.Symbol{},
 	}
 }
 
-func (m *mapping) add(from string, to *ast.Symbol) {
+func (m *scope) add(from string, to *ast.Symbol) {
 	m.vars[from] = to
 }
 
-func (m *mapping) resolve(name string) (*ast.Symbol, bool) {
+func (m *scope) resolve(name string) (*ast.Symbol, bool) {
 	if mapped, ok := m.vars[name]; ok {
 		return mapped, true
 	}
