@@ -1,6 +1,7 @@
 package sema
 
 import (
+	"fmt"
 	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/syntax"
 	"github.com/rhysd/locerr"
@@ -8,7 +9,46 @@ import (
 	"path/filepath"
 )
 
-func Example() {
+func ExampleInferer_Infer() {
+	// Type check example
+
+	// Analyzing target
+	src, err := locerr.NewSourceFromFile(filepath.FromSlash("../testdata/from-mincaml/ack.ml"))
+	if err != nil {
+		// File not found
+		panic(err)
+	}
+
+	parsed, err := syntax.Parse(src)
+	if err != nil {
+		// When parse failed
+		fmt.Fprintln(os.Stderr, err)
+		return
+	}
+
+	// First, resolve all symbols by alpha transform
+	if err := AlphaTransform(parsed.Root); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return
+	}
+
+	// Second, run unification on all nodes and dereference type variables
+
+	// Make a visitor to do type inferernce
+	inferer := NewInferer()
+
+	// Do type inference. It returns error if type mismatch was detected.
+	if err := inferer.Infer(parsed); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return
+	}
+
+	// No error found!
+	fmt.Println("OK")
+	// Output: OK
+}
+
+func ExampleSemanticCheck() {
 	file := filepath.FromSlash("../testdata/from-mincaml/ack.ml")
 	src, err := locerr.NewSourceFromFile(file)
 	if err != nil {

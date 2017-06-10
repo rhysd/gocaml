@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-func ExampleLex() {
+func ExampleLexer_Lex() {
 	file := filepath.FromSlash("../testdata/from-mincaml/ack.ml")
 	src, err := locerr.NewSourceFromFile(file)
 	if err != nil {

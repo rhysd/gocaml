@@ -1,4 +1,5 @@
-// Package sema provides type inference and type check for GoCaml.
+// Package sema provides resolving symbols, type inference and type check for GoCaml.
+// Semantic check finally converts given AST into MIR (Mid-level IR).
 // This package only provides type operations. To know data structures of types, please see
 // https://godoc.org/github.com/rhysd/gocaml/types
 package sema
