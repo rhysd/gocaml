@@ -1,5 +1,4 @@
-// Package lexer provides an instance for lexing GoCaml codes.
-package lexer
+package syntax
 
 import (
 	"bytes"

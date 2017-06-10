@@ -1,10 +1,9 @@
 package closure
 
 import (
-	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/mir"
-	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/sema"
+	"github.com/rhysd/gocaml/syntax"
 	"github.com/rhysd/locerr"
 	"os"
 	"path/filepath"
@@ -18,10 +17,10 @@ func Example() {
 		panic(err)
 	}
 
-	lex := lexer.NewLexer(src)
+	lex := syntax.NewLexer(src)
 	go lex.Lex()
 
-	ast, err := parser.Parse(lex.Tokens)
+	ast, err := syntax.Parse(lex.Tokens)
 	if err != nil {
 		// When parse failed
 		panic(err)

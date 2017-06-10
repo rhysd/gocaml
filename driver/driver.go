@@ -7,10 +7,9 @@ import (
 	"github.com/rhysd/gocaml/ast"
 	"github.com/rhysd/gocaml/closure"
 	"github.com/rhysd/gocaml/codegen"
-	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/mir"
-	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/sema"
+	"github.com/rhysd/gocaml/syntax"
 	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/gocaml/types"
 	"github.com/rhysd/locerr"
@@ -38,7 +37,7 @@ type Driver struct {
 
 // PrintTokens returns the lexed tokens for a source code.
 func (d *Driver) Lex(src *locerr.Source) chan token.Token {
-	l := lexer.NewLexer(src)
+	l := syntax.NewLexer(src)
 	l.Error = func(msg string, pos locerr.Pos) {
 		err := locerr.ErrorAt(pos, msg)
 		err.PrintToFile(os.Stderr)
@@ -66,7 +65,7 @@ func (d *Driver) PrintTokens(src *locerr.Source) {
 // Parse parses the source and returns the parsed AST.
 func (d *Driver) Parse(src *locerr.Source) (*ast.AST, error) {
 	tokens := d.Lex(src)
-	return parser.Parse(tokens)
+	return syntax.Parse(tokens)
 }
 
 // PrintAST outputs AST structure to stdout.

@@ -1,8 +1,7 @@
-package parser
+package syntax
 
 import (
 	"fmt"
-	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/locerr"
 	"io/ioutil"
@@ -33,7 +32,7 @@ func TestParseOK(t *testing.T) {
 					panic(err)
 				}
 
-				l := lexer.NewLexer(s)
+				l := NewLexer(s)
 				go l.Lex()
 
 				root, err := Parse(l.Tokens)
@@ -70,7 +69,7 @@ func TestErrorHeuristic(t *testing.T) {
 		t.Run(tc.what, func(t *testing.T) {
 			for _, code := range tc.codes {
 				s := locerr.NewDummySource(code)
-				l := lexer.NewLexer(s)
+				l := NewLexer(s)
 				go l.Lex()
 				_, err := Parse(l.Tokens)
 				if err == nil {

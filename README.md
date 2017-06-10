@@ -26,8 +26,8 @@ You can see [more examples][examples]. (e.g. [Brainfxxk interpreter][Brainfxxk i
 
 ## Tasks
 
-- [x] Lexer -> ([doc][lexer doc])
-- [x] Parser with [goyacc][] -> ([doc][parser doc])
+- [x] Lexer -> ([doc][syntax doc])
+- [x] Parser with [goyacc][] -> ([doc][syntax doc])
 - [x] Alpha transform ([doc][sema doc])
 - [x] Type inference (Hindley Milner monomorphic type system) -> ([doc][sema doc])
 - [x] mid-level intermediate representation (MIR) ([doc][mir doc])
@@ -876,8 +876,7 @@ $ gcc -m32 -lgc source.o ./runtime/gocamlrt.a
 [LLVM]: http://llvm.org/
 [Linux and macOS Build Status]: https://travis-ci.org/rhysd/gocaml.svg?branch=master
 [Travis CI]: https://travis-ci.org/rhysd/gocaml
-[lexer doc]: https://godoc.org/github.com/rhysd/gocaml/lexer
-[parser doc]: https://godoc.org/github.com/rhysd/gocaml/parser
+[syntax doc]: https://godoc.org/github.com/rhysd/gocaml/syntax
 [sema doc]: https://godoc.org/github.com/rhysd/gocaml/sema
 [mir doc]: https://godoc.org/github.com/rhysd/gocaml/mir
 [closure doc]: https://godoc.org/github.com/rhysd/gocaml/closure

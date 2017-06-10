@@ -4,9 +4,9 @@ SRCS := \
 	ast/printer.go \
 	ast/visitor.go \
 	driver/driver.go \
-	lexer/lexer.go \
-	parser/grammar.go \
-	parser/parser.go \
+	syntax/lexer.go \
+	syntax/grammar.go \
+	syntax/parser.go \
 	token/token.go \
 	types/builtins.go \
 	types/env.go \
@@ -43,10 +43,9 @@ TESTS := \
 	closure/example_test.go \
 	closure/transform_test.go \
 	driver/example_test.go \
-	lexer/example_test.go \
-	lexer/lexer_test.go \
-	parser/example_test.go \
-	parser/parser_test.go \
+	syntax/lexer_test.go \
+	syntax/example_test.go \
+	syntax/parser_test.go \
 	token/token_test.go \
 	types/env_test.go \
 	types/type_test.go \
@@ -76,9 +75,9 @@ gocaml: $(SRCS)
 	go get -t -d ./...
 	if which time > /dev/null; then time go build; else go build; fi
 
-parser/grammar.go: parser/grammar.go.y
+syntax/grammar.go: syntax/grammar.go.y
 	go get golang.org/x/tools/cmd/goyacc
-	goyacc -o parser/grammar.go parser/grammar.go.y
+	goyacc -o syntax/grammar.go syntax/grammar.go.y
 
 runtime/gocamlrt.o: runtime/gocamlrt.c runtime/gocaml.h
 	$(CC) -Wall -Wextra -std=c99 -I/usr/local/include -I./runtime $(CFLAGS) -c runtime/gocamlrt.c -o runtime/gocamlrt.o
@@ -90,7 +89,7 @@ test: $(TESTS)
 
 cover.out: $(TESTS)
 	go get github.com/haya14busa/goverage
-	goverage -coverprofile=cover.out -covermode=count ./alpha ./ast ./mir ./closure ./lexer ./parser ./token ./sema ./codegen ./common
+	goverage -coverprofile=cover.out -covermode=count ./alpha ./ast ./mir ./closure ./syntax ./token ./sema ./codegen ./common
 
 cov: cover.out
 	go get golang.org/x/tools/cmd/cover
@@ -119,6 +118,6 @@ gocaml-darwin-x86_64.zip: gocaml runtime/gocamlrt.a
 release: gocaml-darwin-x86_64.zip
 
 clean:
-	rm -f gocaml y.output parser/grammar.go runtime/gocamlrt.o runtime/gocamlrt.a cover.out cpu.prof codegen.test prof.png gocaml-darwin-x86_64.zip
+	rm -f gocaml y.output syntax/grammar.go runtime/gocamlrt.o runtime/gocamlrt.a cover.out cpu.prof codegen.test prof.png gocaml-darwin-x86_64.zip
 
 .PHONY: all build clean test cov prof release

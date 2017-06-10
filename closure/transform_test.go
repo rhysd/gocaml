@@ -3,10 +3,9 @@ package closure
 import (
 	"bytes"
 	"fmt"
-	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/mir"
-	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/sema"
+	"github.com/rhysd/gocaml/syntax"
 	"github.com/rhysd/locerr"
 	"strings"
 	"testing"
@@ -351,9 +350,9 @@ func TestClosureTransform(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.what, func(t *testing.T) {
 			s := locerr.NewDummySource(fmt.Sprintf("%s; ()", tc.code))
-			l := lexer.NewLexer(s)
+			l := syntax.NewLexer(s)
 			go l.Lex()
-			ast, err := parser.Parse(l.Tokens)
+			ast, err := syntax.Parse(l.Tokens)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -489,9 +488,9 @@ func TestClosureCaptureInInsn(t *testing.T) {
 	}
 
 	s := locerr.NewDummySource(code)
-	l := lexer.NewLexer(s)
+	l := syntax.NewLexer(s)
 	go l.Lex()
-	ast, err := parser.Parse(l.Tokens)
+	ast, err := syntax.Parse(l.Tokens)
 	if err != nil {
 		t.Fatal(err)
 	}

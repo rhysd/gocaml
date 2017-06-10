@@ -1,8 +1,7 @@
 package sema
 
 import (
-	"github.com/rhysd/gocaml/lexer"
-	"github.com/rhysd/gocaml/parser"
+	"github.com/rhysd/gocaml/syntax"
 	"github.com/rhysd/locerr"
 	"path/filepath"
 	"strings"
@@ -23,9 +22,9 @@ func TestEdgeCases(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.what, func(t *testing.T) {
 			s := locerr.NewDummySource(tc.code)
-			l := lexer.NewLexer(s)
+			l := syntax.NewLexer(s)
 			go l.Lex()
-			ast, err := parser.Parse(l.Tokens)
+			ast, err := syntax.Parse(l.Tokens)
 			if err != nil {
 				panic(err)
 			}
@@ -366,9 +365,9 @@ func TestUnificationFailure(t *testing.T) {
 	for _, testcase := range testcases {
 		t.Run(testcase.what, func(t *testing.T) {
 			s := locerr.NewDummySource(testcase.code)
-			l := lexer.NewLexer(s)
+			l := syntax.NewLexer(s)
 			go l.Lex()
-			ast, err := parser.Parse(l.Tokens)
+			ast, err := syntax.Parse(l.Tokens)
 			if err != nil {
 				panic(err)
 			}
@@ -402,9 +401,9 @@ func TestInferSuccess(t *testing.T) {
 			if err != nil {
 				panic(err)
 			}
-			l := lexer.NewLexer(s)
+			l := syntax.NewLexer(s)
 			go l.Lex()
-			ast, err := parser.Parse(l.Tokens)
+			ast, err := syntax.Parse(l.Tokens)
 			if err != nil {
 				t.Fatal(err)
 			}

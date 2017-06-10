@@ -3,10 +3,9 @@ package codegen
 import (
 	"fmt"
 	"github.com/rhysd/gocaml/closure"
-	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/mir"
-	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/sema"
+	"github.com/rhysd/gocaml/syntax"
 	"github.com/rhysd/locerr"
 	"io/ioutil"
 	"os"
@@ -54,10 +53,10 @@ func TestExecutable(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			l := lexer.NewLexer(s)
+			l := syntax.NewLexer(s)
 			go l.Lex()
 
-			ast, err := parser.Parse(l.Tokens)
+			ast, err := syntax.Parse(l.Tokens)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -125,10 +124,10 @@ func BenchmarkExecutableCreation(b *testing.B) {
 	}
 
 	makeEmitter := func(source *locerr.Source) *Emitter {
-		l := lexer.NewLexer(source)
+		l := syntax.NewLexer(source)
 		go l.Lex()
 
-		ast, err := parser.Parse(l.Tokens)
+		ast, err := syntax.Parse(l.Tokens)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -187,10 +186,10 @@ func TestExamples(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			l := lexer.NewLexer(s)
+			l := syntax.NewLexer(s)
 			go l.Lex()
 
-			ast, err := parser.Parse(l.Tokens)
+			ast, err := syntax.Parse(l.Tokens)
 			if err != nil {
 				t.Fatal(err)
 			}

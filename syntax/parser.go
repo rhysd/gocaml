@@ -1,5 +1,5 @@
-// Package parser provides a parsing function for GoCaml.
-package parser
+// Package syntax provides lexing and parsing from GoCaml source code into abstract syntax tree.
+package syntax
 
 import (
 	"github.com/rhysd/gocaml/ast"
