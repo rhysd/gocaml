@@ -40,8 +40,8 @@ func (set nameSet) toSortedArray() []string {
 type transformWithKFO struct {
 	knownFuns            nameSet
 	replacedFuns         map[*mir.Insn]*mir.MakeCls // nil means simply removing the function
-	closures             mir.Closures                // Mapping function name to free variables
-	closureBlockFreeVars map[string]nameSet           // Known free variables of closures' blocks
+	closures             mir.Closures               // Mapping function name to free variables
+	closureBlockFreeVars map[string]nameSet         // Known free variables of closures' blocks
 }
 
 func (trans *transformWithKFO) duplicate() *transformWithKFO {
@@ -123,7 +123,7 @@ func (trans *transformWithKFO) insn(insn *mir.Insn) {
 		}
 		trans.closureBlockFreeVars[insn.Ident] = fv
 
-		var replaced *mir.MakeCls = nil
+		var replaced *mir.MakeCls
 		if _, ok := fv[insn.Ident]; ok {
 			vars, ok := trans.closures[insn.Ident]
 			if !ok {
@@ -147,7 +147,7 @@ func (trans *transformWithKFO) insn(insn *mir.Insn) {
 	}
 }
 
-// Executes closure transform.
+// Transform executes closure transform.
 // The result is a representation of the program. It contains toplevel functions,
 // entry point and closure information.
 // All nested function was moved to toplevel.

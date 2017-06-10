@@ -25,26 +25,28 @@ func init() {
 type OptLevel int
 
 const (
-	// Equivalent to -O0
+	// OptimizeNone is equivalent to -O0
 	OptimizeNone OptLevel = iota
-	// Equivalent to -O1
+	// OptimizeLess is equivalent to -O1
 	OptimizeLess
-	// Equivalent to -O2
+	// OptimizeDefault is equivalent to -O2
 	OptimizeDefault
-	// Equivalent to -O3
+	// OptimizeAggressive is equivalent to -O3
 	OptimizeAggressive
 )
 
-// Options to customize emitter behavior
+// EmitOptions represents emitter options to customize emitter behavior
 type EmitOptions struct {
-	// Determines how many optimizations are added
+	// Optimization determines how many optimizations are added
 	Optimization OptLevel
-	// Target triple "{arch}-{vendor}-{sys}". Empty string means a default target on your machine.
+	// Triple represents target triple "{arch}-{vendor}-{sys}". Empty string means a default target
+	// on your machine.
 	// https://clang.llvm.org/docs/CrossCompilation.html#target-triple
 	Triple string
 	// Additional linker flags used at linking generated object files
 	LinkerFlags string
-	// Generate debug information or not. If true, debug information will be added and you can debug the generated executable with debugger like an LLDB.
+	// DebugInfo determines to generate debug information or not. If true, debug information will
+	// be added and you can debug the generated executable with debugger like an LLDB.
 	DebugInfo bool
 }
 
@@ -59,7 +61,7 @@ type Emitter struct {
 	Disposed bool
 }
 
-// Finalization for internal module and target machine.
+// Dispose does finalization for internal module and target machine.
 // You need to call this with defer statement.
 func (emitter *Emitter) Dispose() {
 	if emitter.Disposed {
@@ -70,7 +72,7 @@ func (emitter *Emitter) Dispose() {
 	emitter.Disposed = true
 }
 
-// Passes optimizations on generated LLVM IR module following specified optimization level.
+// RunOptimizationPasses passes optimizations on generated LLVM IR module following specified optimization level.
 func (emitter *Emitter) RunOptimizationPasses() {
 	if emitter.Optimization == OptimizeNone {
 		return
@@ -107,12 +109,12 @@ func (emitter *Emitter) RunOptimizationPasses() {
 	modPasses.Run(emitter.Module)
 }
 
-// Returns LLVM IR as string.
+// EmitLLVMIR returns LLVM IR as string.
 func (emitter *Emitter) EmitLLVMIR() string {
 	return emitter.Module.String()
 }
 
-// Returns assembly code as string.
+// EmitAsm returns assembly code as string.
 func (emitter *Emitter) EmitAsm() (string, error) {
 	buf, err := emitter.Machine.EmitToMemoryBuffer(emitter.Module, llvm.AssemblyFile)
 	if err != nil {
@@ -123,7 +125,7 @@ func (emitter *Emitter) EmitAsm() (string, error) {
 	return asm, nil
 }
 
-// Returns object file contents as byte sequence.
+// EmitObject returns object file contents as byte sequence.
 func (emitter *Emitter) EmitObject() ([]byte, error) {
 	buf, err := emitter.Machine.EmitToMemoryBuffer(emitter.Module, llvm.ObjectFile)
 	if err != nil {
@@ -134,7 +136,7 @@ func (emitter *Emitter) EmitObject() ([]byte, error) {
 	return obj, nil
 }
 
-// Create executable file with specified name. This is the final result of compilation!
+// EmitExecutable creates executable file with specified name. This is the final result of compilation!
 func (emitter *Emitter) EmitExecutable(executable string) (err error) {
 	objfile := fmt.Sprintf("%s.tmp.o", executable)
 	obj, err := emitter.EmitObject()
@@ -151,7 +153,7 @@ func (emitter *Emitter) EmitExecutable(executable string) (err error) {
 	return
 }
 
-// Creates new emitter object.
+// NewEmitter creates new emitter object.
 func NewEmitter(prog *mir.Program, env *types.Env, src *locerr.Source, opts EmitOptions) (*Emitter, error) {
 	builder, err := newModuleBuilder(env, src, opts)
 	if err != nil {

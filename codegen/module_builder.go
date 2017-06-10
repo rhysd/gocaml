@@ -94,7 +94,7 @@ func newModuleBuilder(env *types.Env, file *locerr.Source, opts EmitOptions) (*m
 
 	typeBuilder := newTypeBuilder(ctx, targetData.IntPtrType(), env)
 
-	var debug *debugInfoBuilder = nil
+	var debug *debugInfoBuilder
 	if opts.DebugInfo {
 		debug, err = newDebugInfoBuilder(module, file, typeBuilder, targetData, opts.Optimization != OptimizeNone)
 		if err != nil {

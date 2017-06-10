@@ -398,7 +398,7 @@ func (e *emitter) emitBlock(name string, node ast.Expr) (*mir.Block, types.Type)
 	return mir.NewBlock(name, firstInsn, lastInsn), e.typeOf(lastInsn)
 }
 
-// Convert given AST into MIR with type environment
+// ToMIR converts given AST into MIR with type environment
 func ToMIR(root ast.Expr, env *types.Env) (*mir.Block, error) {
 	e := &emitter{0, env, nil}
 	b, _ := e.emitBlock("program", root)

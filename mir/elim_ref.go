@@ -54,8 +54,8 @@ func (elim *elimRef) insn(insn *Insn) {
 	case *Unary:
 		val.Child = elim.elimRef(val.Child)
 	case *Binary:
-		val.Lhs = elim.elimRef(val.Lhs)
-		val.Rhs = elim.elimRef(val.Rhs)
+		val.LHS = elim.elimRef(val.LHS)
+		val.RHS = elim.elimRef(val.RHS)
 	case *If:
 		val.Cond = elim.elimRef(val.Cond)
 		elim.block(val.Then)
@@ -87,7 +87,7 @@ func (elim *elimRef) insn(insn *Insn) {
 	case *ArrStore:
 		val.To = elim.elimRef(val.To)
 		val.Index = elim.elimRef(val.Index)
-		val.Rhs = elim.elimRef(val.Rhs)
+		val.RHS = elim.elimRef(val.RHS)
 	case *ArrLen:
 		val.Array = elim.elimRef(val.Array)
 	case *Some:

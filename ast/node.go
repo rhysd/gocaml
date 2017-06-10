@@ -703,9 +703,8 @@ func (e *CtorType) Name() string {
 	len := len(e.ParamTypes)
 	if len == 0 {
 		return fmt.Sprintf("CtorType (%s)", e.Ctor)
-	} else {
-		return fmt.Sprintf("CtorType (%s (%d))", e.Ctor, len)
 	}
+	return fmt.Sprintf("CtorType (%s (%d))", e.Ctor, len)
 }
 func (e *Typed) Name() string    { return "Typed" }
 func (e *TypeDecl) Name() string { return fmt.Sprintf("TypeDecl (%s)", e.Ident) }

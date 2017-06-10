@@ -48,7 +48,7 @@ func ExampleInferer_Infer() {
 	// Output: OK
 }
 
-func ExampleSemanticCheck() {
+func ExampleSemanticsCheck() {
 	file := filepath.FromSlash("../testdata/from-mincaml/ack.ml")
 	src, err := locerr.NewSourceFromFile(file)
 	if err != nil {

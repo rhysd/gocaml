@@ -439,14 +439,14 @@ func (inf *Inferer) infer(e ast.Expr) (Type, error) {
 }
 
 // Infer infers types in given AST and returns error when detecting type errors
-func (inferer *Inferer) Infer(parsed *ast.AST) error {
+func (inf *Inferer) Infer(parsed *ast.AST) error {
 	var err error
-	inferer.conv, err = newNodeTypeConv(parsed.TypeDecls)
+	inf.conv, err = newNodeTypeConv(parsed.TypeDecls)
 	if err != nil {
 		return err
 	}
 
-	root, err := inferer.infer(parsed.Root)
+	root, err := inf.infer(parsed.Root)
 	if err != nil {
 		return err
 	}
@@ -458,5 +458,5 @@ func (inferer *Inferer) Infer(parsed *ast.AST) error {
 	// While dereferencing type variables in table, we can detect type variables
 	// which does not have exact type and raise an error for that.
 	// External variables must be well-typed also.
-	return derefTypeVars(inferer.Env, parsed.Root)
+	return derefTypeVars(inf.Env, parsed.Root)
 }

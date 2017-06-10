@@ -154,7 +154,7 @@ func (b *blockBuilder) buildEq(ty types.Type, bin *mir.Binary, lhs, rhs llvm.Val
 }
 
 func (b *blockBuilder) buildLess(val *mir.Binary, lhs, rhs llvm.Value) llvm.Value {
-	lty := b.typeOf(val.Lhs)
+	lty := b.typeOf(val.LHS)
 	ipred, fpred, name := getOpCmpPredicate(val.Op)
 	switch lty.(type) {
 	case *types.Int:
@@ -298,8 +298,8 @@ func (b *blockBuilder) buildVal(ident string, val mir.Val) llvm.Value {
 			panic("unreachable")
 		}
 	case *mir.Binary:
-		lhs := b.resolve(val.Lhs)
-		rhs := b.resolve(val.Rhs)
+		lhs := b.resolve(val.LHS)
+		rhs := b.resolve(val.RHS)
 		switch val.Op {
 		case mir.ADD:
 			return b.builder.CreateAdd(lhs, rhs, "add")
@@ -322,7 +322,7 @@ func (b *blockBuilder) buildVal(ident string, val mir.Val) llvm.Value {
 		case mir.LT, mir.LTE, mir.GT, mir.GTE:
 			return b.buildLess(val, lhs, rhs)
 		case mir.EQ, mir.NEQ:
-			return b.buildEq(b.typeOf(val.Lhs), val, lhs, rhs)
+			return b.buildEq(b.typeOf(val.LHS), val, lhs, rhs)
 		case mir.AND:
 			return b.builder.CreateAnd(lhs, rhs, "andl")
 		case mir.OR:
@@ -506,7 +506,7 @@ func (b *blockBuilder) buildVal(ident string, val mir.Val) llvm.Value {
 	case *mir.ArrStore:
 		toVal := b.resolve(val.To)
 		idxVal := b.resolve(val.Index)
-		rhsVal := b.resolve(val.Rhs)
+		rhsVal := b.resolve(val.RHS)
 		arrPtr := b.builder.CreateExtractValue(toVal, 0, "")
 		elemPtr := b.builder.CreateInBoundsGEP(arrPtr, []llvm.Value{idxVal}, "")
 		b.builder.CreateStore(rhsVal, elemPtr)

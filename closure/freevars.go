@@ -38,8 +38,8 @@ func (fvg *freeVarsGatherer) exploreInsn(insn *mir.Insn) {
 	case *mir.Unary:
 		fvg.add(val.Child)
 	case *mir.Binary:
-		fvg.add(val.Lhs)
-		fvg.add(val.Rhs)
+		fvg.add(val.LHS)
+		fvg.add(val.RHS)
 	case *mir.Ref:
 		fvg.add(val.Ident)
 	case *mir.If:
@@ -78,7 +78,7 @@ func (fvg *freeVarsGatherer) exploreInsn(insn *mir.Insn) {
 	case *mir.ArrStore:
 		fvg.add(val.To)
 		fvg.add(val.Index)
-		fvg.add(val.Rhs)
+		fvg.add(val.RHS)
 	case *mir.ArrLen:
 		fvg.add(val.Array)
 	case *mir.Some:

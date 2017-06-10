@@ -96,7 +96,7 @@ type (
 	}
 	Binary struct {
 		Op       OperatorKind
-		Lhs, Rhs string
+		LHS, RHS string
 	}
 	Ref struct {
 		Ident string
@@ -133,7 +133,7 @@ type (
 		From, Index string
 	}
 	ArrStore struct {
-		To, Index, Rhs string
+		To, Index, RHS string
 	}
 	ArrLen struct {
 		Array string
@@ -186,7 +186,7 @@ func (v *Unary) Print(out io.Writer) {
 	fmt.Fprintf(out, "unary %s %s", OpTable[v.Op], v.Child)
 }
 func (v *Binary) Print(out io.Writer) {
-	fmt.Fprintf(out, "binary %s %s %s", OpTable[v.Op], v.Lhs, v.Rhs)
+	fmt.Fprintf(out, "binary %s %s %s", OpTable[v.Op], v.LHS, v.RHS)
 }
 func (v *Ref) Print(out io.Writer) {
 	fmt.Fprintf(out, "ref %s", v.Ident)
@@ -220,7 +220,7 @@ func (v *ArrLoad) Print(out io.Writer) {
 	fmt.Fprintf(out, "arrload %s %s", v.Index, v.From)
 }
 func (v *ArrStore) Print(out io.Writer) {
-	fmt.Fprintf(out, "arrstore %s %s %s", v.Index, v.To, v.Rhs)
+	fmt.Fprintf(out, "arrstore %s %s %s", v.Index, v.To, v.RHS)
 }
 func (v *ArrLen) Print(out io.Writer) {
 	fmt.Fprintf(out, "arrlen %s", v.Array)

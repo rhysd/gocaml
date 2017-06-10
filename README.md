@@ -4,11 +4,11 @@ GoCaml :camel:
 [![Windows Build Status][]][Appveyor]
 [![Coverage Status][]][Codecov]
 
-GoCaml is subset of OCaml in Go based on [MinCaml][] using [LLVM][]. MinCaml is a minimal subset of
-OCaml for educational purpose. It is statically-typed and compiled into a binary.
+GoCaml is subset of OCaml in Go based on [MinCaml][] using [LLVM][]. GoCaml adds many features to original MinCaml.
+MinCaml is a minimal subset of OCaml for educational purpose. It is statically-typed and compiled into a binary.
 
-This project aims my practices for understanding type inference, closure transform and introducing
-own intermediate language (IL) to own language.
+This project aims incremental compiler development for my own programming language.
+Type inference, closure transform, mid-level IR are implemented.
 
 [Japanese presentation](https://speakerdeck.com/rhysd/go-detukurufan-yong-yan-yu-chu-li-xi-shi-zhuang-zhan-lue)
 

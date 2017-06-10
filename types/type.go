@@ -52,9 +52,8 @@ type Fun struct {
 func funElemTy(t Type) string {
 	if f, ok := t.(*Fun); ok {
 		return fmt.Sprintf("(%s)", f.String())
-	} else {
-		return t.String()
 	}
+	return t.String()
 }
 
 func (t *Fun) String() string {
@@ -109,8 +108,8 @@ func (t *Var) String() string {
 	return t.Ref.String()
 }
 
+// Make singleton type values because it doesn't have any contextual information
 var (
-	// Make singleton type values because it doesn't have any contextual information
 	UnitType   = &Unit{}
 	BoolType   = &Bool{}
 	IntType    = &Int{}
