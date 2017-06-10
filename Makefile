@@ -89,7 +89,7 @@ test: $(TESTS)
 
 cover.out: $(TESTS)
 	go get github.com/haya14busa/goverage
-	goverage -coverprofile=cover.out -covermode=count ./alpha ./ast ./mir ./closure ./syntax ./token ./sema ./codegen ./common
+	goverage -coverprofile=cover.out -covermode=count ./ast ./mir ./closure ./syntax ./token ./sema ./codegen ./common
 
 cov: cover.out
 	go get golang.org/x/tools/cmd/cover
