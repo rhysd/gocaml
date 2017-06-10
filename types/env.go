@@ -1,4 +1,4 @@
-// Package typing provides type inference logic for GoCaml.
+// Package types provides data structures for types in GoCaml.
 package types
 
 import (

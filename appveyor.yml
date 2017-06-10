@@ -8,15 +8,15 @@ install:
     - echo %GOPATH%
     - go version
     - go env
-    - go get -v -t -d ./alpha ./ast ./closure ./mir ./lexer ./parser ./token ./typing ./common
+    - go get -v -t -d ./alpha ./ast ./closure ./mir ./lexer ./parser ./token ./sema ./common
     - go get golang.org/x/tools/cmd/goyacc
     - go get github.com/haya14busa/goverage
     - set PATH=%PATH%;%GOPATH%\bin
 build: off
 test_script:
     - goyacc -o parser/grammar.go parser/grammar.go.y
-    - go test -v ./alpha ./ast ./closure ./mir ./lexer ./parser ./token ./typing ./common
-    - goverage -coverprofile=coverage.txt -covermode=count ./alpha ./ast ./mir ./closure ./lexer ./parser ./token ./typing ./common
+    - go test -v ./alpha ./ast ./closure ./mir ./lexer ./parser ./token ./sema ./common
+    - goverage -coverprofile=coverage.txt -covermode=count ./alpha ./ast ./mir ./closure ./lexer ./parser ./token ./sema ./common
     - go tool cover -func coverage.txt
 after_test:
     - "SET PATH=C:\\Python34;C:\\Python34\\Scripts;%PATH%"

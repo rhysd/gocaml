@@ -29,7 +29,7 @@ func Example() {
 		panic(err)
 	}
 
-	// Do semantic analysis (type check and inference)
+	// Resolving symbols, type analysis and converting AST into MIR instruction block
 	env, err := d.SemanticAnalysis(ast)
 	if err != nil {
 		panic(err)

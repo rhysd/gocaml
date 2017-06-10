@@ -3,11 +3,10 @@ package closure
 import (
 	"bytes"
 	"fmt"
-	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/parser"
-	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/gocaml/sema"
 	"github.com/rhysd/locerr"
 	"strings"
 	"testing"
@@ -358,10 +357,7 @@ func TestClosureTransform(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err = alpha.Transform(ast.Root); err != nil {
-				t.Fatal(err)
-			}
-			env, ir, err := typing.TypeCheck(ast)
+			env, ir, err := sema.SemanticsCheck(ast)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -499,10 +495,7 @@ func TestClosureCaptureInInsn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err = alpha.Transform(ast.Root); err != nil {
-		t.Fatal(err)
-	}
-	env, ir, err := typing.TypeCheck(ast)
+	env, ir, err := sema.SemanticsCheck(ast)
 	if err != nil {
 		t.Fatal(err)
 	}

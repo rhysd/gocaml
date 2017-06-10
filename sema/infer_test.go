@@ -1,7 +1,6 @@
-package typing
+package sema
 
 import (
-	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/locerr"
@@ -30,7 +29,7 @@ func TestEdgeCases(t *testing.T) {
 			if err != nil {
 				panic(err)
 			}
-			if err = alpha.Transform(ast.Root); err != nil {
+			if err = AlphaTransform(ast.Root); err != nil {
 				panic(err)
 			}
 			i := NewInferer()
@@ -373,7 +372,7 @@ func TestUnificationFailure(t *testing.T) {
 			if err != nil {
 				panic(err)
 			}
-			if err = alpha.Transform(ast.Root); err != nil {
+			if err = AlphaTransform(ast.Root); err != nil {
 				panic(err)
 			}
 			i := NewInferer()
@@ -409,7 +408,7 @@ func TestInferSuccess(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err = alpha.Transform(ast.Root); err != nil {
+			if err = AlphaTransform(ast.Root); err != nil {
 				t.Fatal(err)
 			}
 			i := NewInferer()

@@ -1,7 +1,7 @@
-// Package typing provides type inference and type check for GoCaml.
+// Package sema provides type inference and type check for GoCaml.
 // This package only provides type operations. To know data structures of types, please see
 // https://godoc.org/github.com/rhysd/gocaml/types
-package typing
+package sema
 
 import (
 	"github.com/rhysd/gocaml/ast"
@@ -10,10 +10,15 @@ import (
 	"github.com/rhysd/locerr"
 )
 
-// TypeCheck applies type inference, checks semantics of types and finally converts AST into MIR
+// SemanticsCheck applies type inference, checks semantics of types and finally converts AST into MIR
 // with inferred type information.
-func TypeCheck(parsed *ast.AST) (*types.Env, *mir.Block, error) {
-	// First, run unification on all nodes and dereference type variables
+func SemanticsCheck(parsed *ast.AST) (*types.Env, *mir.Block, error) {
+	// First, resolve all symbols by alpha transform
+	if err := AlphaTransform(parsed.Root); err != nil {
+		return nil, nil, locerr.NoteAt(parsed.Root.Pos(), err, "Alpha transform failed")
+	}
+
+	// Second, run unification on all nodes and dereference type variables
 	inferer := NewInferer()
 	if err := inferer.Infer(parsed); err != nil {
 		return nil, nil, locerr.NoteAt(parsed.Root.Pos(), err, "Type inference failed")
@@ -22,7 +27,7 @@ func TypeCheck(parsed *ast.AST) (*types.Env, *mir.Block, error) {
 	// TODO:
 	// Type dereference should be done with generating MIR
 
-	// Second, convert AST into MIR
+	// Third, convert AST into MIR
 	block, err := ToMIR(parsed.Root, inferer.Env)
 	if err != nil {
 		return nil, nil, locerr.NoteAt(parsed.Root.Pos(), err, "AST to MIR conversion failed")

@@ -3,7 +3,7 @@ def run_test(file)
   sources = Dir["./#{dir}/*.go"].reject{|p| p.end_with? '_test.go'}.join(' ')
   if file.end_with? 'node_to_type_test.go'
     # XXX
-    sources += " ./typing/deref_test.go"
+    sources += " ./sema/deref_test.go"
   end
   result = `go test -v ./#{file} #{sources}`
   puts_out result

@@ -1,5 +1,4 @@
-// Package alpha provides alpha transformation for parsed GoCaml AST.
-package alpha
+package sema
 
 import (
 	"fmt"
@@ -30,7 +29,7 @@ func duplicateSymbol(symbols []*ast.Symbol) *ast.Symbol {
 }
 
 type transformer struct {
-	current *mapping
+	current *scope
 	count   uint
 	err     error
 }
@@ -135,10 +134,10 @@ func (t *transformer) Visit(node ast.Expr) ast.Visitor {
 	}
 }
 
-// Transform adds identical names to all identifiers in AST nodes.
+// AlphaTransform adds identical names to all identifiers in AST nodes.
 // If there are some duplicate names, it causes an error.
 // External symbols are named the same as display names.
-func Transform(root ast.Expr) error {
+func AlphaTransform(root ast.Expr) error {
 	v := newTransformer()
 	ast.Visit(v, root)
 	return v.err

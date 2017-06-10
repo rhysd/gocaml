@@ -1,10 +1,9 @@
-package typing
+package sema
 
 import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/locerr"
@@ -360,7 +359,7 @@ func TestEmitInsn(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err = alpha.Transform(ast.Root); err != nil {
+			if err = AlphaTransform(ast.Root); err != nil {
 				t.Fatal(err)
 			}
 			inf := NewInferer()
@@ -432,7 +431,7 @@ func TestSemanticError(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err = alpha.Transform(ast.Root); err != nil {
+			if err = AlphaTransform(ast.Root); err != nil {
 				t.Fatal(err)
 			}
 			inf := NewInferer()

@@ -2,12 +2,11 @@ package codegen
 
 import (
 	"fmt"
-	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/closure"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/parser"
-	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/gocaml/sema"
 	"github.com/rhysd/locerr"
 	"io/ioutil"
 	"os"
@@ -63,11 +62,7 @@ func TestExecutable(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if err = alpha.Transform(ast.Root); err != nil {
-				t.Fatal(err)
-			}
-
-			env, ir, err := typing.TypeCheck(ast)
+			env, ir, err := sema.SemanticsCheck(ast)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -138,11 +133,7 @@ func BenchmarkExecutableCreation(b *testing.B) {
 			b.Fatal(err)
 		}
 
-		if err = alpha.Transform(ast.Root); err != nil {
-			b.Fatal(err)
-		}
-
-		env, ir, err := typing.TypeCheck(ast)
+		env, ir, err := sema.SemanticsCheck(ast)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -204,11 +195,7 @@ func TestExamples(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if err = alpha.Transform(ast.Root); err != nil {
-				t.Fatal(err)
-			}
-
-			env, ir, err := typing.TypeCheck(ast)
+			env, ir, err := sema.SemanticsCheck(ast)
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -5,9 +5,6 @@ import (
 	"strings"
 )
 
-// I want to move this file to ../typing but it's not possible
-// because this file has a cross reference to ast.go
-
 type Type interface {
 	String() string
 }

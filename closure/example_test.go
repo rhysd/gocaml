@@ -1,11 +1,10 @@
 package closure
 
 import (
-	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/parser"
-	"github.com/rhysd/gocaml/typing"
+	"github.com/rhysd/gocaml/sema"
 	"github.com/rhysd/locerr"
 	"os"
 	"path/filepath"
@@ -28,14 +27,8 @@ func Example() {
 		panic(err)
 	}
 
-	// Run alpha transform against the root of AST
-	if err = alpha.Transform(ast.Root); err != nil {
-		// When some some duplicates found
-		panic(err)
-	}
-
-	// Type analysis and convert AST into MIR instruction block
-	env, block, err := typing.TypeCheck(ast)
+	// Resolving symbols, type analysis and converting AST into MIR instruction block
+	env, block, err := sema.SemanticsCheck(ast)
 	if err != nil {
 		// Type error detected
 		panic(err)

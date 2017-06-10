@@ -1,7 +1,6 @@
-package typing
+package sema
 
 import (
-	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/parser"
 	"github.com/rhysd/gocaml/types"
@@ -21,12 +20,12 @@ func TestResolvedSymbols(t *testing.T) {
 		panic(ast.Root)
 	}
 
-	env, _, err := TypeCheck(ast)
+	env, _, err := SemanticsCheck(ast)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := env.Table["x"]; !ok {
-		t.Error("'x' was not resolved as internal symbol:", env.Table)
+	if _, ok := env.Table["x"]; ok {
+		t.Error("'x' was resolved as internal symbol:", env.Table)
 	}
 	if _, ok := env.Externals["y"]; !ok {
 		t.Error("'y' was not resolved as external symbol:", env.Externals)
@@ -60,11 +59,7 @@ func TestTypeCheckMinCamlTests(t *testing.T) {
 				panic(ast.Root)
 			}
 
-			if err = alpha.Transform(ast.Root); err != nil {
-				panic(err)
-			}
-
-			_, _, err = TypeCheck(ast)
+			_, _, err = SemanticsCheck(ast)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -81,7 +76,7 @@ func TestProgramRootTypeIsUnit(t *testing.T) {
 		panic(ast.Root)
 	}
 
-	_, _, err = TypeCheck(ast)
+	_, _, err = SemanticsCheck(ast)
 	if err == nil {
 		t.Fatalf("Type check must raise an error when root type of program is not ()")
 	}
@@ -100,7 +95,7 @@ func TestTypeCheckFail(t *testing.T) {
 		panic(ast.Root)
 	}
 
-	_, _, err = TypeCheck(ast)
+	_, _, err = SemanticsCheck(ast)
 	if err == nil {
 		t.Fatalf("Type check must raise a type error")
 	}
@@ -115,7 +110,7 @@ func TestDerefNoneTypes(t *testing.T) {
 		panic(ast.Root)
 	}
 
-	env, _, err := TypeCheck(ast)
+	env, _, err := SemanticsCheck(ast)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,7 +136,7 @@ func TestDerefEmptyArray(t *testing.T) {
 		panic(ast.Root)
 	}
 
-	env, _, err := TypeCheck(ast)
+	env, _, err := SemanticsCheck(ast)
 	if err != nil {
 		t.Fatal(err)
 	}

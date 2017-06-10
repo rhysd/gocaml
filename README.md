@@ -28,8 +28,8 @@ You can see [more examples][examples]. (e.g. [Brainfxxk interpreter][Brainfxxk i
 
 - [x] Lexer -> ([doc][lexer doc])
 - [x] Parser with [goyacc][] -> ([doc][parser doc])
-- [x] Alpha transform ([doc][alpha transform doc])
-- [x] Type inference (Hindley Milner monomorphic type system) -> ([doc][typing doc])
+- [x] Alpha transform ([doc][sema doc])
+- [x] Type inference (Hindley Milner monomorphic type system) -> ([doc][sema doc])
 - [x] mid-level intermediate representation (MIR) ([doc][mir doc])
 - [x] K normalization from AST into MIR ([doc][mir doc])
 - [x] Closure transform ([doc][closure doc])
@@ -878,8 +878,7 @@ $ gcc -m32 -lgc source.o ./runtime/gocamlrt.a
 [Travis CI]: https://travis-ci.org/rhysd/gocaml
 [lexer doc]: https://godoc.org/github.com/rhysd/gocaml/lexer
 [parser doc]: https://godoc.org/github.com/rhysd/gocaml/parser
-[typing doc]: https://godoc.org/github.com/rhysd/gocaml/typing
-[alpha transform doc]: https://godoc.org/github.com/rhysd/gocaml/alpha
+[sema doc]: https://godoc.org/github.com/rhysd/gocaml/sema
 [mir doc]: https://godoc.org/github.com/rhysd/gocaml/mir
 [closure doc]: https://godoc.org/github.com/rhysd/gocaml/closure
 [codegen doc]: https://godoc.org/github.com/rhysd/gocaml/codegen

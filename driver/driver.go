@@ -4,16 +4,15 @@ package driver
 
 import (
 	"fmt"
-	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/ast"
 	"github.com/rhysd/gocaml/closure"
 	"github.com/rhysd/gocaml/codegen"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/parser"
+	"github.com/rhysd/gocaml/sema"
 	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/gocaml/types"
-	"github.com/rhysd/gocaml/typing"
 	"github.com/rhysd/locerr"
 	"io/ioutil"
 	"os"
@@ -83,10 +82,10 @@ func (d *Driver) PrintAST(src *locerr.Source) {
 // SemanticAnalysis checks types and symbol duplicates.
 // It returns the result of type analysis or an error.
 func (d *Driver) SemanticAnalysis(a *ast.AST) (*types.Env, error) {
-	if err := alpha.Transform(a.Root); err != nil {
+	if err := sema.AlphaTransform(a.Root); err != nil {
 		return nil, err
 	}
-	inf := typing.NewInferer()
+	inf := sema.NewInferer()
 	if err := inf.Infer(a); err != nil {
 		return nil, err
 	}
@@ -99,10 +98,7 @@ func (d *Driver) EmitMIR(src *locerr.Source) (*mir.Program, *types.Env, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := alpha.Transform(parsed.Root); err != nil {
-		return nil, nil, err
-	}
-	env, ir, err := typing.TypeCheck(parsed)
+	env, ir, err := sema.SemanticsCheck(parsed)
 	if err != nil {
 		return nil, nil, err
 	}

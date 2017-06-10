@@ -1,7 +1,6 @@
-package typing
+package sema
 
 import (
-	"github.com/rhysd/gocaml/alpha"
 	"github.com/rhysd/gocaml/lexer"
 	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/parser"
@@ -27,15 +26,11 @@ func Example() {
 		panic(err)
 	}
 
-	if err = alpha.Transform(ast.Root); err != nil {
-		// When some some duplicates found
-		panic(err)
-	}
-
-	// Apply type inference. After this, all symbols in AST should have exact types. It also checks
+	// Resolve symbols by alpha transform.
+	// Then apply type inference. After this, all symbols in AST should have exact types. It also checks
 	// types are valid and all types are determined by inference. It returns a type environment object
 	// and converted MIR as the result.
-	env, ir, err := TypeCheck(ast)
+	env, ir, err := SemanticsCheck(ast)
 	if err != nil {
 		// Type error detected
 		panic(err)

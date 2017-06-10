@@ -1,4 +1,4 @@
-package typing
+package sema
 
 import (
 	"github.com/rhysd/gocaml/ast"

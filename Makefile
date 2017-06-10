@@ -11,14 +11,14 @@ SRCS := \
 	types/builtins.go \
 	types/env.go \
 	types/type.go \
-	typing/unify.go \
-	typing/deref.go \
-	typing/infer.go \
-	typing/node_to_type.go \
-	typing/type_check.go \
-	typing/to_mir.go \
-	alpha/transform.go \
-	alpha/mapping.go \
+	sema/unify.go \
+	sema/deref.go \
+	sema/infer.go \
+	sema/node_to_type.go \
+	sema/semantics_check.go \
+	sema/to_mir.go \
+	sema/alpha_transform.go \
+	sema/scope.go \
 	mir/val.go \
 	mir/block.go \
 	mir/printer.go \
@@ -37,9 +37,6 @@ SRCS := \
 	common/ordinal.go \
 
 TESTS := \
-	alpha/example_test.go \
-	alpha/mapping_test.go \
-	alpha/transform_test.go \
 	ast/example_test.go \
 	ast/visitor_test.go \
 	ast/printer_test.go \
@@ -53,12 +50,14 @@ TESTS := \
 	token/token_test.go \
 	types/env_test.go \
 	types/type_test.go \
-	typing/example_test.go \
-	typing/infer_test.go \
-	typing/deref_test.go \
-	typing/node_to_type_test.go \
-	typing/to_mir_test.go \
-	typing/type_check_test.go \
+	sema/example_test.go \
+	sema/infer_test.go \
+	sema/deref_test.go \
+	sema/node_to_type_test.go \
+	sema/to_mir_test.go \
+	sema/semantics_check_test.go \
+	sema/scope_test.go \
+	sema/alpha_transform_test.go \
 	mir/block_test.go \
 	mir/elim_ref_test.go \
 	mir/program_test.go \
@@ -91,7 +90,7 @@ test: $(TESTS)
 
 cover.out: $(TESTS)
 	go get github.com/haya14busa/goverage
-	goverage -coverprofile=cover.out -covermode=count ./alpha ./ast ./mir ./closure ./lexer ./parser ./token ./typing ./codegen ./common
+	goverage -coverprofile=cover.out -covermode=count ./alpha ./ast ./mir ./closure ./lexer ./parser ./token ./sema ./codegen ./common
 
 cov: cover.out
 	go get golang.org/x/tools/cmd/cover
