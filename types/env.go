@@ -26,6 +26,7 @@ type Env struct {
 	Externals map[string]Type
 	// Need to remember inferred types of some nodes because some nodes' types can be determined
 	// only by top-down type inference. Currently ast.None and ast.ArrayLit are applicable.
+	// TODO: This should be removed.
 	TypeHints map[ast.Expr]Type
 }
 

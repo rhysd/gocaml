@@ -65,8 +65,17 @@ func unwrap(target Type) (Type, bool) {
 }
 
 type typeVarDereferencer struct {
-	err *locerr.Error
-	env *Env
+	err       *locerr.Error
+	env       *Env
+	exprTypes exprTypes
+}
+
+func (d *typeVarDereferencer) errIn(node ast.Expr, msg string) {
+	if d.err == nil {
+		d.err = locerr.ErrorIn(node.Pos(), node.End(), msg)
+	} else {
+		d.err = d.err.NoteAt(node.Pos(), msg)
+	}
 }
 
 func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
@@ -85,18 +94,12 @@ func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
 	}
 
 	if !ok {
-		panic(fmt.Sprintf("FATAL: Cannot dereference unknown symbol '%s'", sym.Name))
-		return
+		panic("FATAL: Cannot dereference unknown symbol: " + sym.Name)
 	}
 
 	t, ok := unwrap(symType)
 	if !ok {
-		msg := fmt.Sprintf("Cannot infer type of variable '%s'. Inferred type was '%s'", sym.DisplayName, symType.String())
-		if d.err == nil {
-			d.err = locerr.ErrorIn(node.Pos(), node.End(), msg)
-		} else {
-			d.err = d.err.NoteAt(node.Pos(), msg)
-		}
+		d.errIn(node, fmt.Sprintf("Cannot infer type of variable '%s'. Inferred type was '%s'", sym.DisplayName, symType.String()))
 		return
 	}
 
@@ -177,7 +180,7 @@ func (d *typeVarDereferencer) Visit(node ast.Expr) ast.Visitor {
 		// Note:
 		// Need to dereference parameters at first because type of the function depends on type
 		// of its parameters and parameters may be specified as '_'.
-		// '_' is unused. So its type may not be detemined and need to be fixed as unit type.
+		// '_' is unused. So its type may not be determined and need to be fixed as unit type.
 		for _, p := range n.Func.Params {
 			d.derefSym(n, p.Ident)
 		}
@@ -189,11 +192,22 @@ func (d *typeVarDereferencer) Visit(node ast.Expr) ast.Visitor {
 	case *ast.Match:
 		d.derefSym(n, n.SomeIdent)
 	}
+
+	// Dereference node's type
+	if t, ok := d.exprTypes[node]; ok {
+		unwrapped, ok := unwrap(t)
+		if !ok {
+			d.errIn(node, fmt.Sprintf("Cannot infer type of expression. Type annotation is needed. Inferred type was '%s'", t.String()))
+			return nil
+		}
+		d.exprTypes[node] = unwrapped
+	}
+
 	return d
 }
 
-func derefTypeVars(env *Env, root ast.Expr) error {
-	v := &typeVarDereferencer{nil, env}
+func derefTypeVars(env *Env, root ast.Expr, exprTypes exprTypes) error {
+	v := &typeVarDereferencer{nil, env, exprTypes}
 	for n, t := range env.Externals {
 		env.Externals[n] = v.derefExternalSym(n, t)
 	}

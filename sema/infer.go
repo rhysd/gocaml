@@ -8,15 +8,18 @@ import (
 	"github.com/rhysd/locerr"
 )
 
+type exprTypes map[ast.Expr]Type
+
 // Inferer is a visitor to infer types in the AST
 type Inferer struct {
-	Env  *Env
-	conv *nodeTypeConv
+	Env       *Env
+	conv      *nodeTypeConv
+	exprTypes exprTypes
 }
 
 // NewInferer creates a new Inferer instance
 func NewInferer() *Inferer {
-	return &Inferer{NewEnv(), nil}
+	return &Inferer{NewEnv(), nil, map[ast.Expr]Type{}}
 }
 
 func (inf *Inferer) checkNodeType(where string, node ast.Expr, expected Type) error {
@@ -77,7 +80,7 @@ func (inf *Inferer) inferLogicalOp(op string, left, right ast.Expr) (Type, error
 	return BoolType, nil
 }
 
-func (inf *Inferer) infer(e ast.Expr) (Type, error) {
+func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 	switch n := e.(type) {
 	case *ast.Unit:
 		return UnitType, nil
@@ -438,6 +441,15 @@ func (inf *Inferer) infer(e ast.Expr) (Type, error) {
 	}
 }
 
+func (inf *Inferer) infer(e ast.Expr) (Type, error) {
+	t, err := inf.unification(e)
+	if err != nil {
+		return nil, err
+	}
+	inf.exprTypes[e] = t
+	return t, nil
+}
+
 // Infer infers types in given AST and returns error when detecting type errors
 func (inf *Inferer) Infer(parsed *ast.AST) error {
 	var err error
@@ -458,5 +470,5 @@ func (inf *Inferer) Infer(parsed *ast.AST) error {
 	// While dereferencing type variables in table, we can detect type variables
 	// which does not have exact type and raise an error for that.
 	// External variables must be well-typed also.
-	return derefTypeVars(inf.Env, parsed.Root)
+	return derefTypeVars(inf.Env, parsed.Root, inf.exprTypes)
 }

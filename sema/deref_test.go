@@ -67,7 +67,7 @@ func TestDerefFailure(t *testing.T) {
 	tok := &token.Token{token.ILLEGAL, pos, pos, s}
 	env := NewEnv()
 	env.Table["hello"] = &Var{}
-	v := &typeVarDereferencer{nil, env}
+	v := &typeVarDereferencer{nil, env, map[ast.Expr]Type{}}
 	root := &ast.Let{
 		tok,
 		ast.NewSymbol("hello"),
@@ -105,7 +105,7 @@ func TestUnwrapEmptyTypeVar(t *testing.T) {
 }
 
 func TestUnwrapExternalSimpleTypes(t *testing.T) {
-	v := &typeVarDereferencer{nil, NewEnv()}
+	v := &typeVarDereferencer{nil, NewEnv(), map[ast.Expr]Type{}}
 	for _, ty := range []Type{
 		UnitType,
 		IntType,
@@ -136,7 +136,7 @@ func TestUnwrapExternalSimpleTypes(t *testing.T) {
 }
 
 func TestUnwrapTypeVarsInExternals(t *testing.T) {
-	v := &typeVarDereferencer{nil, NewEnv()}
+	v := &typeVarDereferencer{nil, NewEnv(), map[ast.Expr]Type{}}
 	for _, tc := range []struct {
 		input    Type
 		expected Type
@@ -158,7 +158,7 @@ func TestUnwrapTypeVarsInExternals(t *testing.T) {
 }
 
 func TestRaiseErrorOnUnknownTypeInExternals(t *testing.T) {
-	v := &typeVarDereferencer{nil, NewEnv()}
+	v := &typeVarDereferencer{nil, NewEnv(), map[ast.Expr]Type{}}
 	for _, ty := range []Type{
 		&Var{},
 		&Var{&Var{}},
@@ -177,7 +177,7 @@ func TestRaiseErrorOnUnknownTypeInExternals(t *testing.T) {
 }
 
 func TestFixReturnTypeOfExternalFunction(t *testing.T) {
-	v := &typeVarDereferencer{nil, NewEnv()}
+	v := &typeVarDereferencer{nil, NewEnv(), map[ast.Expr]Type{}}
 	for _, ty := range []Type{
 		&Fun{&Var{}, []Type{}},
 		&Fun{&Var{&Var{}}, []Type{IntType}},
