@@ -320,7 +320,7 @@ func (e *emitter) emitInsn(node ast.Expr) *mir.Insn {
 		val = &mir.ArrLit{elems}
 	case *ast.LetTuple:
 		return e.emitLetTupleInsn(n)
-	case *ast.ArrayCreate:
+	case *ast.ArrayMake:
 		size := e.emitInsn(n.Size)
 		elem := e.emitInsn(n.Elem)
 		elem.Append(size)

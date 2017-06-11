@@ -66,7 +66,7 @@ func TestPrintAST(t *testing.T) {
 							},
 						},
 					},
-					&ArrayCreate{
+					&ArrayMake{
 						tok,
 						&Int{tok, 42},
 						&Typed{
@@ -82,7 +82,7 @@ func TestPrintAST(t *testing.T) {
 				},
 				&FMul{
 					&Get{
-						&ArrayCreate{
+						&ArrayMake{
 							tok,
 							&Int{tok, 42},
 							&Bool{tok, false},

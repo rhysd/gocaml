@@ -247,7 +247,7 @@ type (
 		Type        Expr // Maybe nil
 	}
 
-	ArrayCreate struct {
+	ArrayMake struct {
 		ArrayToken *token.Token
 		Size, Elem Expr
 	}
@@ -544,10 +544,10 @@ func (e *LetTuple) End() locerr.Pos {
 	return e.Body.End()
 }
 
-func (e *ArrayCreate) Pos() locerr.Pos {
+func (e *ArrayMake) Pos() locerr.Pos {
 	return e.ArrayToken.Start
 }
-func (e *ArrayCreate) End() locerr.Pos {
+func (e *ArrayMake) End() locerr.Pos {
 	return e.Elem.End()
 }
 
@@ -689,16 +689,16 @@ func (e *LetTuple) Name() string {
 	}
 	return fmt.Sprintf("LetTuple (%s)", vars)
 }
-func (e *ArrayCreate) Name() string { return "ArrayCreate" }
-func (e *ArraySize) Name() string   { return "ArraySize" }
-func (e *Get) Name() string         { return "Get" }
-func (e *Put) Name() string         { return "Put" }
-func (e *Match) Name() string       { return fmt.Sprintf("Match (%s)", e.SomeIdent.DisplayName) }
-func (e *Some) Name() string        { return "Some" }
-func (e *None) Name() string        { return "None" }
-func (e *ArrayLit) Name() string    { return fmt.Sprintf("ArrayLit (%d)", len(e.Elems)) }
-func (e *FuncType) Name() string    { return "FuncType" }
-func (e *TupleType) Name() string   { return fmt.Sprintf("TupleType (%d)", len(e.ElemTypes)) }
+func (e *ArrayMake) Name() string { return "ArrayCreate" }
+func (e *ArraySize) Name() string { return "ArraySize" }
+func (e *Get) Name() string       { return "Get" }
+func (e *Put) Name() string       { return "Put" }
+func (e *Match) Name() string     { return fmt.Sprintf("Match (%s)", e.SomeIdent.DisplayName) }
+func (e *Some) Name() string      { return "Some" }
+func (e *None) Name() string      { return "None" }
+func (e *ArrayLit) Name() string  { return fmt.Sprintf("ArrayLit (%d)", len(e.Elems)) }
+func (e *FuncType) Name() string  { return "FuncType" }
+func (e *TupleType) Name() string { return fmt.Sprintf("TupleType (%d)", len(e.ElemTypes)) }
 func (e *CtorType) Name() string {
 	len := len(e.ParamTypes)
 	if len == 0 {

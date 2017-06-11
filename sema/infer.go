@@ -317,7 +317,7 @@ func (inf *Inferer) infer(e ast.Expr) (Type, error) {
 		}
 
 		return inf.infer(n.Body)
-	case *ast.ArrayCreate:
+	case *ast.ArrayMake:
 		if err := inf.checkNodeType("size at array creation", n.Size, IntType); err != nil {
 			return nil, err
 		}

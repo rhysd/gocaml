@@ -108,7 +108,7 @@ func Visit(v Visitor, e Expr) {
 		}
 		Visit(v, n.Bound)
 		Visit(v, n.Body)
-	case *ArrayCreate:
+	case *ArrayMake:
 		Visit(v, n.Size)
 		Visit(v, n.Elem)
 	case *ArraySize:

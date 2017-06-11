@@ -228,7 +228,7 @@ exp:
 		{ $$ = &ast.Put{$1, $4, $7} }
 	| ARRAY_MAKE simple_exp simple_exp
 		%prec prec_app
-		{ $$ = &ast.ArrayCreate{$1, $2, $3} }
+		{ $$ = &ast.ArrayMake{$1, $2, $3} }
 	| ARRAY_LENGTH simple_exp
 		%prec prec_app
 		{ $$ = &ast.ArraySize{$1, $2} }
