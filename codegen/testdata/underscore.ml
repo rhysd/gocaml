@@ -6,5 +6,9 @@ let rec f _ = b in
 println_int (f ());
 let t = 1, "aaa", true in
 let (_, s, _) = t in
-print_str s
+println_str s;
+let rec f _ = 42 in
+println_int (f true);
+let f = fun _ -> true in
+print_bool (f 3.14)
 

@@ -76,7 +76,7 @@ func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
 		// Parser expands `foo; bar` to `let $unused = foo in bar`. In this situation, type of the
 		// variable will never be determined because it's unused.
 		// So skipping it in order to avoid unknown type error for the unused variable.
-		if v, ok := symType.(*Var); ok {
+		if v, ok := symType.(*Var); ok && v.Ref == nil {
 			// $unused variables are never be used. So its type may not be determined. In the case,
 			// it's type should be fixed to unit type.
 			v.Ref = UnitType
