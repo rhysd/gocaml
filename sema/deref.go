@@ -195,19 +195,73 @@ func (d *typeVarDereferencer) VisitTopdown(node ast.Expr) ast.Visitor {
 	return d
 }
 
+func (d *typeVarDereferencer) checkLess(op string, lhs ast.Expr) string {
+	operand, ok := d.exprTypes[lhs]
+	if !ok {
+		panic("FATAL: Operand type of operator '" + op + "' not found at " + lhs.Pos().String())
+	}
+	// Note:
+	// This type constraint may be useful for type inference. But current HM type inference algorithm cannot
+	// handle a union type. In this context, the operand should be `int | float`
+	switch operand.(type) {
+	case *Unit, *Bool, *String, *Fun, *Tuple, *Array, *Option:
+		return fmt.Sprintf("'%s' can't be compared with operator '%s'", operand.String(), op)
+	default:
+		return ""
+	}
+}
+
+func (d *typeVarDereferencer) checkEq(op string, lhs ast.Expr) string {
+	operand, ok := d.exprTypes[lhs]
+	if !ok {
+		panic("FATAL: Operand type of operator '" + op + "' not found at " + lhs.Pos().String())
+	}
+	// Note:
+	// This type constraint may be useful for type inference. But current HM type inference algorithm cannot
+	// handle a union type. In this context, the operand should be `() | bool | int | float | fun<R, TS...> | tuple<Args...>`
+	if a, ok := operand.(*Array); ok {
+		return fmt.Sprintf("Array type '%s' can't be compared with operator '%s'", a.String(), op)
+	}
+	return ""
+}
+
+func (d *typeVarDereferencer) miscCheck(node ast.Expr) {
+	msg := ""
+	switch n := node.(type) {
+	case *ast.Less:
+		msg = d.checkLess("<", n.Left)
+	case *ast.LessEq:
+		msg = d.checkLess("<=", n.Left)
+	case *ast.Greater:
+		msg = d.checkLess(">", n.Left)
+	case *ast.GreaterEq:
+		msg = d.checkLess(">=", n.Left)
+	case *ast.Eq:
+		msg = d.checkEq("=", n.Left)
+	case *ast.NotEq:
+		msg = d.checkEq("<>", n.Left)
+	}
+	if msg != "" {
+		d.errIn(node, msg)
+	}
+}
+
 func (d *typeVarDereferencer) VisitBottomup(node ast.Expr) {
+	d.miscCheck(node)
+
 	// Dereference all nodes' types
 	t, ok := d.exprTypes[node]
 	if !ok {
 		return
 	}
+
 	unwrapped, ok := unwrap(t)
 	if !ok {
 		d.errIn(node, fmt.Sprintf("Cannot infer type of expression. Type annotation is needed. Inferred type was '%s'", t.String()))
 		return
 	}
+
 	d.exprTypes[node] = unwrapped
-	// TODO: Misc check
 }
 
 func derefTypeVars(env *Env, root ast.Expr, exprTypes exprTypes) error {
@@ -219,14 +273,6 @@ func derefTypeVars(env *Env, root ast.Expr, exprTypes exprTypes) error {
 
 	if v.err != nil {
 		return v.err
-	}
-
-	for n, t := range env.TypeHints {
-		d, ok := unwrap(t)
-		if !ok {
-			panic("Cannot dereference type hint " + t.String() + " at " + n.Pos().String())
-		}
-		env.TypeHints[n] = d
 	}
 
 	return nil

@@ -2,7 +2,6 @@ package sema
 
 import (
 	"github.com/rhysd/gocaml/syntax"
-	"github.com/rhysd/gocaml/types"
 	"github.com/rhysd/locerr"
 	"io/ioutil"
 	"path/filepath"
@@ -88,53 +87,5 @@ func TestTypeCheckFail(t *testing.T) {
 	_, _, err = SemanticsCheck(ast)
 	if err == nil {
 		t.Fatalf("Type check must raise a type error")
-	}
-}
-
-func TestDerefNoneTypes(t *testing.T) {
-	s := locerr.NewDummySource("let rec f x = () in f (Some 42); f None; let a = None in f a")
-	ast, err := syntax.Parse(s)
-	if err != nil {
-		panic(ast.Root)
-	}
-
-	env, _, err := SemanticsCheck(ast)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(env.TypeHints) != 2 {
-		t.Fatal("None type values were not detected")
-	}
-
-	for _, h := range env.TypeHints {
-		v, ok := h.(*types.Option).Elem.(*types.Var)
-		if ok {
-			t.Errorf("Element type of 'None' value was not dereferenced: %s", v.String())
-		}
-	}
-}
-
-func TestDerefEmptyArray(t *testing.T) {
-	s := locerr.NewDummySource("let a = [| |] in println_int a.(0)")
-	ast, err := syntax.Parse(s)
-	if err != nil {
-		panic(ast.Root)
-	}
-
-	env, _, err := SemanticsCheck(ast)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(env.TypeHints) != 1 {
-		t.Fatal("Empty array value was not detected")
-	}
-
-	for _, h := range env.TypeHints {
-		v, ok := h.(*types.Array).Elem.(*types.Var)
-		if ok {
-			t.Errorf("Element type of 'None' value was not dereferenced: %s", v.String())
-		}
 	}
 }

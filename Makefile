@@ -19,7 +19,6 @@ SRCS := \
 	sema/to_mir.go \
 	sema/alpha_transform.go \
 	sema/scope.go \
-	sema/misc_type_check.go \
 	mir/val.go \
 	mir/block.go \
 	mir/printer.go \

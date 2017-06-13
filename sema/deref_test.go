@@ -1,7 +1,9 @@
 package sema
 
 import (
+	"fmt"
 	"github.com/rhysd/gocaml/ast"
+	"github.com/rhysd/gocaml/syntax"
 	"github.com/rhysd/gocaml/token"
 	. "github.com/rhysd/gocaml/types"
 	"github.com/rhysd/locerr"
@@ -192,5 +194,59 @@ func TestFixReturnTypeOfExternalFunction(t *testing.T) {
 		if _, ok := f.Ret.(*Unit); !ok {
 			t.Errorf("Return type must be fixed to unit but actually %s", f.Ret.String())
 		}
+	}
+}
+
+func TestMiscCheckError(t *testing.T) {
+	cases := []struct {
+		what     string
+		code     string
+		expected string
+	}{
+		{
+			what:     "unit is invalid for operator '<'",
+			code:     "() < ()",
+			expected: "'unit' can't be compared with operator '<'",
+		},
+		{
+			what:     "tuple is invalid for operator '<'",
+			code:     "let t = (1, 2) in t < t",
+			expected: "'int * int' can't be compared with operator '<'",
+		},
+		{
+			what:     "option is invalid for operator '<'",
+			code:     "let a = Some 3 in a < None",
+			expected: "'int option' can't be compared with operator '<'",
+		},
+		{
+			what:     "array is invalid for operator '='",
+			code:     "let a = Array.make  3 3 in a = a",
+			expected: "'int array' can't be compared with operator '='",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.what, func(t *testing.T) {
+			s := locerr.NewDummySource(fmt.Sprintf("%s; ()", tc.code))
+			parsed, err := syntax.Parse(s)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err = AlphaTransform(parsed.Root); err != nil {
+				t.Fatal(err)
+			}
+
+			inf := NewInferer()
+
+			// inf.Infer() invokes type dereferences
+			err = inf.Infer(parsed)
+
+			if err == nil {
+				t.Fatalf("Expected code '%s' to cause an error '%s' but actually there is no error", tc.code, tc.expected)
+			}
+			if !strings.Contains(err.Error(), tc.expected) {
+				t.Fatalf("Error message '%s' does not contain '%s'", err.Error(), tc.expected)
+			}
+		})
 	}
 }

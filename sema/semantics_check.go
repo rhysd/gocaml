@@ -29,7 +29,7 @@ func SemanticsCheck(parsed *ast.AST) (*types.Env, *mir.Block, error) {
 	// Type dereference should be done with generating MIR
 
 	// Third, convert AST into MIR
-	block, err := ToMIR(parsed.Root, inferer.Env)
+	block, err := ToMIR(parsed.Root, inferer.Env, inferer.exprTypes)
 	if err != nil {
 		return nil, nil, locerr.NoteAt(parsed.Root.Pos(), err, "AST to MIR conversion failed")
 	}

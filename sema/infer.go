@@ -369,11 +369,7 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 	case *ast.ArrayLit:
 		if len(n.Elems) == 0 {
 			// Array is empty. Cannot infer type of elements.
-			t := &Array{&Var{}}
-			// Type of empty ast.ArrayLit can only be determined top-down direction
-			// type inference.
-			inf.Env.TypeHints[n] = t
-			return t, nil
+			return &Array{&Var{}}, nil
 		}
 		elem, err := inf.infer(n.Elems[0])
 		if err != nil {
@@ -396,10 +392,7 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 		}
 		return &Option{elem}, nil
 	case *ast.None:
-		t := &Option{&Var{}}
-		// Type of ast.None can only be determined top-down direction type inference.
-		inf.Env.TypeHints[n] = t
-		return t, nil
+		return &Option{&Var{}}, nil
 	case *ast.Match:
 		elem := &Var{}
 		matched := &Option{elem}
