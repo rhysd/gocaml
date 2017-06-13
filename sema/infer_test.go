@@ -358,6 +358,21 @@ func TestUnificationFailure(t *testing.T) {
 			code:     "let a = [| 1; 2 + true |] in a",
 			expected: "2nd element type of array literal is incorrect",
 		},
+		{
+			what:     "option's element type is unknown",
+			code:     "None; ()",
+			expected: "Cannot infer type of expression",
+		},
+		{
+			what:     "array's element type is unknown",
+			code:     "[| |]; ()",
+			expected: "Cannot infer type of expression",
+		},
+		{
+			what:     "root expression must be unit",
+			code:     "42",
+			expected: "Type of root expression of program must be unit",
+		},
 	}
 
 	for _, testcase := range testcases {
@@ -371,14 +386,7 @@ func TestUnificationFailure(t *testing.T) {
 				panic(err)
 			}
 			i := NewInferer()
-			i.conv, err = newNodeTypeConv(ast.TypeDecls)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = i.infer(ast.Root)
-			if err == nil {
-				t.Fatalf("Type check did not raise an error for code '%s'", testcase.code)
-			}
+			err = i.Infer(ast)
 			if !strings.Contains(err.Error(), testcase.expected) {
 				t.Fatalf("Expected error message '%s' to contain '%s'", err.Error(), testcase.expected)
 			}

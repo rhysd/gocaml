@@ -60,32 +60,24 @@ func TestTypeCheckMinCamlTests(t *testing.T) {
 	}
 }
 
-func TestProgramRootTypeIsUnit(t *testing.T) {
-	s := locerr.NewDummySource("42")
-	ast, err := syntax.Parse(s)
-	if err != nil {
-		panic(ast.Root)
+func TestSemanticsCheckFail(t *testing.T) {
+	cases := map[string]string{
+		"alpha transform":         "let rec f a a = a in f 42 42; ()",
+		"type mismatch":           "3.14 + 10",
+		"invalid root expression": "42",
+		"dereference failure":     "None",
 	}
-
-	_, _, err = SemanticsCheck(ast)
-	if err == nil {
-		t.Fatalf("Type check must raise an error when root type of program is not ()")
-	}
-	msg := err.Error()
-	if !strings.Contains(msg, "Type of root expression of program must be unit") {
-		t.Fatalf("Expected error for root type of program but actually '%s'", msg)
-	}
-}
-
-func TestTypeCheckFail(t *testing.T) {
-	s := locerr.NewDummySource("let x = 42 in x +. 3.14")
-	ast, err := syntax.Parse(s)
-	if err != nil {
-		panic(ast.Root)
-	}
-
-	_, _, err = SemanticsCheck(ast)
-	if err == nil {
-		t.Fatalf("Type check must raise a type error")
+	for what, code := range cases {
+		t.Run(what, func(t *testing.T) {
+			s := locerr.NewDummySource(code)
+			parsed, err := syntax.Parse(s)
+			if err != nil {
+				panic(err)
+			}
+			_, _, err = SemanticsCheck(parsed)
+			if err == nil {
+				t.Fatal("Semantics should fail with:", code)
+			}
+		})
 	}
 }

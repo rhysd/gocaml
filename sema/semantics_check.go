@@ -25,14 +25,8 @@ func SemanticsCheck(parsed *ast.AST) (*types.Env, *mir.Block, error) {
 		return nil, nil, locerr.NoteAt(parsed.Root.Pos(), err, "Type inference failed")
 	}
 
-	// TODO:
-	// Type dereference should be done with generating MIR
-
 	// Third, convert AST into MIR
-	block, err := ToMIR(parsed.Root, inferer.Env, inferer.inferred)
-	if err != nil {
-		return nil, nil, locerr.NoteAt(parsed.Root.Pos(), err, "AST to MIR conversion failed")
-	}
+	block := ToMIR(parsed.Root, inferer.Env, inferer.inferred)
 
 	return inferer.Env, block, nil
 }

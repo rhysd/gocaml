@@ -5,7 +5,6 @@ import (
 	"github.com/rhysd/gocaml/ast"
 	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/types"
-	"github.com/rhysd/locerr"
 )
 
 // Convert AST into MIR with K-Normalization
@@ -14,7 +13,6 @@ type emitter struct {
 	count    uint
 	env      *types.Env
 	inferred exprTypes
-	err      *locerr.Error
 }
 
 func (e *emitter) genID() string {
@@ -320,11 +318,7 @@ func (e *emitter) emitBlock(name string, node ast.Expr) *mir.Block {
 }
 
 // ToMIR converts given AST into MIR with type environment
-func ToMIR(root ast.Expr, env *types.Env, inferred exprTypes) (*mir.Block, error) {
-	e := &emitter{0, env, inferred, nil}
-	b := e.emitBlock("program", root)
-	if e.err != nil {
-		return nil, e.err.Note("Semantics error while MIR generation")
-	}
-	return b, nil
+func ToMIR(root ast.Expr, env *types.Env, inferred exprTypes) *mir.Block {
+	e := &emitter{0, env, inferred}
+	return e.emitBlock("program", root)
 }

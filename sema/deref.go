@@ -271,9 +271,10 @@ func derefTypeVars(env *Env, root ast.Expr, inferred exprTypes) error {
 	}
 	ast.Visit(v, root)
 
+	// Note:
+	// Cannot return v.err directly because `return v.err` returns typed nil (typed as *locerr.Error).
 	if v.err != nil {
 		return v.err
 	}
-
 	return nil
 }
