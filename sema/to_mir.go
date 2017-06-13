@@ -28,11 +28,17 @@ func (e *emitter) typeOf(node ast.Expr) types.Type {
 	return t
 }
 
-func (e *emitter) emitBinaryInsn(op mir.OperatorKind, lhs ast.Expr, rhs ast.Expr) (mir.Val, *mir.Insn) {
+func (e *emitter) insn(val mir.Val, prev *mir.Insn, node ast.Expr) *mir.Insn {
+	id := e.genID()
+	e.env.Table[id] = e.typeOf(node)
+	return mir.Concat(mir.NewInsn(id, val, node.Pos()), prev)
+}
+
+func (e *emitter) emitBinaryInsn(op mir.OperatorKind, lhs, rhs, node ast.Expr) *mir.Insn {
 	l := e.emitInsn(lhs)
 	r := e.emitInsn(rhs)
 	r.Append(l)
-	return &mir.Binary{op, l.Ident, r.Ident}, r
+	return e.insn(&mir.Binary{op, l.Ident, r.Ident}, r, node)
 }
 
 func (e *emitter) emitLetInsn(node *ast.Let) *mir.Insn {
@@ -88,7 +94,7 @@ func (e *emitter) emitFunInsn(node *ast.LetRec) *mir.Insn {
 	return body
 }
 
-func (e *emitter) emitMatchInsn(node *ast.Match) (mir.Val, *mir.Insn) {
+func (e *emitter) emitMatchInsn(node *ast.Match) *mir.Insn {
 	pos := node.Pos()
 	matched := e.emitInsn(node.Target)
 	id := e.genID()
@@ -108,7 +114,7 @@ func (e *emitter) emitMatchInsn(node *ast.Match) (mir.Val, *mir.Insn) {
 
 	noneBlk := e.emitBlock("else", node.IfNone)
 
-	return &mir.If{cond.Ident, someBlk, noneBlk}, cond
+	return e.insn(&mir.If{cond.Ident, someBlk, noneBlk}, cond, node)
 }
 
 func (e *emitter) emitLetTupleInsn(node *ast.LetTuple) *mir.Insn {
@@ -142,82 +148,77 @@ func (e *emitter) emitLetTupleInsn(node *ast.LetTuple) *mir.Insn {
 }
 
 func (e *emitter) emitInsn(node ast.Expr) *mir.Insn {
-	var prev *mir.Insn
-	var val mir.Val
-
 	switch n := node.(type) {
 	case *ast.Unit:
-		val = mir.UnitVal
+		return e.insn(mir.UnitVal, nil, node)
 	case *ast.Bool:
-		val = &mir.Bool{n.Value}
+		return e.insn(&mir.Bool{n.Value}, nil, node)
 	case *ast.Int:
-		val = &mir.Int{n.Value}
+		return e.insn(&mir.Int{n.Value}, nil, node)
 	case *ast.Float:
-		val = &mir.Float{n.Value}
+		return e.insn(&mir.Float{n.Value}, nil, node)
 	case *ast.String:
-		val = &mir.String{n.Value}
+		return e.insn(&mir.String{n.Value}, nil, node)
 	case *ast.Not:
 		i := e.emitInsn(n.Child)
-		val = &mir.Unary{mir.NOT, i.Ident}
-		prev = i
+		return e.insn(&mir.Unary{mir.NOT, i.Ident}, i, node)
 	case *ast.Neg:
 		i := e.emitInsn(n.Child)
-		val = &mir.Unary{mir.NEG, i.Ident}
-		prev = i
+		return e.insn(&mir.Unary{mir.NEG, i.Ident}, i, node)
 	case *ast.FNeg:
 		i := e.emitInsn(n.Child)
-		val = &mir.Unary{mir.FNEG, i.Ident}
-		prev = i
+		return e.insn(&mir.Unary{mir.FNEG, i.Ident}, i, node)
 	case *ast.Add:
-		val, prev = e.emitBinaryInsn(mir.ADD, n.Left, n.Right)
+		return e.emitBinaryInsn(mir.ADD, n.Left, n.Right, node)
 	case *ast.Sub:
-		val, prev = e.emitBinaryInsn(mir.SUB, n.Left, n.Right)
+		return e.emitBinaryInsn(mir.SUB, n.Left, n.Right, node)
 	case *ast.Mul:
-		val, prev = e.emitBinaryInsn(mir.MUL, n.Left, n.Right)
+		return e.emitBinaryInsn(mir.MUL, n.Left, n.Right, node)
 	case *ast.Div:
-		val, prev = e.emitBinaryInsn(mir.DIV, n.Left, n.Right)
+		return e.emitBinaryInsn(mir.DIV, n.Left, n.Right, node)
 	case *ast.Mod:
-		val, prev = e.emitBinaryInsn(mir.MOD, n.Left, n.Right)
+		return e.emitBinaryInsn(mir.MOD, n.Left, n.Right, node)
 	case *ast.FAdd:
-		val, prev = e.emitBinaryInsn(mir.FADD, n.Left, n.Right)
+		return e.emitBinaryInsn(mir.FADD, n.Left, n.Right, node)
 	case *ast.FSub:
-		val, prev = e.emitBinaryInsn(mir.FSUB, n.Left, n.Right)
+		return e.emitBinaryInsn(mir.FSUB, n.Left, n.Right, node)
 	case *ast.FMul:
-		val, prev = e.emitBinaryInsn(mir.FMUL, n.Left, n.Right)
+		return e.emitBinaryInsn(mir.FMUL, n.Left, n.Right, node)
 	case *ast.FDiv:
-		val, prev = e.emitBinaryInsn(mir.FDIV, n.Left, n.Right)
+		return e.emitBinaryInsn(mir.FDIV, n.Left, n.Right, node)
 	case *ast.Less:
-		val, prev = e.emitBinaryInsn(mir.LT, n.Left, n.Right)
+		return e.emitBinaryInsn(mir.LT, n.Left, n.Right, node)
 	case *ast.LessEq:
-		val, prev = e.emitBinaryInsn(mir.LTE, n.Left, n.Right)
+		return e.emitBinaryInsn(mir.LTE, n.Left, n.Right, node)
 	case *ast.Greater:
-		val, prev = e.emitBinaryInsn(mir.GT, n.Left, n.Right)
+		return e.emitBinaryInsn(mir.GT, n.Left, n.Right, node)
 	case *ast.GreaterEq:
-		val, prev = e.emitBinaryInsn(mir.GTE, n.Left, n.Right)
+		return e.emitBinaryInsn(mir.GTE, n.Left, n.Right, node)
 	case *ast.And:
-		val, prev = e.emitBinaryInsn(mir.AND, n.Left, n.Right)
+		return e.emitBinaryInsn(mir.AND, n.Left, n.Right, node)
 	case *ast.Or:
-		val, prev = e.emitBinaryInsn(mir.OR, n.Left, n.Right)
+		return e.emitBinaryInsn(mir.OR, n.Left, n.Right, node)
 	case *ast.Eq:
-		val, prev = e.emitBinaryInsn(mir.EQ, n.Left, n.Right)
+		return e.emitBinaryInsn(mir.EQ, n.Left, n.Right, node)
 	case *ast.NotEq:
-		val, prev = e.emitBinaryInsn(mir.NEQ, n.Left, n.Right)
+		return e.emitBinaryInsn(mir.NEQ, n.Left, n.Right, node)
 	case *ast.If:
-		prev = e.emitInsn(n.Cond)
+		prev := e.emitInsn(n.Cond)
 		thenBlk := e.emitBlock("then", n.Then)
 		elseBlk := e.emitBlock("else", n.Else)
-		val = &mir.If{
+		val := &mir.If{
 			prev.Ident,
 			thenBlk,
 			elseBlk,
 		}
+		return e.insn(val, prev, node)
 	case *ast.Let:
 		return e.emitLetInsn(n)
 	case *ast.VarRef:
 		if _, ok := e.env.Table[n.Symbol.Name]; ok {
-			val = &mir.Ref{n.Symbol.Name}
+			return e.insn(&mir.Ref{n.Symbol.Name}, nil, node)
 		} else if _, ok := e.env.Externals[n.Symbol.Name]; ok {
-			val = &mir.XRef{n.Symbol.Name}
+			return e.insn(&mir.XRef{n.Symbol.Name}, nil, node)
 		} else {
 			panic("FATAL: Unknown identifier: " + n.Symbol.Name)
 		}
@@ -225,7 +226,7 @@ func (e *emitter) emitInsn(node ast.Expr) *mir.Insn {
 		return e.emitFunInsn(n)
 	case *ast.Apply:
 		callee := e.emitInsn(n.Callee)
-		prev = callee
+		prev := callee
 		args := make([]string, 0, len(n.Args))
 		for _, a := range n.Args {
 			arg := e.emitInsn(a)
@@ -233,12 +234,10 @@ func (e *emitter) emitInsn(node ast.Expr) *mir.Insn {
 			args = append(args, arg.Ident)
 			prev = arg
 		}
-		val = &mir.App{callee.Ident, args, mir.DIRECT_CALL}
+		return e.insn(&mir.App{callee.Ident, args, mir.DIRECT_CALL}, prev, node)
 	case *ast.Tuple:
+		var prev *mir.Insn
 		len := len(n.Elems)
-		if len == 0 {
-			panic("Tuple must not be empty!")
-		}
 		elems := make([]string, 0, len)
 		for _, elem := range n.Elems {
 			i := e.emitInsn(elem)
@@ -246,12 +245,12 @@ func (e *emitter) emitInsn(node ast.Expr) *mir.Insn {
 			elems = append(elems, i.Ident)
 			prev = i
 		}
-		val = &mir.Tuple{elems}
+		return e.insn(&mir.Tuple{elems}, prev, node)
 	case *ast.ArrayLit:
 		if len(n.Elems) == 0 {
-			val = &mir.ArrLit{}
-			break
+			return e.insn(&mir.ArrLit{}, nil, node)
 		}
+		var prev *mir.Insn
 		elems := make([]string, 0, len(n.Elems))
 		for _, elem := range n.Elems {
 			i := e.emitInsn(elem)
@@ -259,53 +258,41 @@ func (e *emitter) emitInsn(node ast.Expr) *mir.Insn {
 			elems = append(elems, i.Ident)
 			prev = i
 		}
-		val = &mir.ArrLit{elems}
+		return e.insn(&mir.ArrLit{elems}, prev, node)
 	case *ast.LetTuple:
 		return e.emitLetTupleInsn(n)
 	case *ast.ArrayMake:
 		size := e.emitInsn(n.Size)
 		elem := e.emitInsn(n.Elem)
 		elem.Append(size)
-		prev = elem
-		val = &mir.Array{size.Ident, elem.Ident}
+		return e.insn(&mir.Array{size.Ident, elem.Ident}, elem, node)
 	case *ast.Get:
 		array := e.emitInsn(n.Array)
 		index := e.emitInsn(n.Index)
 		index.Append(array)
-		prev = index
-		val = &mir.ArrLoad{array.Ident, index.Ident}
+		return e.insn(&mir.ArrLoad{array.Ident, index.Ident}, index, node)
 	case *ast.Put:
 		array := e.emitInsn(n.Array)
 		index := e.emitInsn(n.Index)
 		index.Append(array)
 		rhs := e.emitInsn(n.Assignee)
 		rhs.Append(index)
-		prev = rhs
-		val = &mir.ArrStore{array.Ident, index.Ident, rhs.Ident}
+		return e.insn(&mir.ArrStore{array.Ident, index.Ident, rhs.Ident}, rhs, node)
 	case *ast.ArraySize:
 		array := e.emitInsn(n.Target)
-		prev = array
-		val = &mir.ArrLen{array.Ident}
+		return e.insn(&mir.ArrLen{array.Ident}, array, node)
 	case *ast.Some:
 		child := e.emitInsn(n.Child)
-		prev = child
-		val = &mir.Some{child.Ident}
+		return e.insn(&mir.Some{child.Ident}, child, node)
 	case *ast.None:
-		val = mir.NoneVal
+		return e.insn(mir.NoneVal, nil, node)
 	case *ast.Match:
-		val, prev = e.emitMatchInsn(n)
+		return e.emitMatchInsn(n)
 	case *ast.Typed:
 		return e.emitInsn(n.Child)
+	default:
+		panic("FATAL: Unknown node: " + node.Name())
 	}
-
-	if val == nil {
-		panic("FATAL: Value in instruction must not be nil!")
-	}
-
-	ty := e.typeOf(node)
-	id := e.genID()
-	e.env.Table[id] = ty
-	return mir.Concat(mir.NewInsn(id, val, node.Pos()), prev)
 }
 
 // Returns mir.Block instance and its type
