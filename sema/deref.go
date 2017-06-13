@@ -67,7 +67,7 @@ func unwrap(target Type) (Type, bool) {
 type typeVarDereferencer struct {
 	err      *locerr.Error
 	env      *Env
-	inferred exprTypes
+	inferred InferredTypes
 }
 
 func (d *typeVarDereferencer) errIn(node ast.Expr, msg string) {
@@ -264,7 +264,7 @@ func (d *typeVarDereferencer) VisitBottomup(node ast.Expr) {
 	d.inferred[node] = unwrapped
 }
 
-func derefTypeVars(env *Env, root ast.Expr, inferred exprTypes) error {
+func derefTypeVars(env *Env, root ast.Expr, inferred InferredTypes) error {
 	v := &typeVarDereferencer{nil, env, inferred}
 	for n, t := range env.Externals {
 		env.Externals[n] = v.derefExternalSym(n, t)

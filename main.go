@@ -13,6 +13,7 @@ var (
 	help        = flag.Bool("help", false, "Show this help")
 	showTokens  = flag.Bool("tokens", false, "Show tokens for input")
 	showAST     = flag.Bool("ast", false, "Show AST for input")
+	analyze     = flag.Bool("analyze", false, "Analyze code and report errors if exist")
 	showMIR     = flag.Bool("mir", false, "Emit GoCaml Intermediate Language representation to stdout")
 	externals   = flag.Bool("externals", false, "Display external symbols")
 	llvm        = flag.Bool("llvm", false, "Emit LLVM IR to stdout")
@@ -98,6 +99,11 @@ func main() {
 		d.PrintTokens(src)
 	case *showAST:
 		d.PrintAST(src)
+	case *analyze:
+		if _, _, err := d.SemanticAnalysis(src); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(4)
+		}
 	case *showMIR:
 		prog, env, err := d.EmitMIR(src)
 		if err != nil {

@@ -77,17 +77,15 @@ func (d *Driver) PrintAST(src *locerr.Source) {
 	ast.Println(a)
 }
 
-// SemanticAnalysis checks types and symbol duplicates.
-// It returns the result of type analysis or an error.
-func (d *Driver) SemanticAnalysis(a *ast.AST) (*types.Env, error) {
-	if err := sema.AlphaTransform(a.Root); err != nil {
-		return nil, err
+// SemanticAnalysis checks symbol duplicates, infers types and so on. It returns analyzed type
+// environment and inferred types of AST node.
+func (d *Driver) SemanticAnalysis(src *locerr.Source) (*types.Env, sema.InferredTypes, error) {
+	a, err := syntax.Parse(src)
+	if err != nil {
+		return nil, nil, err
 	}
-	inf := sema.NewInferer()
-	if err := inf.Infer(a); err != nil {
-		return nil, err
-	}
-	return inf.Env, nil
+
+	return sema.Analyze(a)
 }
 
 // EmitMIR emits MIR tree representation.

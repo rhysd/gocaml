@@ -11,9 +11,7 @@ import (
 	"github.com/rhysd/locerr"
 )
 
-// SemanticsCheck applies type inference, checks semantics of types and finally converts AST into MIR
-// with inferred type information.
-func SemanticsCheck(parsed *ast.AST) (*types.Env, *mir.Block, error) {
+func Analyze(parsed *ast.AST) (*types.Env, InferredTypes, error) {
 	// First, resolve all symbols by alpha transform
 	if err := AlphaTransform(parsed.Root); err != nil {
 		return nil, nil, locerr.NoteAt(parsed.Root.Pos(), err, "Alpha transform failed")
@@ -25,8 +23,19 @@ func SemanticsCheck(parsed *ast.AST) (*types.Env, *mir.Block, error) {
 		return nil, nil, locerr.NoteAt(parsed.Root.Pos(), err, "Type inference failed")
 	}
 
-	// Third, convert AST into MIR
-	block := ToMIR(parsed.Root, inferer.Env, inferer.inferred)
+	return inferer.Env, inferer.inferred, nil
+}
 
-	return inferer.Env, block, nil
+// SemanticsCheck applies type inference, checks semantics of types and finally converts AST into MIR
+// with inferred type information.
+func SemanticsCheck(parsed *ast.AST) (*types.Env, *mir.Block, error) {
+	env, inferred, err := Analyze(parsed)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Third, convert AST into MIR
+	block := ToMIR(parsed.Root, env, inferred)
+
+	return env, block, nil
 }

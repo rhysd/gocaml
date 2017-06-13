@@ -12,7 +12,7 @@ import (
 type emitter struct {
 	count    uint
 	env      *types.Env
-	inferred exprTypes
+	inferred InferredTypes
 }
 
 func (e *emitter) genID() string {
@@ -305,7 +305,7 @@ func (e *emitter) emitBlock(name string, node ast.Expr) *mir.Block {
 }
 
 // ToMIR converts given AST into MIR with type environment
-func ToMIR(root ast.Expr, env *types.Env, inferred exprTypes) *mir.Block {
+func ToMIR(root ast.Expr, env *types.Env, inferred InferredTypes) *mir.Block {
 	e := &emitter{0, env, inferred}
 	return e.emitBlock("program", root)
 }

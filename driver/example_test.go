@@ -24,19 +24,25 @@ func Example() {
 	d.PrintAST(src)
 
 	// Parse file into AST
-	ast, err := d.Parse(src)
+	parsed, err := d.Parse(src)
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println(parsed)
 
-	// Resolving symbols, type analysis and converting AST into MIR instruction block
-	env, err := d.SemanticAnalysis(ast)
+	// Resolving symbols and type analysis
+	env, inferred, err := d.SemanticAnalysis(src)
 	if err != nil {
 		panic(err)
 	}
 
 	// Show environment of type analysis
 	env.Dump()
+
+	// Show inferred types of all AST nodes
+	for e, t := range inferred {
+		fmt.Printf("Node '%s' at '%s' => Type '%s'", e.Name(), e.Pos(), t.String())
+	}
 
 	// Show LLVM IR for the source
 	ir, err := d.EmitLLVMIR(src)

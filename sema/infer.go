@@ -8,13 +8,14 @@ import (
 	"github.com/rhysd/locerr"
 )
 
-type exprTypes map[ast.Expr]Type
+// InferredTypes is a dictonary from an AST nodes to inferred types.
+type InferredTypes map[ast.Expr]Type
 
 // Inferer is a visitor to infer types in the AST
 type Inferer struct {
 	Env      *Env
 	conv     *nodeTypeConv
-	inferred exprTypes
+	inferred InferredTypes
 }
 
 // NewInferer creates a new Inferer instance

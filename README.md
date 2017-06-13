@@ -670,6 +670,8 @@ Usage: gocaml [flags] [file]
   attempt to read from STDIN as source code to compile.
 
 Flags:
+  -analyze
+    	Analyze code and report errors if exist
   -asm
     	Emit assembler code to stdout
   -ast
@@ -677,14 +679,14 @@ Flags:
   -externals
     	Display external symbols
   -g	Compile with debug information
-  -mir
-    	Emit GoCaml Intermediate Language representation to stdout
   -help
     	Show this help
   -ldflags string
     	Flags passed to underlying linker
   -llvm
     	Emit LLVM IR to stdout
+  -mir
+    	Emit GoCaml Intermediate Language representation to stdout
   -obj
     	Compile to object file
   -opt int
