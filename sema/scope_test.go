@@ -6,48 +6,48 @@ import (
 )
 
 func TestFindSymbol(t *testing.T) {
-	m := newMapping(nil)
+	s := newScope(nil)
 	foo := ast.NewSymbol("foo")
 	foo.Name = "foo1"
-	m.add("foo", foo)
-	s, ok := m.resolve("foo")
+	s.mapSymbol("foo", foo)
+	sym, ok := s.resolve("foo")
 	if !ok {
 		t.Errorf("symbol for current scope not found")
 	}
-	if s.Name != "foo1" {
-		t.Errorf("expected foo1 but actually %s", s.Name)
+	if sym.Name != "foo1" {
+		t.Errorf("expected foo1 but actually %s", sym.Name)
 	}
 }
 
 func TestFindNestedSymbol(t *testing.T) {
-	m := newMapping(nil)
+	s := newScope(nil)
 	foo := ast.NewSymbol("foo")
 	foo.Name = "foo1"
-	m.add("foo", foo)
-	m.add("bar", ast.NewSymbol("bar"))
+	s.mapSymbol("foo", foo)
+	s.mapSymbol("bar", ast.NewSymbol("bar"))
 
-	m = newMapping(m)
+	s = newScope(s)
 	foo2 := ast.NewSymbol("foo")
 	foo2.Name = "foo2"
-	m.add("foo", foo2)
+	s.mapSymbol("foo", foo2)
 
-	s, ok := m.resolve("foo")
+	sym, ok := s.resolve("foo")
 	if !ok {
 		t.Errorf("symbol for current scope not found")
 	}
-	if s.Name != "foo2" {
-		t.Errorf("expected foo2 but actually %s", s.Name)
+	if sym.Name != "foo2" {
+		t.Errorf("expected foo2 but actually %s", sym.Name)
 	}
 
-	s, ok = m.resolve("bar")
+	sym, ok = s.resolve("bar")
 	if !ok {
 		t.Errorf("symbol for current scope not found")
 	}
-	if s.Name != "bar" {
-		t.Errorf("expected bar but actually %s", s.Name)
+	if sym.Name != "bar" {
+		t.Errorf("expected bar but actually %s", sym.Name)
 	}
 
-	if s, ok = m.resolve("piyo"); ok {
-		t.Errorf("symbol piyo should not be found but actually %v was found", s)
+	if sym, ok = s.resolve("piyo"); ok {
+		t.Errorf("symbol piyo should not be found but actually %v was found", sym)
 	}
 }

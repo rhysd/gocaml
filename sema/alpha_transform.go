@@ -36,7 +36,7 @@ type transformer struct {
 
 func newTransformer() *transformer {
 	return &transformer{
-		current: newMapping(nil),
+		current: newScope(nil),
 		count:   0,
 		err:     nil,
 	}
@@ -56,11 +56,11 @@ func (t *transformer) register(s *ast.Symbol) {
 		return
 	}
 	s.Name = t.newID(s.DisplayName)
-	t.current.add(s.DisplayName, s)
+	t.current.mapSymbol(s.DisplayName, s)
 }
 
 func (t *transformer) nest() {
-	t.current = newMapping(t.current)
+	t.current = newScope(t.current)
 }
 
 func (t *transformer) pop() {

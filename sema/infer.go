@@ -12,9 +12,9 @@ type exprTypes map[ast.Expr]Type
 
 // Inferer is a visitor to infer types in the AST
 type Inferer struct {
-	Env       *Env
-	conv      *nodeTypeConv
-	exprTypes exprTypes
+	Env      *Env
+	conv     *nodeTypeConv
+	inferred exprTypes
 }
 
 // NewInferer creates a new Inferer instance
@@ -439,7 +439,7 @@ func (inf *Inferer) infer(e ast.Expr) (Type, error) {
 	if err != nil {
 		return nil, err
 	}
-	inf.exprTypes[e] = t
+	inf.inferred[e] = t
 	return t, nil
 }
 
@@ -463,5 +463,5 @@ func (inf *Inferer) Infer(parsed *ast.AST) error {
 	// While dereferencing type variables in table, we can detect type variables
 	// which does not have exact type and raise an error for that.
 	// External variables must be well-typed also.
-	return derefTypeVars(inf.Env, parsed.Root, inf.exprTypes)
+	return derefTypeVars(inf.Env, parsed.Root, inf.inferred)
 }

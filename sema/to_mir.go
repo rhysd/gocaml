@@ -11,10 +11,10 @@ import (
 // Convert AST into MIR with K-Normalization
 
 type emitter struct {
-	count uint
-	env   *types.Env
-	exprs exprTypes
-	err   *locerr.Error
+	count    uint
+	env      *types.Env
+	inferred exprTypes
+	err      *locerr.Error
 }
 
 func (e *emitter) genID() string {
@@ -23,7 +23,7 @@ func (e *emitter) genID() string {
 }
 
 func (e *emitter) typeOf(node ast.Expr) types.Type {
-	t, ok := e.exprs[node]
+	t, ok := e.inferred[node]
 	if !ok {
 		panic("FATAL: Type was not inferred for node '" + node.Name() + "' at " + node.Pos().String())
 	}
@@ -320,8 +320,8 @@ func (e *emitter) emitBlock(name string, node ast.Expr) *mir.Block {
 }
 
 // ToMIR converts given AST into MIR with type environment
-func ToMIR(root ast.Expr, env *types.Env, exprs exprTypes) (*mir.Block, error) {
-	e := &emitter{0, env, exprs, nil}
+func ToMIR(root ast.Expr, env *types.Env, inferred exprTypes) (*mir.Block, error) {
+	e := &emitter{0, env, inferred, nil}
 	b := e.emitBlock("program", root)
 	if e.err != nil {
 		return nil, e.err.Note("Semantics error while MIR generation")

@@ -363,7 +363,7 @@ func TestEmitInsn(t *testing.T) {
 			if err := inf.Infer(ast); err != nil {
 				t.Fatal(err)
 			}
-			ir, err := ToMIR(ast.Root, inf.Env, inf.exprTypes)
+			ir, err := ToMIR(ast.Root, inf.Env, inf.inferred)
 			if err != nil {
 				t.Fatal(err)
 			}

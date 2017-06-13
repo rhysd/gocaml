@@ -65,9 +65,9 @@ func unwrap(target Type) (Type, bool) {
 }
 
 type typeVarDereferencer struct {
-	err       *locerr.Error
-	env       *Env
-	exprTypes exprTypes
+	err      *locerr.Error
+	env      *Env
+	inferred exprTypes
 }
 
 func (d *typeVarDereferencer) errIn(node ast.Expr, msg string) {
@@ -196,7 +196,7 @@ func (d *typeVarDereferencer) VisitTopdown(node ast.Expr) ast.Visitor {
 }
 
 func (d *typeVarDereferencer) checkLess(op string, lhs ast.Expr) string {
-	operand, ok := d.exprTypes[lhs]
+	operand, ok := d.inferred[lhs]
 	if !ok {
 		panic("FATAL: Operand type of operator '" + op + "' not found at " + lhs.Pos().String())
 	}
@@ -212,7 +212,7 @@ func (d *typeVarDereferencer) checkLess(op string, lhs ast.Expr) string {
 }
 
 func (d *typeVarDereferencer) checkEq(op string, lhs ast.Expr) string {
-	operand, ok := d.exprTypes[lhs]
+	operand, ok := d.inferred[lhs]
 	if !ok {
 		panic("FATAL: Operand type of operator '" + op + "' not found at " + lhs.Pos().String())
 	}
@@ -250,7 +250,7 @@ func (d *typeVarDereferencer) VisitBottomup(node ast.Expr) {
 	d.miscCheck(node)
 
 	// Dereference all nodes' types
-	t, ok := d.exprTypes[node]
+	t, ok := d.inferred[node]
 	if !ok {
 		return
 	}
@@ -261,11 +261,11 @@ func (d *typeVarDereferencer) VisitBottomup(node ast.Expr) {
 		return
 	}
 
-	d.exprTypes[node] = unwrapped
+	d.inferred[node] = unwrapped
 }
 
-func derefTypeVars(env *Env, root ast.Expr, exprTypes exprTypes) error {
-	v := &typeVarDereferencer{nil, env, exprTypes}
+func derefTypeVars(env *Env, root ast.Expr, inferred exprTypes) error {
+	v := &typeVarDereferencer{nil, env, inferred}
 	for n, t := range env.Externals {
 		env.Externals[n] = v.derefExternalSym(n, t)
 	}
