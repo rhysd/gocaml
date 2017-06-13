@@ -13,9 +13,13 @@ type Printer struct {
 	out    io.Writer
 }
 
-func (p Printer) Visit(e Expr) Visitor {
+func (p Printer) VisitTopdown(e Expr) Visitor {
 	fmt.Fprintf(p.out, "\n%s%s (%d:%d-%d:%d)", strings.Repeat("-   ", p.indent), e.Name(), e.Pos().Line, e.Pos().Column, e.End().Line, e.End().Column)
 	return Printer{p.indent + 1, p.out}
+}
+
+func (p Printer) VisitBottomup(Expr) {
+	return
 }
 
 // Fprint outputs a structure of AST to given io.Writer object

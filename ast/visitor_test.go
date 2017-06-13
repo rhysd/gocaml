@@ -25,12 +25,17 @@ var testTree = &Let{
 }
 
 type testNumAllNodes struct {
-	total int
+	tdTotal int
+	buTotal int
 }
 
-func (v *testNumAllNodes) Visit(e Expr) Visitor {
-	v.total++
+func (v *testNumAllNodes) VisitTopdown(e Expr) Visitor {
+	v.tdTotal++
 	return v
+}
+
+func (v *testNumAllNodes) VisitBottomup(e Expr) {
+	v.buTotal++
 }
 
 type testNumRootChildren struct {
@@ -38,7 +43,7 @@ type testNumRootChildren struct {
 	rootVisited bool
 }
 
-func (v *testNumRootChildren) Visit(e Expr) Visitor {
+func (v *testNumRootChildren) VisitTopdown(e Expr) Visitor {
 	v.numChildren++
 	if v.rootVisited {
 		return nil
@@ -47,11 +52,14 @@ func (v *testNumRootChildren) Visit(e Expr) Visitor {
 	return v
 }
 
+func (v *testNumRootChildren) VisitBottomup(Expr) {
+}
+
 func TestVisitorVisit(t *testing.T) {
-	v := &testNumAllNodes{0}
+	v := &testNumAllNodes{0, 0}
 	Visit(v, testTree)
-	if v.total != 5 {
-		t.Fatalf("5 is expected as total nodes but actually %d", v.total)
+	if v.tdTotal != 5 {
+		t.Fatalf("5 is expected as total nodes but actually %d", v.tdTotal)
 	}
 }
 
@@ -61,32 +69,4 @@ func TestVisitorCancelVisit(t *testing.T) {
 	if v.numChildren != 3 {
 		t.Fatalf("3 is expected as number of root children but actually %d", v.numChildren)
 	}
-}
-
-func TestVisitorFind(t *testing.T) {
-	found := Find(testTree, func(e Expr) bool {
-		_, ok := e.(*VarRef)
-		return ok
-	})
-	if !found {
-		t.Errorf("'VarRef' node was not found for test AST")
-	}
-	found = Find(testTree, func(e Expr) bool {
-		_, ok := e.(*Not)
-		return ok
-	})
-	if found {
-		t.Errorf("'Not' node is not in test AST but was found by ast.Find()")
-	}
-}
-
-func TestVisitorVisitChildren(t *testing.T) {
-	names := []string{"Int", "Add"}
-	index := 0
-	VisitChildren(testTree, func(child Expr) {
-		if names[index] != child.Name() {
-			t.Errorf("Expected child name %s but actually %s", names[index], child.Name())
-		}
-		index++
-	})
 }

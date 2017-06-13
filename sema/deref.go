@@ -172,7 +172,7 @@ func (d *typeVarDereferencer) derefExternalSym(name string, symType Type) Type {
 	}
 }
 
-func (d *typeVarDereferencer) Visit(node ast.Expr) ast.Visitor {
+func (d *typeVarDereferencer) VisitTopdown(node ast.Expr) ast.Visitor {
 	switch n := node.(type) {
 	case *ast.Let:
 		d.derefSym(n, n.Symbol)
@@ -192,18 +192,22 @@ func (d *typeVarDereferencer) Visit(node ast.Expr) ast.Visitor {
 	case *ast.Match:
 		d.derefSym(n, n.SomeIdent)
 	}
-
-	// Dereference node's type
-	if t, ok := d.exprTypes[node]; ok {
-		unwrapped, ok := unwrap(t)
-		if !ok {
-			d.errIn(node, fmt.Sprintf("Cannot infer type of expression. Type annotation is needed. Inferred type was '%s'", t.String()))
-			return nil
-		}
-		d.exprTypes[node] = unwrapped
-	}
-
 	return d
+}
+
+func (d *typeVarDereferencer) VisitBottomup(node ast.Expr) {
+	// Dereference all nodes' types
+	t, ok := d.exprTypes[node]
+	if !ok {
+		return
+	}
+	unwrapped, ok := unwrap(t)
+	if !ok {
+		d.errIn(node, fmt.Sprintf("Cannot infer type of expression. Type annotation is needed. Inferred type was '%s'", t.String()))
+		return
+	}
+	d.exprTypes[node] = unwrapped
+	// TODO: Misc check
 }
 
 func derefTypeVars(env *Env, root ast.Expr, exprTypes exprTypes) error {

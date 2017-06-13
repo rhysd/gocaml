@@ -67,7 +67,7 @@ func (t *transformer) pop() {
 	t.current = t.current.parent
 }
 
-func (t *transformer) Visit(node ast.Expr) ast.Visitor {
+func (t *transformer) VisitTopdown(node ast.Expr) ast.Visitor {
 	switch n := node.(type) {
 	case *ast.Let:
 		// At first, transform value bound to the variable
@@ -132,6 +132,10 @@ func (t *transformer) Visit(node ast.Expr) ast.Visitor {
 		// Visit recursively
 		return t
 	}
+}
+
+func (t *transformer) VisitBottomup(ast.Expr) {
+	return
 }
 
 // AlphaTransform adds identical names to all identifiers in AST nodes.
