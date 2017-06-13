@@ -2,15 +2,21 @@ package ast
 
 // Visitor is an interface for the structs which is used for traversing AST.
 type Visitor interface {
-	// Visit defines the process when a node is visit.
-	// Visitor is a next visitor to use for visit.
-	// When wanting to stop visiting, return nil.
-	Visit(e Expr) Visitor
+	// VisitTopdown defines the process when a node is visit. This method is called before
+	// children are visited.
+	// Returned value is a next visitor to use for succeeding visit. When wanting to stop
+	// visiting, please return nil.
+	// A visitor visits in depth-first order.
+	VisitTopdown(e Expr) Visitor
+	// VisitBottomup defines the process when a node is visit. This method is called after
+	// children were visited.
+	VisitBottomup(e Expr)
 }
 
 // Visit visits the tree with the visitor.
-func Visit(v Visitor, e Expr) {
-	if v = v.Visit(e); v == nil {
+func Visit(vis Visitor, e Expr) {
+	v := vis.VisitTopdown(e)
+	if v == nil {
 		return
 	}
 
@@ -149,51 +155,6 @@ func Visit(v Visitor, e Expr) {
 	case *TypeDecl:
 		Visit(v, n.Type)
 	}
-}
 
-type finder struct {
-	found     bool
-	predicate func(Expr) bool
-}
-
-func (f *finder) Visit(e Expr) Visitor {
-	if f.found {
-		return nil
-	}
-	if f.predicate(e) {
-		f.found = true
-		return nil
-	}
-	return f
-}
-
-func Find(e Expr, p func(Expr) bool) bool {
-	f := &finder{
-		found:     false,
-		predicate: p,
-	}
-	Visit(f, e)
-	return f.found
-}
-
-type childrenVisitor struct {
-	isChild   bool
-	predicate func(Expr)
-}
-
-func (v *childrenVisitor) Visit(e Expr) Visitor {
-	if v.isChild {
-		v.predicate(e)
-		return nil
-	}
-	v.isChild = true
-	return v // Visit children
-}
-
-func VisitChildren(e Expr, pred func(e Expr)) {
-	v := &childrenVisitor{
-		isChild:   false,
-		predicate: pred,
-	}
-	Visit(v, e)
+	vis.VisitBottomup(e)
 }

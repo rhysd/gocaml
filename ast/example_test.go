@@ -4,27 +4,26 @@ import (
 	"fmt"
 	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/locerr"
-	"path/filepath"
 )
 
 // Visitor which counts number of nodes in AST
-type numAllNodes struct {
+type printPath struct {
 	total int
 }
 
-// Visit method to meets ast.Visitor interface
-func (v *numAllNodes) Visit(e Expr) Visitor {
-	v.total++
+// VisitTopdown method is called before children are visited
+func (v *printPath) VisitTopdown(e Expr) Visitor {
+	fmt.Printf("\n -> %s (topdown)", e.Name())
 	return v
 }
 
+// VisitBottomup method is called after children were visited
+func (v *printPath) VisitBottomup(e Expr) {
+	fmt.Printf("\n -> %s (bottomup)", e.Name())
+}
+
 func Example() {
-	file := filepath.FromSlash("../testdata/from-mincaml/ack.ml")
-	src, err := locerr.NewSourceFromFile(file)
-	if err != nil {
-		// File not found
-		panic(err)
-	}
+	src := locerr.NewDummySource("")
 
 	// AST which usually comes from syntax.Parse() function.
 	rootOfAST := &Let{
@@ -49,10 +48,22 @@ func Example() {
 	ast := &AST{Root: rootOfAST}
 
 	// Apply visitor to root node of AST
-	v := &numAllNodes{0}
+	v := &printPath{0}
+	fmt.Println("ROOT")
+
 	Visit(v, ast.Root)
-	fmt.Println(v.total)
-	// Output: 5
+	// Output:
+	// ROOT
+	//  -> Let (test) (topdown)
+	//  -> Int (topdown)
+	//  -> Int (bottomup)
+	//  -> Add (topdown)
+	//  -> VarRef (test) (topdown)
+	//  -> VarRef (test) (bottomup)
+	//  -> Float (topdown)
+	//  -> Float (bottomup)
+	//  -> Add (bottomup)
+	//  -> Let (test) (bottomup)
 
 	// Print AST
 	Println(ast)

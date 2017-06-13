@@ -9,14 +9,14 @@ type scope struct {
 	vars   map[string]*ast.Symbol
 }
 
-func newMapping(parent *scope) *scope {
+func newScope(parent *scope) *scope {
 	return &scope{
 		parent,
 		map[string]*ast.Symbol{},
 	}
 }
 
-func (m *scope) add(from string, to *ast.Symbol) {
+func (m *scope) mapSymbol(from string, to *ast.Symbol) {
 	m.vars[from] = to
 }
 

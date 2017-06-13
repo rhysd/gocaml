@@ -65,8 +65,17 @@ func unwrap(target Type) (Type, bool) {
 }
 
 type typeVarDereferencer struct {
-	err *locerr.Error
-	env *Env
+	err      *locerr.Error
+	env      *Env
+	inferred exprTypes
+}
+
+func (d *typeVarDereferencer) errIn(node ast.Expr, msg string) {
+	if d.err == nil {
+		d.err = locerr.ErrorIn(node.Pos(), node.End(), msg)
+	} else {
+		d.err = d.err.NoteAt(node.Pos(), msg)
+	}
 }
 
 func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
@@ -85,18 +94,12 @@ func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
 	}
 
 	if !ok {
-		panic(fmt.Sprintf("FATAL: Cannot dereference unknown symbol '%s'", sym.Name))
-		return
+		panic("FATAL: Cannot dereference unknown symbol: " + sym.Name)
 	}
 
 	t, ok := unwrap(symType)
 	if !ok {
-		msg := fmt.Sprintf("Cannot infer type of variable '%s'. Inferred type was '%s'", sym.DisplayName, symType.String())
-		if d.err == nil {
-			d.err = locerr.ErrorIn(node.Pos(), node.End(), msg)
-		} else {
-			d.err = d.err.NoteAt(node.Pos(), msg)
-		}
+		d.errIn(node, fmt.Sprintf("Cannot infer type of variable '%s'. Inferred type was '%s'", sym.DisplayName, symType.String()))
 		return
 	}
 
@@ -169,7 +172,7 @@ func (d *typeVarDereferencer) derefExternalSym(name string, symType Type) Type {
 	}
 }
 
-func (d *typeVarDereferencer) Visit(node ast.Expr) ast.Visitor {
+func (d *typeVarDereferencer) VisitTopdown(node ast.Expr) ast.Visitor {
 	switch n := node.(type) {
 	case *ast.Let:
 		d.derefSym(n, n.Symbol)
@@ -177,7 +180,7 @@ func (d *typeVarDereferencer) Visit(node ast.Expr) ast.Visitor {
 		// Note:
 		// Need to dereference parameters at first because type of the function depends on type
 		// of its parameters and parameters may be specified as '_'.
-		// '_' is unused. So its type may not be detemined and need to be fixed as unit type.
+		// '_' is unused. So its type may not be determined and need to be fixed as unit type.
 		for _, p := range n.Func.Params {
 			d.derefSym(n, p.Ident)
 		}
@@ -192,24 +195,86 @@ func (d *typeVarDereferencer) Visit(node ast.Expr) ast.Visitor {
 	return d
 }
 
-func derefTypeVars(env *Env, root ast.Expr) error {
-	v := &typeVarDereferencer{nil, env}
+func (d *typeVarDereferencer) checkLess(op string, lhs ast.Expr) string {
+	operand, ok := d.inferred[lhs]
+	if !ok {
+		panic("FATAL: Operand type of operator '" + op + "' not found at " + lhs.Pos().String())
+	}
+	// Note:
+	// This type constraint may be useful for type inference. But current HM type inference algorithm cannot
+	// handle a union type. In this context, the operand should be `int | float`
+	switch operand.(type) {
+	case *Unit, *Bool, *String, *Fun, *Tuple, *Array, *Option:
+		return fmt.Sprintf("'%s' can't be compared with operator '%s'", operand.String(), op)
+	default:
+		return ""
+	}
+}
+
+func (d *typeVarDereferencer) checkEq(op string, lhs ast.Expr) string {
+	operand, ok := d.inferred[lhs]
+	if !ok {
+		panic("FATAL: Operand type of operator '" + op + "' not found at " + lhs.Pos().String())
+	}
+	// Note:
+	// This type constraint may be useful for type inference. But current HM type inference algorithm cannot
+	// handle a union type. In this context, the operand should be `() | bool | int | float | fun<R, TS...> | tuple<Args...>`
+	if a, ok := operand.(*Array); ok {
+		return fmt.Sprintf("Array type '%s' can't be compared with operator '%s'", a.String(), op)
+	}
+	return ""
+}
+
+func (d *typeVarDereferencer) miscCheck(node ast.Expr) {
+	msg := ""
+	switch n := node.(type) {
+	case *ast.Less:
+		msg = d.checkLess("<", n.Left)
+	case *ast.LessEq:
+		msg = d.checkLess("<=", n.Left)
+	case *ast.Greater:
+		msg = d.checkLess(">", n.Left)
+	case *ast.GreaterEq:
+		msg = d.checkLess(">=", n.Left)
+	case *ast.Eq:
+		msg = d.checkEq("=", n.Left)
+	case *ast.NotEq:
+		msg = d.checkEq("<>", n.Left)
+	}
+	if msg != "" {
+		d.errIn(node, msg)
+	}
+}
+
+func (d *typeVarDereferencer) VisitBottomup(node ast.Expr) {
+	d.miscCheck(node)
+
+	// Dereference all nodes' types
+	t, ok := d.inferred[node]
+	if !ok {
+		return
+	}
+
+	unwrapped, ok := unwrap(t)
+	if !ok {
+		d.errIn(node, fmt.Sprintf("Cannot infer type of expression. Type annotation is needed. Inferred type was '%s'", t.String()))
+		return
+	}
+
+	d.inferred[node] = unwrapped
+}
+
+func derefTypeVars(env *Env, root ast.Expr, inferred exprTypes) error {
+	v := &typeVarDereferencer{nil, env, inferred}
 	for n, t := range env.Externals {
 		env.Externals[n] = v.derefExternalSym(n, t)
 	}
 	ast.Visit(v, root)
 
+	// Note:
+	// Cannot return v.err directly because `return v.err` returns typed nil (typed as *locerr.Error).
 	if v.err != nil {
 		return v.err
 	}
-
-	for n, t := range env.TypeHints {
-		d, ok := unwrap(t)
-		if !ok {
-			panic("Cannot dereference type hint " + t.String() + " at " + n.Pos().String())
-		}
-		env.TypeHints[n] = d
-	}
-
 	return nil
 }

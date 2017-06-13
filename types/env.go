@@ -3,7 +3,6 @@ package types
 
 import (
 	"fmt"
-	"github.com/rhysd/gocaml/ast"
 )
 
 // Result of type analysis.
@@ -24,9 +23,6 @@ type Env struct {
 	// External variable names which are referred but not defined.
 	// External variables are exposed as external symbols in other object files.
 	Externals map[string]Type
-	// Need to remember inferred types of some nodes because some nodes' types can be determined
-	// only by top-down type inference. Currently ast.None and ast.ArrayLit are applicable.
-	TypeHints map[ast.Expr]Type
 }
 
 // NewEnv creates empty Env instance.
@@ -34,7 +30,6 @@ func NewEnv() *Env {
 	return &Env{
 		map[string]Type{},
 		builtinPopulatedTable(),
-		map[ast.Expr]Type{},
 	}
 }
 
