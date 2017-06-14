@@ -12,8 +12,8 @@ import (
 
 func TestLexingOK(t *testing.T) {
 	for _, testdir := range []string{
-		"../testdata/syntax",
-		"../testdata/from-mincaml/",
+		"testdata",
+		"testdata/from-mincaml/",
 	} {
 		files, err := ioutil.ReadDir(filepath.FromSlash(testdir))
 		if err != nil {
@@ -70,7 +70,7 @@ lexing:
 }
 
 func TestLexingIllegal(t *testing.T) {
-	testdir := filepath.FromSlash("../testdata/lexer/invalid")
+	testdir := filepath.FromSlash("testdata/lexer/invalid")
 	files, err := ioutil.ReadDir(testdir)
 	if err != nil {
 		panic(err)
