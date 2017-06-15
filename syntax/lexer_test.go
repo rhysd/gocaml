@@ -13,7 +13,7 @@ import (
 func TestLexingOK(t *testing.T) {
 	for _, testdir := range []string{
 		"testdata",
-		"testdata/from-mincaml/",
+		"../testdata/from-mincaml/",
 	} {
 		files, err := ioutil.ReadDir(filepath.FromSlash(testdir))
 		if err != nil {
