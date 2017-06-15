@@ -139,7 +139,7 @@ type_decls:
 		{ $$ = []*ast.TypeDecl{} }
 	| type_decls TYPE IDENT EQUAL type SEMICOLON
 		{
-			decl := &ast.TypeDecl{$2, $3.Value(), $5}
+			decl := &ast.TypeDecl{$2, ast.NewSymbol($3.Value()), $5}
 			$$ = append($1, decl)
 		}
 
@@ -399,17 +399,17 @@ simple_type:
 	IDENT
 		{
 			t := $1
-			$$ = &ast.CtorType{nil, t, nil, t.Value()}
+			$$ = &ast.CtorType{nil, t, nil, ast.NewSymbol(t.Value())}
 		}
 	| simple_type IDENT
 		{
 			t := $2
-			$$ = &ast.CtorType{nil, t, []ast.Expr{$1}, t.Value()}
+			$$ = &ast.CtorType{nil, t, []ast.Expr{$1}, ast.NewSymbol(t.Value())}
 		}
 	| LPAREN type_comma_list RPAREN IDENT
 		{
 			t := $4
-			$$ = &ast.CtorType{$1, t, $2, t.Value()}
+			$$ = &ast.CtorType{$1, t, $2, ast.NewSymbol(t.Value())}
 		}
 	| LPAREN type_comma_list RPAREN
 		%prec prec_below_ident

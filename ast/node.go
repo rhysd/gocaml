@@ -302,7 +302,7 @@ type (
 		StartToken *token.Token // Maybe nil
 		EndToken   *token.Token
 		ParamTypes []Expr
-		Ctor       string // TODO: It should be identifier after types namespace added
+		Ctor       *Symbol
 	}
 
 	Typed struct {
@@ -312,7 +312,7 @@ type (
 
 	TypeDecl struct {
 		Token *token.Token
-		Ident string
+		Ident *Symbol
 		Type  Expr
 	}
 )
@@ -702,9 +702,9 @@ func (e *TupleType) Name() string { return fmt.Sprintf("TupleType (%d)", len(e.E
 func (e *CtorType) Name() string {
 	len := len(e.ParamTypes)
 	if len == 0 {
-		return fmt.Sprintf("CtorType (%s)", e.Ctor)
+		return fmt.Sprintf("CtorType (%s)", e.Ctor.Name)
 	}
-	return fmt.Sprintf("CtorType (%s (%d))", e.Ctor, len)
+	return fmt.Sprintf("CtorType (%s (%d))", e.Ctor.Name, len)
 }
 func (e *Typed) Name() string    { return "Typed" }
-func (e *TypeDecl) Name() string { return fmt.Sprintf("TypeDecl (%s)", e.Ident) }
+func (e *TypeDecl) Name() string { return fmt.Sprintf("TypeDecl (%s)", e.Ident.Name) }

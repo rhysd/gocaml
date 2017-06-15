@@ -13,7 +13,7 @@ import (
 
 func Analyze(parsed *ast.AST) (*types.Env, InferredTypes, error) {
 	// First, resolve all symbols by alpha transform
-	if err := AlphaTransform(parsed.Root); err != nil {
+	if err := AlphaTransform(parsed); err != nil {
 		return nil, nil, locerr.NoteAt(parsed.Root.Pos(), err, "Alpha transform failed")
 	}
 

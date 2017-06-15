@@ -27,7 +27,7 @@ func ExampleInferer_Infer() {
 	}
 
 	// First, resolve all symbols by alpha transform
-	if err := AlphaTransform(parsed.Root); err != nil {
+	if err := AlphaTransform(parsed); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return
 	}

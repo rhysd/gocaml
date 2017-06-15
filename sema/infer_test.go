@@ -26,7 +26,7 @@ func TestEdgeCases(t *testing.T) {
 			if err != nil {
 				panic(err)
 			}
-			if err = AlphaTransform(ast.Root); err != nil {
+			if err = AlphaTransform(ast); err != nil {
 				panic(err)
 			}
 			i := NewInferer()
@@ -284,11 +284,6 @@ func TestUnificationFailure(t *testing.T) {
 			expected: "option' and 'int'",
 		},
 		{
-			what:     "Invalid type specified",
-			code:     "let foo: fooooooo = 42 in foo",
-			expected: "Unknown type constructor 'fooooooo'",
-		},
-		{
 			what:     "Type mismatch at type annotation",
 			code:     "let foo: bool = 42 in foo",
 			expected: "Type mismatch between 'bool' and 'int'",
@@ -314,11 +309,6 @@ func TestUnificationFailure(t *testing.T) {
 			expected: "Mismatch between inferred type and specified type",
 		},
 		{
-			what:     "Invalid type at (e: ty) expression",
-			code:     "(i: foooo)",
-			expected: "Unknown type constructor 'foooo'",
-		},
-		{
 			what:     "Type mismatch at param type",
 			code:     "let rec f (x:float) = -x in f",
 			expected: "Type mismatch between 'int' and 'float'",
@@ -335,8 +325,18 @@ func TestUnificationFailure(t *testing.T) {
 		},
 		{
 			what:     "Invalid return type",
-			code:     "let rec f x: foo = x in f",
+			code:     "let rec f _: bool = 42 in f",
 			expected: "Return type of function",
+		},
+		{
+			what:     "Invalid type at (e: ty) expression",
+			code:     "let i = 42 in (i: bool)",
+			expected: "Mismatch between inferred type and specified type",
+		},
+		{
+			what:     "Invalid type specified to variable",
+			code:     "let foo: bool = 42 in foo",
+			expected: "Type of variable 'foo'",
 		},
 		{
 			what:     "Element type mismatch",
@@ -382,8 +382,8 @@ func TestUnificationFailure(t *testing.T) {
 			if err != nil {
 				panic(err)
 			}
-			if err = AlphaTransform(ast.Root); err != nil {
-				panic(err)
+			if err = AlphaTransform(ast); err != nil {
+				t.Fatal(err)
 			}
 			i := NewInferer()
 			err = i.Infer(ast)
@@ -409,7 +409,7 @@ func TestInferSuccess(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err = AlphaTransform(ast.Root); err != nil {
+			if err = AlphaTransform(ast); err != nil {
 				t.Fatal(err)
 			}
 			i := NewInferer()

@@ -877,7 +877,7 @@ $ gcc -m32 -lgc source.o ./runtime/gocamlrt.a
 [goyacc]: https://github.com/cznic/goyacc
 [LLVM]: http://llvm.org/
 [Linux and macOS Build Status]: https://travis-ci.org/rhysd/gocaml.svg?branch=master
-[Travis CI]: https://travis-ci.org/rhysd/gocaml
+[Travis CI]: https://travis-ci.org/rhysd/gocaml/branches
 [syntax doc]: https://godoc.org/github.com/rhysd/gocaml/syntax
 [sema doc]: https://godoc.org/github.com/rhysd/gocaml/sema
 [mir doc]: https://godoc.org/github.com/rhysd/gocaml/mir

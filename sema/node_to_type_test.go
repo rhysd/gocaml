@@ -22,7 +22,7 @@ func TestSuccess(t *testing.T) {
 			nil,
 			tok,
 			nil,
-			name,
+			ast.NewSymbol(name),
 		}
 	}
 	ctor := func(name string, child ast.Expr) ast.Expr {
@@ -30,13 +30,13 @@ func TestSuccess(t *testing.T) {
 			nil,
 			tok,
 			[]ast.Expr{child},
-			name,
+			ast.NewSymbol(name),
 		}
 	}
 	decls := []*ast.TypeDecl{
-		{tok, "foo", prim("int")},
-		{tok, "bar", prim("foo")},
-		{tok, "piyo", &ast.FuncType{
+		{tok, ast.NewSymbol("foo"), prim("int")},
+		{tok, ast.NewSymbol("bar"), prim("foo")},
+		{tok, ast.NewSymbol("piyo"), &ast.FuncType{
 			[]ast.Expr{prim("int"), prim("foo")},
 			prim("bar"),
 		}},
@@ -214,7 +214,7 @@ func TestErrors(t *testing.T) {
 			nil,
 			tok,
 			nil,
-			name,
+			ast.NewSymbol(name),
 		}
 	}
 	cases := []struct {
@@ -233,7 +233,7 @@ func TestErrors(t *testing.T) {
 				tok,
 				tok,
 				[]ast.Expr{prim("int"), prim("bool")},
-				"array",
+				ast.NewSymbol("array"),
 			},
 			msg: "'array' only has 1 type parameter",
 		},
@@ -243,7 +243,7 @@ func TestErrors(t *testing.T) {
 				tok,
 				tok,
 				[]ast.Expr{prim("int"), prim("bool")},
-				"option",
+				ast.NewSymbol("option"),
 			},
 			msg: "'option' only has 1 type parameter",
 		},
@@ -292,7 +292,7 @@ func TestInvalidAliases(t *testing.T) {
 			nil,
 			tok,
 			nil,
-			name,
+			ast.NewSymbol(name),
 		}
 	}
 
@@ -304,29 +304,29 @@ func TestInvalidAliases(t *testing.T) {
 		{
 			what: "ignored name",
 			decls: []*ast.TypeDecl{
-				{tok, "_", prim("int")},
+				{tok, ast.NewSymbol("_"), prim("int")},
 			},
 			msg: "Cannot declare '_' type name",
 		},
 		{
 			what: "redeclare primitive type name",
 			decls: []*ast.TypeDecl{
-				{tok, "int", prim("float")},
+				{tok, ast.NewSymbol("int"), prim("float")},
 			},
 			msg: "Type name 'int' was already declared",
 		},
 		{
 			what: "redeclare alias name",
 			decls: []*ast.TypeDecl{
-				{tok, "foo", prim("float")},
-				{tok, "foo", prim("bool")},
+				{tok, ast.NewSymbol("foo"), prim("float")},
+				{tok, ast.NewSymbol("foo"), prim("bool")},
 			},
 			msg: "Type name 'foo' was already declared",
 		},
 		{
 			what: "invalid aliased type",
 			decls: []*ast.TypeDecl{
-				{tok, "foo", prim("piyo")},
+				{tok, ast.NewSymbol("foo"), prim("piyo")},
 			},
 			msg: "Type declaration 'foo'",
 		},

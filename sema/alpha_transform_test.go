@@ -24,7 +24,7 @@ func TestFlatScope(t *testing.T) {
 		ref,
 		nil,
 	}
-	if err := AlphaTransform(root); err != nil {
+	if err := AlphaTransform(&ast.AST{Root: root}); err != nil {
 		t.Fatal(err)
 	}
 	if ref.Symbol.Name != "test$t1" {
@@ -59,7 +59,7 @@ func TestNested(t *testing.T) {
 		nil,
 	}
 
-	if err := AlphaTransform(root); err != nil {
+	if err := AlphaTransform(&ast.AST{Root: root}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -102,7 +102,7 @@ func TestMatch(t *testing.T) {
 		nil,
 	}
 
-	if err := AlphaTransform(root); err != nil {
+	if err := AlphaTransform(&ast.AST{Root: root}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -134,7 +134,7 @@ func TestLetTuple(t *testing.T) {
 		nil,
 	}
 
-	if err := AlphaTransform(root); err != nil {
+	if err := AlphaTransform(&ast.AST{Root: root}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -169,7 +169,7 @@ func TestLetTupleHasDuplicateName(t *testing.T) {
 		nil,
 	}
 
-	if err := AlphaTransform(root); err == nil {
+	if err := AlphaTransform(&ast.AST{Root: root}); err == nil {
 		t.Fatalf("LetTuple contains duplicate symbols but error did not occur")
 	}
 }
@@ -202,7 +202,7 @@ func TestLetRec(t *testing.T) {
 		ref,
 	}
 
-	if err := AlphaTransform(root); err != nil {
+	if err := AlphaTransform(&ast.AST{Root: root}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -253,7 +253,7 @@ func TestRecursiveFunc(t *testing.T) {
 		&ast.Int{tok, 42},
 	}
 
-	if err := AlphaTransform(root); err != nil {
+	if err := AlphaTransform(&ast.AST{Root: root}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -291,7 +291,7 @@ func TestFuncAndParamHaveSameName(t *testing.T) {
 		ref2,
 	}
 
-	if err := AlphaTransform(root); err != nil {
+	if err := AlphaTransform(&ast.AST{Root: root}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -330,7 +330,7 @@ func TestParamDuplicate(t *testing.T) {
 		&ast.Int{tok, 42},
 	}
 
-	if err := AlphaTransform(root); err == nil {
+	if err := AlphaTransform(&ast.AST{Root: root}); err == nil {
 		t.Fatal("Duplicate in parameters must raise an error")
 	}
 }
@@ -345,7 +345,7 @@ func TestExternalSymbol(t *testing.T) {
 		ast.NewSymbol("x"),
 	}
 
-	if err := AlphaTransform(ref); err != nil {
+	if err := AlphaTransform(&ast.AST{Root: ref}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -363,7 +363,7 @@ func TestUnderscoreName(t *testing.T) {
 		tok,
 		ast.NewSymbol("_"),
 	}
-	err := AlphaTransform(ref)
+	err := AlphaTransform(&ast.AST{Root: ref})
 	if err == nil {
 		t.Fatal("Error was expected")
 	}

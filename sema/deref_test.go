@@ -232,7 +232,7 @@ func TestMiscCheckError(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err = AlphaTransform(parsed.Root); err != nil {
+			if err = AlphaTransform(parsed); err != nil {
 				t.Fatal(err)
 			}
 
