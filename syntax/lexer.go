@@ -6,7 +6,6 @@ import (
 	"github.com/rhysd/gocaml/token"
 	"github.com/rhysd/locerr"
 	"io"
-	"os"
 	"unicode"
 	"unicode/utf8"
 )
@@ -109,7 +108,8 @@ func (l *Lexer) emitIdent(ident string) {
 	}
 }
 
-func (l *Lexer) emitIllegal() {
+func (l *Lexer) emitIllegal(reason string) {
+	l.errmsg(reason)
 	t := token.Token{
 		token.ILLEGAL,
 		l.start,
@@ -121,13 +121,11 @@ func (l *Lexer) emitIllegal() {
 }
 
 func (l *Lexer) expected(s string, actual rune) {
-	l.errmsg(fmt.Sprintf("Expected %s but got '%c'(%d)", s, actual, actual))
-	l.emitIllegal()
+	l.emitIllegal(fmt.Sprintf("Expected %s but got '%c'(%d)", s, actual, actual))
 }
 
 func (l *Lexer) unclosedComment(expected string) {
-	l.errmsg(fmt.Sprintf("Expected '%s' for closing comment but got EOF", expected))
-	l.emitIllegal()
+	l.emitIllegal(fmt.Sprintf("Expected '%s' for closing comment but got EOF", expected))
 }
 
 func (l *Lexer) forward() {
@@ -143,8 +141,9 @@ func (l *Lexer) forward() {
 	}
 
 	if !utf8.ValidRune(r) {
-		fmt.Fprintln(os.Stderr, locerr.ErrorfAt(l.current, "Invalid UTF-8 character '%c' (%d)", r, r))
-		panic("FATAL: Cannot continue to lex source")
+		l.emitIllegal(fmt.Sprintf("Invalid UTF-8 character '%c' (%d)", r, r))
+		l.eof = true
+		return
 	}
 
 	l.top = r
@@ -403,8 +402,7 @@ func lexArrayCreate(l *Lexer) stateFn {
 		l.emit(token.ARRAY_LENGTH)
 		return lex
 	default:
-		l.errmsg(fmt.Sprintf("Expected 'make' or 'length' for Array.make but got '%s'", ident))
-		l.emitIllegal()
+		l.emitIllegal(fmt.Sprintf("Expected 'make' or 'length' for Array.make but got '%s'", ident))
 		return nil
 	}
 }
@@ -436,8 +434,7 @@ func lexStringLiteral(l *Lexer) stateFn {
 		}
 		l.eat()
 	}
-	l.errmsg("Unclosed string literal")
-	l.emitIllegal()
+	l.emitIllegal("Unclosed string literal")
 	return nil
 }
 
