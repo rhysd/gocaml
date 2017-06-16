@@ -19,12 +19,6 @@ func newNodeTypeConv(decls []*ast.TypeDecl) (*nodeTypeConv, error) {
 	conv.aliases["string"] = StringType
 
 	for _, decl := range decls {
-		if decl.Ident.Name == "_" {
-			return nil, locerr.ErrorIn(decl.Pos(), decl.End(), "Cannot declare '_' type name")
-		}
-		if t, ok := conv.aliases[decl.Ident.Name]; ok {
-			return nil, locerr.ErrorfIn(decl.Pos(), decl.End(), "Type name '%s' was already declared as type '%s' at (line:%d, column:%d)", decl.Ident.Name, t.String())
-		}
 		t, err := conv.nodeToType(decl.Type)
 		if err != nil {
 			return nil, locerr.NotefAt(decl.Pos(), err, "Type declaration '%s'", decl.Ident.Name)

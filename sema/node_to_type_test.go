@@ -302,28 +302,6 @@ func TestInvalidAliases(t *testing.T) {
 		msg   string
 	}{
 		{
-			what: "ignored name",
-			decls: []*ast.TypeDecl{
-				{tok, ast.NewSymbol("_"), prim("int")},
-			},
-			msg: "Cannot declare '_' type name",
-		},
-		{
-			what: "redeclare primitive type name",
-			decls: []*ast.TypeDecl{
-				{tok, ast.NewSymbol("int"), prim("float")},
-			},
-			msg: "Type name 'int' was already declared",
-		},
-		{
-			what: "redeclare alias name",
-			decls: []*ast.TypeDecl{
-				{tok, ast.NewSymbol("foo"), prim("float")},
-				{tok, ast.NewSymbol("foo"), prim("bool")},
-			},
-			msg: "Type name 'foo' was already declared",
-		},
-		{
 			what: "invalid aliased type",
 			decls: []*ast.TypeDecl{
 				{tok, ast.NewSymbol("foo"), prim("piyo")},

@@ -162,10 +162,6 @@ func (t *transformer) VisitTopdown(node ast.Expr) ast.Visitor {
 			// '_' or other builtin types such as 'int' should not be alpha-transformed and handled as-is.
 			return t
 		}
-		if n.Ctor.DisplayName == "_" {
-			// '_' in type annotation means any type.
-			return t
-		}
 		mapped, ok := t.typeScope.resolve(n.Ctor.DisplayName)
 		if !ok {
 			t.err = locerr.ErrorfIn(n.Pos(), n.End(), "Undefined type name '%s'", n.Ctor.DisplayName)

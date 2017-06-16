@@ -371,3 +371,134 @@ func TestUnderscoreName(t *testing.T) {
 		t.Fatal("Unexpected error for '_' variable reference:", err)
 	}
 }
+
+func TestInvalidTypeAlias(t *testing.T) {
+	pos := locerr.Pos{}
+	tok := &token.Token{
+		Start: pos,
+		End:   pos,
+		File:  locerr.NewDummySource(""),
+	}
+	prim := func(name string) ast.Expr {
+		return &ast.CtorType{
+			nil,
+			tok,
+			nil,
+			ast.NewSymbol(name),
+		}
+	}
+
+	cases := []struct {
+		what  string
+		types []*ast.TypeDecl
+		root  ast.Expr
+		err   string
+	}{
+		{
+			what: "cannot define '_'",
+			types: []*ast.TypeDecl{
+				{tok, ast.NewSymbol("_"), prim("int")},
+			},
+			root: &ast.Unit{tok, tok},
+			err:  "Cannot redefine built-in type '_'",
+		},
+		{
+			what: "cannot define primitive type",
+			types: []*ast.TypeDecl{
+				{tok, ast.NewSymbol("float"), prim("int")},
+			},
+			root: &ast.Unit{tok, tok},
+			err:  "Cannot redefine built-in type 'float'",
+		},
+		{
+			what: "undefined type name in type decls",
+			types: []*ast.TypeDecl{
+				{tok, ast.NewSymbol("foo"), prim("bar")},
+			},
+			root: &ast.Unit{tok, tok},
+			err:  "Undefined type name 'bar'",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.what, func(t *testing.T) {
+			tree := &ast.AST{tc.root, tc.types}
+			err := AlphaTransform(tree)
+			if err == nil {
+				t.Fatal("Error did not occur. Expected:", tc.err)
+			}
+			msg := err.Error()
+			if !strings.Contains(msg, tc.err) {
+				t.Fatalf("Unexpected error message '%s'. '%s' should be contained", msg, tc.err)
+			}
+		})
+	}
+}
+
+func TestTypeAlias(t *testing.T) {
+	pos := locerr.Pos{}
+	tok := &token.Token{
+		Start: pos,
+		End:   pos,
+		File:  locerr.NewDummySource(""),
+	}
+	prim := func(sym *ast.Symbol) *ast.CtorType {
+		return &ast.CtorType{
+			nil,
+			tok,
+			nil,
+			sym,
+		}
+	}
+
+	foo := ast.NewSymbol("foo")
+	bar := ast.NewSymbol("bar")
+	primitive := ast.NewSymbol("int")
+	anyTy := prim(ast.NewSymbol("_"))
+	ty1 := prim(ast.NewSymbol("foo"))
+
+	root := &ast.Let{
+		tok,
+		ast.NewSymbol("foo"),
+		&ast.Unit{},
+		&ast.Let{
+			tok,
+			ast.NewSymbol("bar"),
+			&ast.Unit{},
+			&ast.Unit{},
+			anyTy,
+		},
+		ty1,
+	}
+
+	ty2 := prim(ast.NewSymbol("foo"))
+	decls := []*ast.TypeDecl{
+		{tok, foo, prim(primitive)},
+		{tok, bar, ty2},
+	}
+
+	tree := &ast.AST{root, decls}
+
+	if err := AlphaTransform(tree); err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.HasPrefix(foo.Name, "foo.t") {
+		t.Fatal("Unexpected symbol name: ", foo.Name)
+	}
+	if ty1.Ctor != foo {
+		t.Fatal("Failed to refer 'foo' at let expr")
+	}
+	if ty2.Ctor != foo {
+		t.Fatal("Failed to refer 'foo' at type decl")
+	}
+	if !strings.HasPrefix(bar.Name, "bar.t") {
+		t.Fatal("Unexpected symbol name: ", bar.Name)
+	}
+	if primitive.Name != "int" {
+		t.Fatal("Primitive type should not be transformed:", primitive.Name)
+	}
+	if anyTy.Ctor.Name != "_" {
+		t.Fatal("'_' should not be transformed:", anyTy.Ctor.Name)
+	}
+}
