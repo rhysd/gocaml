@@ -199,3 +199,15 @@ func TestTooLargeFloatLiteral(t *testing.T) {
 		t.Fatal("Unexpected error:", err)
 	}
 }
+
+func TestLexFailed(t *testing.T) {
+	src := locerr.NewDummySource("(* comment is not closed")
+	_, err := Parse(src)
+	if err == nil {
+		t.Fatal("Lex error was not reported")
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, "Lexing source into tokens failed") {
+		t.Fatal("Unexpected error message:", msg)
+	}
+}
