@@ -356,7 +356,7 @@ func TestEmitInsn(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err = AlphaTransform(ast.Root); err != nil {
+			if err = AlphaTransform(ast); err != nil {
 				t.Fatal(err)
 			}
 			inf := NewInferer()

@@ -28,17 +28,29 @@ func duplicateSymbol(symbols []*ast.Symbol) *ast.Symbol {
 	return nil
 }
 
+func isBuiltinTypeCtor(name string) bool {
+	switch name {
+	case "_", "array", "option", "unit", "int", "bool", "float", "string":
+		return true
+	default:
+		return false
+	}
+}
+
 type transformer struct {
-	current *scope
-	count   uint
-	err     error
+	current   *scope
+	typeScope *scope
+	varId     uint
+	tyId      uint
+	err       error
 }
 
 func newTransformer() *transformer {
 	return &transformer{
-		current: newScope(nil),
-		count:   0,
-		err:     nil,
+		current:   newScope(nil),
+		typeScope: newScope(nil),
+		varId:     0,
+		tyId:      0,
 	}
 }
 
@@ -46,16 +58,21 @@ func (t *transformer) duplicateError(node ast.Expr, name string) {
 	t.err = locerr.ErrorfIn(node.Pos(), node.End(), "Detected duplicate symbol '%s'", name)
 }
 
-func (t *transformer) newID(n string) string {
-	t.count++
-	return fmt.Sprintf("%s$t%d", n, t.count)
+func (t *transformer) newVarID(n string) string {
+	t.varId++
+	return fmt.Sprintf("%s$t%d", n, t.varId)
+}
+
+func (t *transformer) newTyID(n string) string {
+	t.tyId++
+	return fmt.Sprintf("%s.t%d", n, t.tyId)
 }
 
 func (t *transformer) register(s *ast.Symbol) {
 	if s.IsIgnored() {
 		return
 	}
-	s.Name = t.newID(s.DisplayName)
+	s.Name = t.newVarID(s.DisplayName)
 	t.current.mapSymbol(s.DisplayName, s)
 }
 
@@ -72,6 +89,9 @@ func (t *transformer) VisitTopdown(node ast.Expr) ast.Visitor {
 	case *ast.Let:
 		// At first, transform value bound to the variable
 		ast.Visit(t, n.Bound)
+		if n.Type != nil {
+			ast.Visit(t, n.Type)
+		}
 		t.nest()
 		t.register(n.Symbol)
 		ast.Visit(t, n.Body)
@@ -86,7 +106,13 @@ func (t *transformer) VisitTopdown(node ast.Expr) ast.Visitor {
 		t.register(n.Func.Symbol)
 		t.nest()
 		for _, p := range n.Func.Params {
+			if p.Type != nil {
+				ast.Visit(t, p.Type)
+			}
 			t.register(p.Ident)
+		}
+		if n.Func.RetType != nil {
+			ast.Visit(t, n.Func.RetType)
 		}
 		ast.Visit(t, n.Func.Body)
 		t.pop() // Pop parameters scope
@@ -94,6 +120,9 @@ func (t *transformer) VisitTopdown(node ast.Expr) ast.Visitor {
 		t.pop() // Pop function scope
 		return nil
 	case *ast.LetTuple:
+		if n.Type != nil {
+			ast.Visit(t, n.Type)
+		}
 		ast.Visit(t, n.Bound)
 		if s := duplicateSymbol(n.Symbols); s != nil {
 			t.duplicateError(n, s.DisplayName)
@@ -128,6 +157,18 @@ func (t *transformer) VisitTopdown(node ast.Expr) ast.Visitor {
 		}
 		n.Symbol = mapped
 		return nil
+	case *ast.CtorType:
+		if isBuiltinTypeCtor(n.Ctor.DisplayName) {
+			// '_' or other builtin types such as 'int' should not be alpha-transformed and handled as-is.
+			return t
+		}
+		mapped, ok := t.typeScope.resolve(n.Ctor.DisplayName)
+		if !ok {
+			t.err = locerr.ErrorfIn(n.Pos(), n.End(), "Undefined type name '%s'", n.Ctor.DisplayName)
+			return nil
+		}
+		n.Ctor = mapped
+		return t
 	default:
 		// Visit recursively
 		return t
@@ -141,8 +182,23 @@ func (t *transformer) VisitBottomup(ast.Expr) {
 // AlphaTransform adds identical names to all identifiers in AST nodes.
 // If there are some duplicate names, it causes an error.
 // External symbols are named the same as display names.
-func AlphaTransform(root ast.Expr) error {
+func AlphaTransform(tree *ast.AST) error {
 	v := newTransformer()
-	ast.Visit(v, root)
+	for _, decl := range tree.TypeDecls {
+		ast.Visit(v, decl.Type)
+		if v.err != nil {
+			return v.err
+		}
+
+		i := decl.Ident
+		if isBuiltinTypeCtor(i.DisplayName) {
+			return locerr.ErrorfIn(decl.Pos(), decl.End(), "Cannot redefine built-in type '%s'", i.DisplayName)
+		}
+
+		// Note: Overwrite previous type mapping if already existing
+		i.Name = v.newTyID(i.DisplayName)
+		v.typeScope.mapSymbol(i.DisplayName, i)
+	}
+	ast.Visit(v, tree.Root)
 	return v.err
 }

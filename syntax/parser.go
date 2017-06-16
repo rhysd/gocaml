@@ -94,8 +94,7 @@ func ParseTokens(tokens chan token.Token) (*ast.AST, error) {
 
 	root := l.result
 	if ret != 0 || root == nil {
-		l.Error("Parse failed for unknown reason")
-		return nil, l.err
+		panic("FATAL: Parse failed for unknown reason")
 	}
 
 	return root, nil

@@ -15,10 +15,7 @@ type printer struct {
 func (p *printer) getTypeNameOf(insn *Insn) string {
 	t, ok := p.types.Table[insn.Ident]
 	if !ok {
-		panic(fmt.Sprintf("Type for identifier '%s' not found", insn.Ident))
-	}
-	if t == nil {
-		return "unknown (unused)"
+		panic("FATAL: Type of identifier not found: " + insn.Ident)
 	}
 	return t.String()
 }
