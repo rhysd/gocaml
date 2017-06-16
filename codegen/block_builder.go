@@ -35,7 +35,7 @@ type blockBuilder struct {
 }
 
 func newBlockBuilder(b *moduleBuilder, allocaBlock llvm.BasicBlock) *blockBuilder {
-	unit := llvm.ConstNamedStruct(b.typeBuilder.unitT, []llvm.Value{})
+	unit := llvm.Undef(b.typeBuilder.unitT)
 	return &blockBuilder{b, map[string]llvm.Value{}, unit, allocaBlock}
 }
 
@@ -102,7 +102,7 @@ func (b *blockBuilder) buildEq(ty types.Type, bin *mir.Binary, lhs, rhs llvm.Val
 
 	switch ty := ty.(type) {
 	case *types.Unit:
-		// `() = ()` is always true and `() <> ()` will never be true.
+		// `() = ()` is always true and `() <> ()` is never true.
 		i := uint64(1)
 		if bin.Op == mir.NEQ {
 			i = 0
