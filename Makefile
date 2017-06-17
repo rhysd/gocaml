@@ -11,6 +11,7 @@ SRCS := \
 	types/builtins.go \
 	types/env.go \
 	types/type.go \
+	types/visitor.go \
 	sema/unify.go \
 	sema/deref.go \
 	sema/infer.go \
@@ -49,6 +50,7 @@ TESTS := \
 	token/token_test.go \
 	types/env_test.go \
 	types/type_test.go \
+	types/visitor_test.go \
 	sema/example_test.go \
 	sema/infer_test.go \
 	sema/deref_test.go \
