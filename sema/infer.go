@@ -168,19 +168,15 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 			return nil, err
 		}
 
-		var t Type
 		if n.Type != nil {
 			// When let x: type = ...
-			t, err = inf.conv.nodeToType(n.Type)
+			t, err := inf.conv.nodeToType(n.Type)
 			if err != nil {
 				return nil, err
 			}
-		} else {
-			t = &Var{}
-		}
-
-		if err = Unify(t, bound); err != nil {
-			return nil, locerr.NotefAt(n.Body.Pos(), err, "Type of variable '%s'", n.Symbol.DisplayName)
+			if err := Unify(t, bound); err != nil {
+				return nil, locerr.NotefAt(n.Body.Pos(), err, "Type of variable '%s'", n.Symbol.DisplayName)
+			}
 		}
 
 		inf.Env.Table[n.Symbol.Name] = bound
