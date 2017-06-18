@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"strings"
+	"unsafe"
 )
 
 type Type interface {
@@ -98,7 +99,8 @@ func (t *Option) String() string {
 }
 
 type Var struct {
-	Ref Type
+	Ref   Type
+	Level int
 }
 
 func (t *Var) String() string {
@@ -106,6 +108,21 @@ func (t *Var) String() string {
 		return fmt.Sprintf("?(%p)", t)
 	}
 	return t.Ref.String()
+}
+
+type GenericId uintptr
+type Generic struct {
+	Id GenericId
+}
+
+func (t *Generic) String() string {
+	return fmt.Sprintf("'a(%x)", t.Id)
+}
+
+func newGeneric() *Generic {
+	g := &Generic{}
+	g.Id = GenericId(unsafe.Pointer(g))
+	return g
 }
 
 // Make singleton type values because it doesn't have any contextual information

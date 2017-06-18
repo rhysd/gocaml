@@ -23,23 +23,23 @@ func NewInferer() *Inferer {
 	return &Inferer{NewEnv(), nil, map[ast.Expr]Type{}}
 }
 
-func (inf *Inferer) checkNodeType(where string, node ast.Expr, expected Type) error {
-	t, err := inf.infer(node)
+func (inf *Inferer) checkNodeType(where string, node ast.Expr, expected Type, level int) error {
+	t, err := inf.infer(node, level)
 	if err != nil {
 		return err
 	}
-	if err = Unify(expected, t); err != nil {
+	if err := Unify(expected, t); err != nil {
 		return locerr.NotefAt(node.Pos(), err, "Type error: %s must be '%s'", where, expected.String())
 	}
 	return nil
 }
 
-func (inf *Inferer) inferArithmeticBinOp(op string, left, right ast.Expr, operand Type) (Type, error) {
-	l, err := inf.infer(left)
+func (inf *Inferer) inferArithmeticBinOp(op string, left, right ast.Expr, operand Type, level int) (Type, error) {
+	l, err := inf.infer(left, level)
 	if err != nil {
 		return nil, err
 	}
-	r, err := inf.infer(right)
+	r, err := inf.infer(right, level)
 	if err != nil {
 		return nil, err
 	}
@@ -53,12 +53,12 @@ func (inf *Inferer) inferArithmeticBinOp(op string, left, right ast.Expr, operan
 	return operand, nil
 }
 
-func (inf *Inferer) inferRelationalBinOp(op string, left, right ast.Expr) (Type, error) {
-	l, err := inf.infer(left)
+func (inf *Inferer) inferRelationalBinOp(op string, left, right ast.Expr, level int) (Type, error) {
+	l, err := inf.infer(left, level)
 	if err != nil {
 		return nil, err
 	}
-	r, err := inf.infer(right)
+	r, err := inf.infer(right, level)
 	if err != nil {
 		return nil, err
 	}
@@ -68,9 +68,9 @@ func (inf *Inferer) inferRelationalBinOp(op string, left, right ast.Expr) (Type,
 	return BoolType, nil
 }
 
-func (inf *Inferer) inferLogicalOp(op string, left, right ast.Expr) (Type, error) {
+func (inf *Inferer) inferLogicalOp(op string, left, right ast.Expr, level int) (Type, error) {
 	for i, e := range []ast.Expr{left, right} {
-		t, err := inf.infer(e)
+		t, err := inf.infer(e, level)
 		if err != nil {
 			return nil, err
 		}
@@ -81,7 +81,7 @@ func (inf *Inferer) inferLogicalOp(op string, left, right ast.Expr) (Type, error
 	return BoolType, nil
 }
 
-func (inf *Inferer) unification(e ast.Expr) (Type, error) {
+func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 	switch n := e.(type) {
 	case *ast.Unit:
 		return UnitType, nil
@@ -94,65 +94,65 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 	case *ast.Bool:
 		return BoolType, nil
 	case *ast.Not:
-		if err := inf.checkNodeType("operand of operator 'not'", n.Child, BoolType); err != nil {
+		if err := inf.checkNodeType("operand of operator 'not'", n.Child, BoolType, level); err != nil {
 			return nil, err
 		}
 		return BoolType, nil
 	case *ast.Neg:
-		if err := inf.checkNodeType("operand of unary operator '-'", n.Child, IntType); err != nil {
+		if err := inf.checkNodeType("operand of unary operator '-'", n.Child, IntType, level); err != nil {
 			return nil, err
 		}
 		return IntType, nil
 	case *ast.Add:
-		return inf.inferArithmeticBinOp("+", n.Left, n.Right, IntType)
+		return inf.inferArithmeticBinOp("+", n.Left, n.Right, IntType, level)
 	case *ast.Sub:
-		return inf.inferArithmeticBinOp("-", n.Left, n.Right, IntType)
+		return inf.inferArithmeticBinOp("-", n.Left, n.Right, IntType, level)
 	case *ast.Mul:
-		return inf.inferArithmeticBinOp("*", n.Left, n.Right, IntType)
+		return inf.inferArithmeticBinOp("*", n.Left, n.Right, IntType, level)
 	case *ast.Div:
-		return inf.inferArithmeticBinOp("/", n.Left, n.Right, IntType)
+		return inf.inferArithmeticBinOp("/", n.Left, n.Right, IntType, level)
 	case *ast.Mod:
-		return inf.inferArithmeticBinOp("%", n.Left, n.Right, IntType)
+		return inf.inferArithmeticBinOp("%", n.Left, n.Right, IntType, level)
 	case *ast.FNeg:
-		if err := inf.checkNodeType("operand of unary operator '-.'", n.Child, FloatType); err != nil {
+		if err := inf.checkNodeType("operand of unary operator '-.'", n.Child, FloatType, level); err != nil {
 			return nil, err
 		}
 		return FloatType, nil
 	case *ast.FAdd:
-		return inf.inferArithmeticBinOp("+.", n.Left, n.Right, FloatType)
+		return inf.inferArithmeticBinOp("+.", n.Left, n.Right, FloatType, level)
 	case *ast.FSub:
-		return inf.inferArithmeticBinOp("-.", n.Left, n.Right, FloatType)
+		return inf.inferArithmeticBinOp("-.", n.Left, n.Right, FloatType, level)
 	case *ast.FMul:
-		return inf.inferArithmeticBinOp("*.", n.Left, n.Right, FloatType)
+		return inf.inferArithmeticBinOp("*.", n.Left, n.Right, FloatType, level)
 	case *ast.FDiv:
-		return inf.inferArithmeticBinOp("/.", n.Left, n.Right, FloatType)
+		return inf.inferArithmeticBinOp("/.", n.Left, n.Right, FloatType, level)
 	case *ast.Eq:
-		return inf.inferRelationalBinOp("=", n.Left, n.Right)
+		return inf.inferRelationalBinOp("=", n.Left, n.Right, level)
 	case *ast.NotEq:
-		return inf.inferRelationalBinOp("<>", n.Left, n.Right)
+		return inf.inferRelationalBinOp("<>", n.Left, n.Right, level)
 	case *ast.Less:
-		return inf.inferRelationalBinOp("<", n.Left, n.Right)
+		return inf.inferRelationalBinOp("<", n.Left, n.Right, level)
 	case *ast.LessEq:
-		return inf.inferRelationalBinOp("<=", n.Left, n.Right)
+		return inf.inferRelationalBinOp("<=", n.Left, n.Right, level)
 	case *ast.Greater:
-		return inf.inferRelationalBinOp(">", n.Left, n.Right)
+		return inf.inferRelationalBinOp(">", n.Left, n.Right, level)
 	case *ast.GreaterEq:
-		return inf.inferRelationalBinOp(">=", n.Left, n.Right)
+		return inf.inferRelationalBinOp(">=", n.Left, n.Right, level)
 	case *ast.And:
-		return inf.inferLogicalOp("&&", n.Left, n.Right)
+		return inf.inferLogicalOp("&&", n.Left, n.Right, level)
 	case *ast.Or:
-		return inf.inferLogicalOp("||", n.Left, n.Right)
+		return inf.inferLogicalOp("||", n.Left, n.Right, level)
 	case *ast.If:
-		if err := inf.checkNodeType("condition of 'if' expression", n.Cond, BoolType); err != nil {
+		if err := inf.checkNodeType("condition of 'if' expression", n.Cond, BoolType, level); err != nil {
 			return nil, err
 		}
 
-		t, err := inf.infer(n.Then)
+		t, err := inf.infer(n.Then, level)
 		if err != nil {
 			return nil, err
 		}
 
-		e, err := inf.infer(n.Else)
+		e, err := inf.infer(n.Else, level)
 		if err != nil {
 			return nil, err
 		}
@@ -163,42 +163,39 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 
 		return t, nil
 	case *ast.Let:
-		bound, err := inf.infer(n.Bound)
+		bound, err := inf.infer(n.Bound, level+1)
 		if err != nil {
 			return nil, err
 		}
+		bound = Generalize(level, bound)
 
-		var t Type
 		if n.Type != nil {
 			// When let x: type = ...
-			t, err = inf.conv.nodeToType(n.Type)
+			t, err := inf.conv.nodeToType(n.Type, level)
 			if err != nil {
 				return nil, err
 			}
-		} else {
-			t = &Var{}
-		}
-
-		if err = Unify(t, bound); err != nil {
-			return nil, locerr.NotefAt(n.Body.Pos(), err, "Type of variable '%s'", n.Symbol.DisplayName)
+			if err := Unify(t, bound); err != nil {
+				return nil, locerr.NotefAt(n.Body.Pos(), err, "Type of variable '%s'", n.Symbol.DisplayName)
+			}
 		}
 
 		inf.Env.Table[n.Symbol.Name] = bound
-		return inf.infer(n.Body)
+		return inf.infer(n.Body, level)
 	case *ast.VarRef:
 		if t, ok := inf.Env.Table[n.Symbol.Name]; ok {
-			return t, nil
+			return instantiate(t, level), nil
 		}
 		if t, ok := inf.Env.Externals[n.Symbol.Name]; ok {
-			return t, nil
+			return instantiate(t, level), nil
 		}
 		// Assume as free variable. If free variable's type is not identified,
 		// It falls into compilation error
-		t := &Var{}
+		t := &Var{Level: level}
 		inf.Env.Externals[n.Symbol.DisplayName] = t
 		return t, nil
 	case *ast.LetRec:
-		f := &Var{}
+		f := &Var{Level: level}
 		// Need to register function here because of recursive functions
 		inf.Env.Table[n.Func.Symbol.Name] = f
 
@@ -208,25 +205,25 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 			var t Type
 			var err error
 			if p.Type != nil {
-				t, err = inf.conv.nodeToType(p.Type)
+				t, err = inf.conv.nodeToType(p.Type, level)
 				if err != nil {
 					return nil, locerr.NotefAt(p.Type.Pos(), err, "%s parameter of function", common.Ordinal(i+1))
 				}
 			} else {
-				t = &Var{}
+				t = &Var{Level: level}
 			}
 			inf.Env.Table[p.Ident.Name] = t
 			params[i] = t
 		}
 
 		// Infer return type of function from its body
-		ret, err := inf.infer(n.Func.Body)
+		ret, err := inf.infer(n.Func.Body, level)
 		if err != nil {
 			return nil, err
 		}
 
 		if n.Func.RetType != nil {
-			t, err := inf.conv.nodeToType(n.Func.RetType)
+			t, err := inf.conv.nodeToType(n.Func.RetType, level)
 			if err != nil {
 				return nil, locerr.NoteAt(n.Func.RetType.Pos(), err, "Return type of function")
 			}
@@ -246,11 +243,11 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 			return nil, locerr.NotefAt(n.Pos(), err, "Function '%s'", n.Func.Symbol.DisplayName)
 		}
 
-		return inf.infer(n.Body)
+		return inf.infer(n.Body, level)
 	case *ast.Apply:
 		args := make([]Type, len(n.Args))
 		for i, a := range n.Args {
-			t, err := inf.infer(a)
+			t, err := inf.infer(a, level)
 			if err != nil {
 				return nil, err
 			}
@@ -259,13 +256,13 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 
 		// Return type of callee is unknown in this point.
 		// So make a new type variable and allocate it as return type.
-		ret := &Var{}
+		ret := &Var{Level: level}
 		fun := &Fun{
 			Ret:    ret,
 			Params: args,
 		}
 
-		callee, err := inf.infer(n.Callee)
+		callee, err := inf.infer(n.Callee, level)
 		if err != nil {
 			return nil, err
 		}
@@ -278,7 +275,7 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 	case *ast.Tuple:
 		elems := make([]Type, len(n.Elems))
 		for i, e := range n.Elems {
-			t, err := inf.infer(e)
+			t, err := inf.infer(e, level)
 			if err != nil {
 				return nil, err
 			}
@@ -290,7 +287,7 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 
 		if n.Type != nil {
 			var err error
-			t, err = inf.conv.nodeToType(n.Type)
+			t, err = inf.conv.nodeToType(n.Type, level)
 			if err != nil {
 				return nil, err
 			}
@@ -308,60 +305,66 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 			elems := make([]Type, len(n.Symbols))
 			for i, sym := range n.Symbols {
 				// Bound elements' types are unknown in this point
-				v := &Var{}
+				v := &Var{Level: level}
 				inf.Env.Table[sym.Name] = v
 				elems[i] = v
 			}
 			t = &Tuple{Elems: elems}
 		}
 
-		// Bound value must be tuple
-		if err := inf.checkNodeType("bound tuple value at 'let'", n.Bound, t); err != nil {
+		bound, err := inf.infer(n.Bound, level+1)
+		if err != nil {
 			return nil, err
+		}
+		bound = Generalize(level, bound)
+
+		// Bound value must be tuple
+		if err := Unify(t, bound); err != nil {
+			return nil, locerr.NotefAt(n.Pos(), err, "Type error: bound tuple value at 'let' must be '%s'", t.String())
 		}
 
-		return inf.infer(n.Body)
+		return inf.infer(n.Body, level)
 	case *ast.ArrayMake:
-		if err := inf.checkNodeType("size at array creation", n.Size, IntType); err != nil {
+		if err := inf.checkNodeType("size at array creation", n.Size, IntType, level); err != nil {
 			return nil, err
 		}
-		elem, err := inf.infer(n.Elem)
+		elem, err := inf.infer(n.Elem, level)
 		if err != nil {
 			return nil, err
 		}
 		return &Array{Elem: elem}, nil
 	case *ast.ArraySize:
-		if err := inf.checkNodeType("argument of 'Array.length'", n.Target, &Array{Elem: &Var{}}); err != nil {
+		if err := inf.checkNodeType("argument of 'Array.length'", n.Target, &Array{Elem: &Var{Level: level}}, level); err != nil {
 			return nil, err
 		}
 		return IntType, nil
 	case *ast.Get:
 		// Lhs of Get must be array but its element type is unknown.
 		// So introduce new type variable for it.
-		elem := &Var{}
+		elem := &Var{Level: level}
 		array := &Array{Elem: elem}
 
-		if err := inf.checkNodeType("array value in index access", n.Array, array); err != nil {
+		if err := inf.checkNodeType("array value in index access", n.Array, array, level); err != nil {
 			return nil, err
 		}
 
-		if err := inf.checkNodeType("index access to array", n.Index, IntType); err != nil {
+		if err := inf.checkNodeType("index access to array", n.Index, IntType, level); err != nil {
 			return nil, err
 		}
 
 		return elem, nil
 	case *ast.Put:
-		if err := inf.checkNodeType("index at assignment to an element of array", n.Index, IntType); err != nil {
+		if err := inf.checkNodeType("index at assignment to an element of array", n.Index, IntType, level); err != nil {
 			return nil, err
 		}
-		assignee, err := inf.infer(n.Assignee)
+		assignee, err := inf.infer(n.Assignee, level)
 		if err != nil {
 			return nil, err
 		}
 
 		// Type of assigned value must be the same as element type of the array
 		array := &Array{Elem: assignee}
-		if err := inf.checkNodeType("assignment to an element of array", n.Array, array); err != nil {
+		if err := inf.checkNodeType("assignment to an element of array", n.Array, array, level); err != nil {
 			return nil, err
 		}
 
@@ -370,14 +373,14 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 	case *ast.ArrayLit:
 		if len(n.Elems) == 0 {
 			// Array is empty. Cannot infer type of elements.
-			return &Array{&Var{}}, nil
+			return &Array{&Var{Level: level}}, nil
 		}
-		elem, err := inf.infer(n.Elems[0])
+		elem, err := inf.infer(n.Elems[0], level)
 		if err != nil {
 			return nil, locerr.NoteAt(n.Pos(), err, "1st element type of array literal is incorrect")
 		}
 		for i, e := range n.Elems[1:] {
-			t, err := inf.infer(e)
+			t, err := inf.infer(e, level)
 			if err != nil {
 				return nil, locerr.NotefAt(n.Pos(), err, "%s element type of array literal is incorrect", common.Ordinal(i+2))
 			}
@@ -387,26 +390,26 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 		}
 		return &Array{elem}, nil
 	case *ast.Some:
-		elem, err := inf.infer(n.Child)
+		elem, err := inf.infer(n.Child, level)
 		if err != nil {
 			return nil, err
 		}
 		return &Option{elem}, nil
 	case *ast.None:
-		return &Option{&Var{}}, nil
+		return &Option{&Var{Level: level}}, nil
 	case *ast.Match:
-		elem := &Var{}
+		elem := &Var{Level: level}
 		matched := &Option{elem}
-		if err := inf.checkNodeType("matching target in 'match' expression", n.Target, matched); err != nil {
+		if err := inf.checkNodeType("matching target in 'match' expression", n.Target, matched, level); err != nil {
 			return nil, err
 		}
 
 		inf.Env.Table[n.SomeIdent.Name] = elem
-		some, err := inf.infer(n.IfSome)
+		some, err := inf.infer(n.IfSome, level)
 		if err != nil {
 			return nil, err
 		}
-		none, err := inf.infer(n.IfNone)
+		none, err := inf.infer(n.IfNone, level)
 		if err != nil {
 			return nil, err
 		}
@@ -415,12 +418,12 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 		}
 		return some, nil
 	case *ast.Typed:
-		child, err := inf.infer(n.Child)
+		child, err := inf.infer(n.Child, level)
 		if err != nil {
 			return nil, err
 		}
 
-		t, err := inf.conv.nodeToType(n.Type)
+		t, err := inf.conv.nodeToType(n.Type, level)
 		if err != nil {
 			return nil, err
 		}
@@ -435,8 +438,8 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 	}
 }
 
-func (inf *Inferer) infer(e ast.Expr) (Type, error) {
-	t, err := inf.unification(e)
+func (inf *Inferer) infer(e ast.Expr, level int) (Type, error) {
+	t, err := inf.inferNode(e, level)
 	if err != nil {
 		return nil, err
 	}
@@ -452,7 +455,7 @@ func (inf *Inferer) Infer(parsed *ast.AST) error {
 		return err
 	}
 
-	root, err := inf.infer(parsed.Root)
+	root, err := inf.infer(parsed.Root, 0)
 	if err != nil {
 		return err
 	}

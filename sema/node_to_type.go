@@ -19,7 +19,7 @@ func newNodeTypeConv(decls []*ast.TypeDecl) (*nodeTypeConv, error) {
 	conv.aliases["string"] = StringType
 
 	for _, decl := range decls {
-		t, err := conv.nodeToType(decl.Type)
+		t, err := conv.nodeToType(decl.Type, -1)
 		if err != nil {
 			return nil, locerr.NotefAt(decl.Pos(), err, "Type declaration '%s'", decl.Ident.Name)
 		}
@@ -28,10 +28,10 @@ func newNodeTypeConv(decls []*ast.TypeDecl) (*nodeTypeConv, error) {
 	return conv, nil
 }
 
-func (conv *nodeTypeConv) nodesToTypes(nodes []ast.Expr) ([]Type, error) {
+func (conv *nodeTypeConv) nodesToTypes(nodes []ast.Expr, level int) ([]Type, error) {
 	types := make([]Type, 0, len(nodes))
 	for _, n := range nodes {
-		t, err := conv.nodeToType(n)
+		t, err := conv.nodeToType(n, level)
 		if err != nil {
 			return nil, err
 		}
@@ -40,29 +40,29 @@ func (conv *nodeTypeConv) nodesToTypes(nodes []ast.Expr) ([]Type, error) {
 	return types, nil
 }
 
-func (conv *nodeTypeConv) nodeToType(node ast.Expr) (Type, error) {
+func (conv *nodeTypeConv) nodeToType(node ast.Expr, level int) (Type, error) {
 	switch n := node.(type) {
 	case *ast.FuncType:
-		params, err := conv.nodesToTypes(n.ParamTypes)
+		params, err := conv.nodesToTypes(n.ParamTypes, level)
 		if err != nil {
 			return nil, err
 		}
 
-		ret, err := conv.nodeToType(n.RetType)
+		ret, err := conv.nodeToType(n.RetType, level)
 		if err != nil {
 			return nil, err
 		}
 
 		return &Fun{ret, params}, nil
 	case *ast.TupleType:
-		elems, err := conv.nodesToTypes(n.ElemTypes)
+		elems, err := conv.nodesToTypes(n.ElemTypes, level)
 		return &Tuple{elems}, err
 	case *ast.CtorType:
 		len := len(n.ParamTypes)
 		if len == 0 {
 			if n.Ctor.Name == "_" {
 				// '_' accepts any type.
-				return &Var{}, nil
+				return &Var{Level: level}, nil
 			}
 			if t, ok := conv.aliases[n.Ctor.Name]; ok {
 				return t, nil
@@ -75,13 +75,13 @@ func (conv *nodeTypeConv) nodeToType(node ast.Expr) (Type, error) {
 			if len != 1 {
 				return nil, locerr.ErrorIn(n.Pos(), n.End(), "Invalid array type. 'array' only has 1 type parameter")
 			}
-			elem, err := conv.nodeToType(n.ParamTypes[0])
+			elem, err := conv.nodeToType(n.ParamTypes[0], level)
 			return &Array{elem}, err
 		case "option":
 			if len != 1 {
 				return nil, locerr.ErrorIn(n.Pos(), n.End(), "Invalid option type. 'option' only has 1 type parameter")
 			}
-			elem, err := conv.nodeToType(n.ParamTypes[0])
+			elem, err := conv.nodeToType(n.ParamTypes[0], level)
 			return &Option{elem}, err
 		default:
 			return nil, locerr.ErrorfIn(n.Pos(), n.End(), "Unknown type constructor '%s'. Primitive types, aliased types, 'array', 'option' and '_' are supported", n.Ctor.DisplayName)
