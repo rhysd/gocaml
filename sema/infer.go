@@ -205,25 +205,25 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 			var t Type
 			var err error
 			if p.Type != nil {
-				t, err = inf.conv.nodeToType(p.Type, level)
+				t, err = inf.conv.nodeToType(p.Type, level+1)
 				if err != nil {
 					return nil, locerr.NotefAt(p.Type.Pos(), err, "%s parameter of function", common.Ordinal(i+1))
 				}
 			} else {
-				t = &Var{Level: level}
+				t = &Var{Level: level + 1}
 			}
 			inf.Env.Table[p.Ident.Name] = t
 			params[i] = t
 		}
 
 		// Infer return type of function from its body
-		ret, err := inf.infer(n.Func.Body, level)
+		ret, err := inf.infer(n.Func.Body, level+1)
 		if err != nil {
 			return nil, err
 		}
 
 		if n.Func.RetType != nil {
-			t, err := inf.conv.nodeToType(n.Func.RetType, level)
+			t, err := inf.conv.nodeToType(n.Func.RetType, level+1)
 			if err != nil {
 				return nil, locerr.NoteAt(n.Func.RetType.Pos(), err, "Return type of function")
 			}
@@ -242,6 +242,8 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		if err = Unify(fun, f); err != nil {
 			return nil, locerr.NotefAt(n.Pos(), err, "Function '%s'", n.Func.Symbol.DisplayName)
 		}
+
+		inf.Env.Table[n.Func.Symbol.Name] = Generalize(level, f)
 
 		return inf.infer(n.Body, level)
 	case *ast.Apply:
@@ -270,7 +272,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 				params = t.Params
 				break Loop
 			case *Var:
-				if t.Ref == nil {
+				if t.Ref != nil {
 					callee = t.Ref
 					continue
 				}

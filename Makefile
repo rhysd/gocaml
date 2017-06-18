@@ -13,6 +13,7 @@ SRCS := \
 	types/type.go \
 	types/visitor.go \
 	sema/unify.go \
+	sema/generic.go \
 	sema/deref.go \
 	sema/infer.go \
 	sema/node_to_type.go \

@@ -4,7 +4,6 @@ import (
 	"github.com/rhysd/gocaml/common"
 	. "github.com/rhysd/gocaml/types"
 	"github.com/rhysd/locerr"
-	"unsafe"
 )
 
 // Check cyclic dependency. When unifying t and u where t is type variable and
@@ -143,81 +142,4 @@ func Unify(left, right Type) error {
 	}
 
 	return locerr.Errorf("Cannot unify types. Type mismatch between '%s' and '%s'", left.String(), right.String())
-}
-
-func Generalize(level int, t Type) Type {
-	switch t := t.(type) {
-	case *Var:
-		if t.Ref != nil {
-			return Generalize(level, t.Ref)
-		}
-		if t.Level > level {
-			// Bind free variable 'a' as 'forall a.a'
-			return &Generic{GenericId(unsafe.Pointer(t))}
-		}
-		return t
-	case *Tuple:
-		ts := make([]Type, 0, len(t.Elems))
-		for _, e := range t.Elems {
-			ts = append(ts, Generalize(level, e))
-		}
-		return &Tuple{ts}
-	case *Array:
-		return &Array{Generalize(level, t.Elem)}
-	case *Option:
-		return &Option{Generalize(level, t.Elem)}
-	case *Fun:
-		ts := make([]Type, 0, len(t.Params))
-		for _, p := range t.Params {
-			ts = append(ts, Generalize(level, p))
-		}
-		return &Fun{Generalize(level, t.Ret), ts}
-	default:
-		return t
-	}
-}
-
-type instantiation struct {
-	vars  map[GenericId]*Var
-	level int
-}
-
-func (inst *instantiation) apply(t Type) Type {
-	switch t := t.(type) {
-	case *Var:
-		if t.Ref != nil {
-			return inst.apply(t.Ref)
-		}
-		return t
-	case *Generic:
-		v, ok := inst.vars[t.Id]
-		if !ok {
-			v = &Var{Level: inst.level}
-			inst.vars[t.Id] = v
-		}
-		return v
-	case *Tuple:
-		ts := make([]Type, 0, len(t.Elems))
-		for _, e := range t.Elems {
-			ts = append(ts, inst.apply(e))
-		}
-		return &Tuple{ts}
-	case *Array:
-		return &Array{inst.apply(t.Elem)}
-	case *Option:
-		return &Option{inst.apply(t.Elem)}
-	case *Fun:
-		ts := make([]Type, 0, len(t.Params))
-		for _, p := range t.Params {
-			ts = append(ts, inst.apply(p))
-		}
-		return &Fun{inst.apply(t.Ret), ts}
-	default:
-		return t
-	}
-}
-
-func instantiate(t Type, level int) Type {
-	i := &instantiation{map[GenericId]*Var{}, level}
-	return i.apply(t)
 }
