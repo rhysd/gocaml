@@ -195,10 +195,6 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		inf.Env.Externals[n.Symbol.DisplayName] = t
 		return t, nil
 	case *ast.LetRec:
-		f := &Var{Level: level}
-		// Need to register function here because of recursive functions
-		inf.Env.Table[n.Func.Symbol.Name] = f
-
 		// Register parameters of function as variables to table
 		params := make([]Type, len(n.Func.Params))
 		for i, p := range n.Func.Params {
@@ -210,11 +206,19 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 					return nil, locerr.NotefAt(p.Type.Pos(), err, "%s parameter of function", common.Ordinal(i+1))
 				}
 			} else {
-				t = &Var{Level: level + 1}
+				t = NewGeneric()
 			}
 			inf.Env.Table[p.Ident.Name] = t
 			params[i] = t
 		}
+
+		// Need to register function before inferring body because of recursive functions
+		fun := &Fun{
+			Params: params,
+			// In this point return type is unknown. So specify generic for now.
+			Ret: NewGeneric(),
+		}
+		inf.Env.Table[n.Func.Symbol.Name] = fun
 
 		// Infer return type of function from its body
 		ret, err := inf.infer(n.Func.Body, level+1)
@@ -232,18 +236,10 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 			}
 		}
 
-		fun := &Fun{
-			Params: params,
-			Ret:    ret,
-		}
-
-		// n.Func.Type represents its function type. So unify it with
-		// inferred function type from its parameters and body.
-		if err = Unify(fun, f); err != nil {
-			return nil, locerr.NotefAt(n.Pos(), err, "Function '%s'", n.Func.Symbol.DisplayName)
-		}
-
-		inf.Env.Table[n.Func.Symbol.Name] = Generalize(level, f)
+		// Update the return type with the result of inferernce of function body.
+		// Params are already specified as generic if no type annotated. So finally generalize return
+		// type if needed.
+		fun.Ret = Generalize(level, ret)
 
 		return inf.infer(n.Body, level)
 	case *ast.Apply:

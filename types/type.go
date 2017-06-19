@@ -119,7 +119,7 @@ func (t *Generic) String() string {
 	return fmt.Sprintf("'a(%x)", t.Id)
 }
 
-func newGeneric() *Generic {
+func NewGeneric() *Generic {
 	g := &Generic{}
 	g.Id = GenericId(unsafe.Pointer(g))
 	return g
