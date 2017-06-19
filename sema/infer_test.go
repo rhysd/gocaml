@@ -387,6 +387,9 @@ func TestUnificationFailure(t *testing.T) {
 			}
 			i := NewInferer()
 			err = i.Infer(ast)
+			if err == nil {
+				t.Fatal("Error did not occur for code:", testcase.code)
+			}
 			if !strings.Contains(err.Error(), testcase.expected) {
 				t.Fatalf("Expected error message '%s' to contain '%s'", err.Error(), testcase.expected)
 			}
