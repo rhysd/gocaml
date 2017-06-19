@@ -16,11 +16,12 @@ type Inferer struct {
 	Env      *Env
 	conv     *nodeTypeConv
 	inferred InferredTypes
+	insts    map[*ast.VarRef]*Instantiation
 }
 
 // NewInferer creates a new Inferer instance
 func NewInferer() *Inferer {
-	return &Inferer{NewEnv(), nil, map[ast.Expr]Type{}}
+	return &Inferer{NewEnv(), nil, map[ast.Expr]Type{}, map[*ast.VarRef]*Instantiation{}}
 }
 
 func (inf *Inferer) checkNodeType(where string, node ast.Expr, expected Type, level int) error {
@@ -184,10 +185,16 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		return inf.infer(n.Body, level)
 	case *ast.VarRef:
 		if t, ok := inf.Env.Table[n.Symbol.Name]; ok {
-			return instantiate(t, level), nil
+			inst := instantiate(t, level)
+			if inst == nil {
+				return t, nil
+			}
+			inf.insts[n] = inst
+			return inst.To, nil
 		}
 		if t, ok := inf.Env.Externals[n.Symbol.Name]; ok {
-			return instantiate(t, level), nil
+			// External symbols are not permitted to be generic
+			return t, nil
 		}
 		// Assume as free variable. If free variable's type is not identified,
 		// It falls into compilation error

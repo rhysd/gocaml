@@ -1,8 +1,9 @@
 package sema
 
 import (
-	"github.com/rhysd/gocaml/types"
 	"unsafe"
+
+	"github.com/rhysd/gocaml/types"
 )
 
 func Generalize(level int, t types.Type) types.Type {
@@ -32,12 +33,12 @@ func Generalize(level int, t types.Type) types.Type {
 	return t
 }
 
-type instantiation struct {
+type instantiator struct {
 	vars  map[types.GenericId]*types.Var
 	level int
 }
 
-func (inst *instantiation) apply(t types.Type) types.Type {
+func (inst *instantiator) apply(t types.Type) types.Type {
 	switch t := t.(type) {
 	case *types.Var:
 		if t.Ref != nil {
@@ -72,7 +73,23 @@ func (inst *instantiation) apply(t types.Type) types.Type {
 	}
 }
 
-func instantiate(t types.Type, level int) types.Type {
-	i := &instantiation{map[types.GenericId]*types.Var{}, level}
-	return i.apply(t)
+type Instantiation struct {
+	From    types.Type
+	To      types.Type
+	Mapping map[types.GenericId]*types.Var
+}
+
+func instantiate(t types.Type, level int) *Instantiation {
+	i := &instantiator{map[types.GenericId]*types.Var{}, level}
+	ret := i.apply(t)
+	if len(i.vars) == 0 {
+		// Should return the original type 't' here?
+		// Even if no instantiation occurred, linked type variables may be dereferenced in instantiator.apply().
+		return nil
+	}
+	return &Instantiation{
+		From:    t,
+		To:      ret,
+		Mapping: i.vars,
+	}
 }
