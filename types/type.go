@@ -11,13 +11,13 @@ type Type interface {
 }
 
 type toString struct {
-	generics map[GenericId]string
+	generics map[*Var]string
 	count    int
 	char     rune
 }
 
 func newToString() *toString {
-	return &toString{map[GenericId]string{}, 0, 'a'}
+	return &toString{map[*Var]string{}, 0, 'a'}
 }
 
 func (toStr *toString) newGenName() string {
@@ -51,8 +51,6 @@ func (toStr *toString) ofType(t Type) string {
 		return toStr.ofOption(t)
 	case *Var:
 		return toStr.ofVar(t)
-	case *Generic:
-		return toStr.ofGeneric(t)
 	default:
 		panic("FATAL: Unreachable: Cannot stringify unknown type")
 	}
@@ -95,18 +93,17 @@ func (toStr *toString) ofOption(o *Option) string {
 }
 
 func (toStr *toString) ofVar(v *Var) string {
-	if v.Ref == nil {
+	if v.Ref != nil {
+		return toStr.ofType(v.Ref)
+	}
+	if v.Level != genericLevel {
 		return fmt.Sprintf("?(%p)", v)
 	}
-	return toStr.ofType(v.Ref)
-}
-
-func (toStr *toString) ofGeneric(g *Generic) string {
-	if s, ok := toStr.generics[g.Id]; ok {
+	if s, ok := toStr.generics[v]; ok {
 		return s
 	}
 	s := toStr.newGenName()
-	toStr.generics[g.Id] = s
+	toStr.generics[v] = s
 	return s
 }
 
@@ -178,6 +175,12 @@ func (t *Option) String() string {
 	return newToString().ofOption(t)
 }
 
+// INT32_MAX. When this value is specified to variable's level, it means that the variable is
+// 'forall a.a' (generic bound type variable). It's because any other level is smaller than
+// the genericLevel. Type inference algorithm treats type variables whose level is larger than
+// current level as generic type.
+const genericLevel = 2147483647
+
 type Var struct {
 	Ref   Type
 	Level int
@@ -187,27 +190,25 @@ func (t *Var) String() string {
 	return newToString().ofVar(t)
 }
 
-func (t *Var) ID() GenericId {
-	return GenericId(unsafe.Pointer(t))
+type VarID uintptr
+
+func (t *Var) ID() VarID {
+	return VarID(unsafe.Pointer(t))
 }
 
-type GenericId uintptr
-type Generic struct {
-	Id GenericId
+func (t *Var) AsGeneric() {
+	if t.Ref != nil {
+		panic("FATAL: Cannot promote linked type variable to generic variable")
+	}
+	t.Level = genericLevel
 }
 
-func (t *Generic) String() string {
-	return newToString().ofGeneric(t)
+func (t *Var) IsGeneric() bool {
+	return t.Level == genericLevel
 }
 
-func NewGeneric() *Generic {
-	g := &Generic{}
-	g.Id = GenericId(unsafe.Pointer(g))
-	return g
-}
-
-func NewGenericFromVar(v *Var) *Generic {
-	return &Generic{v.ID()}
+func NewGeneric() *Var {
+	return &Var{Level: genericLevel}
 }
 
 // Make singleton type values because it doesn't have any contextual information

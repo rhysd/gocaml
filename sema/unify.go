@@ -41,8 +41,9 @@ func occur(v *Var, rhs Type) bool {
 			}
 			return occur(v, t.Ref)
 		}
-	case *Generic:
-		panic("FATAL: occurs check for generic type")
+		if t.IsGeneric() {
+			panic("FATAL: occurs check for generic type")
+		}
 	}
 	return false
 }

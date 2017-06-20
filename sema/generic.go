@@ -12,7 +12,7 @@ func generalize(level int, t types.Type) types.Type {
 		}
 		if t.Level > level {
 			// Bind free variable 'a' as 'forall a.a'
-			return types.NewGenericFromVar(t)
+			t.AsGeneric()
 		}
 	case *types.Tuple:
 		for i, e := range t.Elems {
@@ -32,7 +32,7 @@ func generalize(level int, t types.Type) types.Type {
 }
 
 type instantiator struct {
-	vars  map[types.GenericId]*types.Var
+	vars  map[*types.Var]*types.Var
 	level int
 }
 
@@ -42,12 +42,13 @@ func (inst *instantiator) apply(t types.Type) types.Type {
 		if t.Ref != nil {
 			return inst.apply(t.Ref)
 		}
-		return t
-	case *types.Generic:
-		v, ok := inst.vars[t.Id]
+		if !t.IsGeneric() {
+			return t
+		}
+		v, ok := inst.vars[t]
 		if !ok {
 			v = &types.Var{Level: inst.level}
-			inst.vars[t.Id] = v
+			inst.vars[t] = v
 		}
 		return v
 	case *types.Tuple:
@@ -74,11 +75,11 @@ func (inst *instantiator) apply(t types.Type) types.Type {
 type Instantiation struct {
 	From    types.Type
 	To      types.Type
-	Mapping map[types.GenericId]*types.Var
+	Mapping map[*types.Var]*types.Var
 }
 
 func instantiate(t types.Type, level int) *Instantiation {
-	i := &instantiator{map[types.GenericId]*types.Var{}, level}
+	i := &instantiator{map[*types.Var]*types.Var{}, level}
 	ret := i.apply(t)
 	if len(i.vars) == 0 {
 		// Should return the original type 't' here?

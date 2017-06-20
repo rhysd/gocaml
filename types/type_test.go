@@ -57,15 +57,28 @@ func TestVarString(t *testing.T) {
 
 func TestGenGeneric(t *testing.T) {
 	g1 := NewGeneric()
-	g2 := NewGeneric()
-	if g1.Id == g2.Id {
-		t.Fatal("NewGeneric should generate Generic with unique ID")
+	g2 := &Var{}
+	if g2.IsGeneric() {
+		t.Fatal("Level 0 type variable should not be generic")
 	}
-	v := &Var{}
-	g3 := NewGenericFromVar(v)
-	if g3.Id != v.ID() {
-		t.Fatal("Generic created with NewGenericFromVar() should inherit ID of variable")
+	g2.AsGeneric()
+	if !g2.IsGeneric() {
+		t.Fatal("Type variabel after AsGeneric() should eb generic")
 	}
+	if g1.ID() == g2.ID() {
+		t.Fatal("NewGeneric should generate generic variable with unique ID")
+	}
+	if g1.Level != g2.Level {
+		t.Fatal("NewGeneric should generate generic variables with the same level", g1.Level, g2.Level)
+	}
+
+	defer func() {
+		if recover() == nil {
+			t.Fatal("Making non-empty linked type variable generic should cause panic")
+		}
+	}()
+	v := &Var{IntType, 0}
+	v.AsGeneric()
 }
 
 func TestGenericString(t *testing.T) {
