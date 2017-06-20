@@ -4,6 +4,11 @@ import (
 	"github.com/rhysd/gocaml/types"
 )
 
+// Generalization cannot modify given type destructively. It sometimes breaks existing other type variable.
+// For example, in `let rec f x = f true; x in f 42`, first function call `f true` is inferred as `bool -> 'a`
+// after type inference because `f true;` is equivalent to `let $unused = f true in`. 'let' expression causes
+// generalization and $unused is inferred as 'a. It changes type of the `f` from `bool -> ?` to `bool -> 'a`
+// if generalization changed a given type destructively.
 func generalize(level int, t types.Type) types.Type {
 	switch t := t.(type) {
 	case *types.Var:
@@ -12,27 +17,33 @@ func generalize(level int, t types.Type) types.Type {
 		}
 		if t.Level > level {
 			// Bind free variable 'a' as 'forall a.a'
-			t.AsGeneric()
+			return t.AsGeneric()
 		}
+		return t
 	case *types.Tuple:
-		for i, e := range t.Elems {
-			t.Elems[i] = generalize(level, e)
+		ts := make([]types.Type, 0, len(t.Elems))
+		for _, e := range t.Elems {
+			ts = append(ts, generalize(level, e))
 		}
+		return &types.Tuple{ts}
 	case *types.Array:
-		t.Elem = generalize(level, t.Elem)
+		return &types.Array{generalize(level, t.Elem)}
 	case *types.Option:
-		t.Elem = generalize(level, t.Elem)
+		return &types.Option{generalize(level, t.Elem)}
 	case *types.Fun:
-		t.Ret = generalize(level, t.Ret)
-		for i, p := range t.Params {
-			t.Params[i] = generalize(level, p)
+		ret := generalize(level, t.Ret)
+		params := make([]types.Type, 0, len(t.Params))
+		for _, p := range t.Params {
+			params = append(params, generalize(level, p))
 		}
+		return &types.Fun{ret, params}
+	default:
+		return t
 	}
-	return t
 }
 
 type instantiator struct {
-	vars  map[*types.Var]*types.Var
+	vars  map[types.VarID]*types.Var
 	level int
 }
 
@@ -45,10 +56,10 @@ func (inst *instantiator) apply(t types.Type) types.Type {
 		if !t.IsGeneric() {
 			return t
 		}
-		v, ok := inst.vars[t]
+		v, ok := inst.vars[t.ID]
 		if !ok {
-			v = &types.Var{Level: inst.level}
-			inst.vars[t] = v
+			v = types.NewVar(nil, inst.level)
+			inst.vars[t.ID] = v
 		}
 		return v
 	case *types.Tuple:
@@ -75,11 +86,11 @@ func (inst *instantiator) apply(t types.Type) types.Type {
 type Instantiation struct {
 	From    types.Type
 	To      types.Type
-	Mapping map[*types.Var]*types.Var
+	Mapping map[types.VarID]*types.Var
 }
 
 func instantiate(t types.Type, level int) *Instantiation {
-	i := &instantiator{map[*types.Var]*types.Var{}, level}
+	i := &instantiator{map[types.VarID]*types.Var{}, level}
 	ret := i.apply(t)
 	if len(i.vars) == 0 {
 		// Should return the original type 't' here?

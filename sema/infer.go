@@ -198,15 +198,16 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		}
 		// Assume as free variable. If free variable's type is not identified,
 		// It falls into compilation error
-		t := &Var{Level: level}
+		t := NewVar(nil, level)
 		inf.Env.Externals[n.Symbol.DisplayName] = t
 		return t, nil
 	case *ast.LetRec:
 		// Considering recursive function call, register function name before inferring its body.
 		// Recursive function may be generic like `let rec f x = f true; x in f 42`.
-		// So register the function as generic type here and later update the type with the result
+		// So register the function as a type variable here and later update the type with the result
 		// of inference for body of function.
-		inf.Env.Table[n.Func.Symbol.Name] = NewGeneric()
+		f := NewVar(nil, level)
+		inf.Env.Table[n.Func.Symbol.Name] = f
 
 		// Register parameters of function as variables to table
 		params := make([]Type, len(n.Func.Params))
@@ -219,7 +220,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 					return nil, locerr.NotefAt(p.Type.Pos(), err, "%s parameter of function", common.Ordinal(i+1))
 				}
 			} else {
-				t = &Var{Level: level + 1}
+				t = NewVar(nil, level+1)
 			}
 			inf.Env.Table[p.Ident.Name] = t
 			params[i] = t
@@ -250,6 +251,10 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		// registered as generic type for recursive call at the beginning of this method.
 		inf.Env.Table[n.Func.Symbol.Name] = generalize(level, fun)
 
+		if err := Unify(f, fun); err != nil {
+			return nil, locerr.NotefAt(n.Pos(), err, "Type of function '%s'", n.Func.Symbol.Name)
+		}
+
 		return inf.infer(n.Body, level)
 	case *ast.Apply:
 		args := make([]Type, len(n.Args))
@@ -263,7 +268,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 
 		// Return type of callee is unknown in this point.
 		// So make a new type variable and allocate it as return type.
-		ret := &Var{Level: level}
+		ret := NewVar(nil, level)
 		fun := &Fun{
 			Ret:    ret,
 			Params: args,
@@ -312,7 +317,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 			elems := make([]Type, len(n.Symbols))
 			for i, sym := range n.Symbols {
 				// Bound elements' types are unknown in this point
-				v := &Var{Level: level}
+				v := NewVar(nil, level)
 				inf.Env.Table[sym.Name] = v
 				elems[i] = v
 			}
@@ -341,14 +346,14 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		}
 		return &Array{Elem: elem}, nil
 	case *ast.ArraySize:
-		if err := inf.checkNodeType("argument of 'Array.length'", n.Target, &Array{Elem: &Var{Level: level}}, level); err != nil {
+		if err := inf.checkNodeType("argument of 'Array.length'", n.Target, &Array{Elem: NewVar(nil, level)}, level); err != nil {
 			return nil, err
 		}
 		return IntType, nil
 	case *ast.Get:
 		// Lhs of Get must be array but its element type is unknown.
 		// So introduce new type variable for it.
-		elem := &Var{Level: level}
+		elem := NewVar(nil, level)
 		array := &Array{Elem: elem}
 
 		if err := inf.checkNodeType("array value in index access", n.Array, array, level); err != nil {
@@ -380,7 +385,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 	case *ast.ArrayLit:
 		if len(n.Elems) == 0 {
 			// Array is empty. Cannot infer type of elements.
-			return &Array{&Var{Level: level}}, nil
+			return &Array{NewVar(nil, level)}, nil
 		}
 		elem, err := inf.infer(n.Elems[0], level)
 		if err != nil {
@@ -403,9 +408,9 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		}
 		return &Option{elem}, nil
 	case *ast.None:
-		return &Option{&Var{Level: level}}, nil
+		return &Option{NewVar(nil, level)}, nil
 	case *ast.Match:
-		elem := &Var{Level: level}
+		elem := NewVar(nil, level)
 		matched := &Option{elem}
 		if err := inf.checkNodeType("matching target in 'match' expression", n.Target, matched, level); err != nil {
 			return nil, err
@@ -472,6 +477,7 @@ func (inf *Inferer) Infer(parsed *ast.AST) error {
 	}
 
 	inf.Env.Dump()
+	fmt.Println("Instantiations:", len(inf.insts))
 	for v, i := range inf.insts {
 		fmt.Println("\nVAR:", v.Symbol.Name, v.Pos())
 		fmt.Printf("  '%s' ==> '%s'\n", i.From, i.To)

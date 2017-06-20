@@ -42,7 +42,7 @@ func TestVisitTypes(t *testing.T) {
 			"string option (top) -> string (top) -> string (bottom) -> string option (bottom)",
 		},
 		{
-			&Var{IntType, 0},
+			NewVar(IntType, 0),
 			"int (top) -> int (top) -> int (bottom) -> int (bottom)",
 		},
 	}
@@ -74,7 +74,7 @@ func (v *testVisitShallow) VisitBottomup(t Type) {
 
 func TestVisitStop(t *testing.T) {
 	v := &testVisitShallow{}
-	ty := &Tuple{[]Type{UnitType, &Array{&Var{IntType, 0}}}}
+	ty := &Tuple{[]Type{UnitType, &Array{NewVar(IntType, 0)}}}
 	Visit(v, ty)
 	if v.last == nil {
 		t.Fatal("No child was visited")

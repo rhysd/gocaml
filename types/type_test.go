@@ -12,7 +12,7 @@ func TestTupleString(t *testing.T) {
 		t.Fatal("Tuple string format is unexpected:", s)
 	}
 	// Tuple in other type
-	v := &Var{&Tuple{[]Type{IntType, BoolType}}, 0}
+	v := NewVar(&Tuple{[]Type{IntType, BoolType}}, 0)
 	s = v.String()
 	if s != "int * bool" {
 		t.Fatal("Tuple string nested in other type is unexpected:", s)
@@ -32,7 +32,7 @@ func TestFunString(t *testing.T) {
 		t.Fatal("Function string format is unexpected:", s)
 	}
 	// Fun in other type
-	v := &Var{&Fun{IntType, []Type{BoolType}}, 0}
+	v := NewVar(&Fun{IntType, []Type{BoolType}}, 0)
 	s = v.String()
 	if s != "bool -> int" {
 		t.Fatal("Function string nested in other type is unexpected:", s)
@@ -41,7 +41,7 @@ func TestFunString(t *testing.T) {
 
 func TestVarString(t *testing.T) {
 	var_ := func(t Type) *Var {
-		return &Var{t, 0}
+		return NewVar(t, 0)
 	}
 	v := var_(nil)
 	s := v.String()
@@ -57,15 +57,15 @@ func TestVarString(t *testing.T) {
 
 func TestGenGeneric(t *testing.T) {
 	g1 := NewGeneric()
-	g2 := &Var{}
+	g2 := NewVar(nil, 0)
 	if g2.IsGeneric() {
 		t.Fatal("Level 0 type variable should not be generic")
 	}
-	g2.AsGeneric()
+	g2 = g2.AsGeneric()
 	if !g2.IsGeneric() {
 		t.Fatal("Type variabel after AsGeneric() should eb generic")
 	}
-	if g1.ID() == g2.ID() {
+	if g1.ID == g2.ID {
 		t.Fatal("NewGeneric should generate generic variable with unique ID")
 	}
 	if g1.Level != g2.Level {
@@ -77,7 +77,7 @@ func TestGenGeneric(t *testing.T) {
 			t.Fatal("Making non-empty linked type variable generic should cause panic")
 		}
 	}()
-	v := &Var{IntType, 0}
+	v := NewVar(IntType, 0)
 	v.AsGeneric()
 }
 
