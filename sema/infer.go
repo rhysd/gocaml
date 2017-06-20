@@ -252,55 +252,30 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 
 		return inf.infer(n.Body, level)
 	case *ast.Apply:
-		callee, err := inf.infer(n.Callee, level)
-		if err != nil {
-			return nil, err
-		}
-
-		// Cannot unify callee's function type directly because callee may have generic type parameters
-		// and return types. To avoid unifying function's these generic types, unify each parameter type
-		// and return type individually.
-
-		var ret Type
-		var params []Type
-
-	Loop:
-		for {
-			switch t := callee.(type) {
-			case *Fun:
-				if len(t.Params) != len(n.Args) {
-					err := locerr.ErrorfIn(n.Pos(), n.End(), "Number of arguments does not match to applied function. %d param(s) function is applied with %d arguments.", len(t.Params), len(n.Args))
-					err = err.NotefAt(n.Pos(), "Inferred function type is '%s'", t.String())
-					return nil, err
-				}
-				ret = t.Ret
-				params = t.Params
-				break Loop
-			case *Var:
-				if t.Ref != nil {
-					callee = t.Ref
-					continue
-				}
-				ret = &Var{Level: level}
-				params = make([]Type, 0, len(n.Args))
-				for i := 0; i < len(n.Args); i++ {
-					params = append(params, &Var{Level: level})
-				}
-				t.Ref = &Fun{ret, params}
-				break Loop
-			default:
-				return nil, locerr.ErrorfIn(n.Pos(), n.End(), "Applying not function type '%s'", callee.String())
-			}
-		}
-
+		args := make([]Type, len(n.Args))
 		for i, a := range n.Args {
 			t, err := inf.infer(a, level)
 			if err != nil {
 				return nil, err
 			}
-			if err := Unify(params[i], t); err != nil {
-				return nil, err
-			}
+			args[i] = t
+		}
+
+		// Return type of callee is unknown in this point.
+		// So make a new type variable and allocate it as return type.
+		ret := &Var{Level: level}
+		fun := &Fun{
+			Ret:    ret,
+			Params: args,
+		}
+
+		callee, err := inf.infer(n.Callee, level)
+		if err != nil {
+			return nil, err
+		}
+
+		if err = Unify(callee, fun); err != nil {
+			return nil, locerr.NoteAt(n.Pos(), err, "Type of called function")
 		}
 
 		return ret, nil
