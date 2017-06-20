@@ -168,7 +168,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		if err != nil {
 			return nil, err
 		}
-		bound = Generalize(level, bound)
+		bound = generalize(level, bound)
 
 		if n.Type != nil {
 			// When let x: type = ...
@@ -248,7 +248,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 
 		// Update the return type with the result of inference of function body. The function was
 		// registered as generic type for recursive call at the beginning of this method.
-		inf.Env.Table[n.Func.Symbol.Name] = Generalize(level, fun)
+		inf.Env.Table[n.Func.Symbol.Name] = generalize(level, fun)
 
 		return inf.infer(n.Body, level)
 	case *ast.Apply:
@@ -348,7 +348,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		if err != nil {
 			return nil, err
 		}
-		bound = Generalize(level, bound)
+		bound = generalize(level, bound)
 
 		// Bound value must be tuple
 		if err := Unify(t, bound); err != nil {

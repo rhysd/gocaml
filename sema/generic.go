@@ -1,33 +1,31 @@
 package sema
 
 import (
-	"unsafe"
-
 	"github.com/rhysd/gocaml/types"
 )
 
-func Generalize(level int, t types.Type) types.Type {
+func generalize(level int, t types.Type) types.Type {
 	switch t := t.(type) {
 	case *types.Var:
 		if t.Ref != nil {
-			return Generalize(level, t.Ref)
+			return generalize(level, t.Ref)
 		}
 		if t.Level > level {
 			// Bind free variable 'a' as 'forall a.a'
-			return &types.Generic{types.GenericId(unsafe.Pointer(t))}
+			return types.NewGenericFromVar(t)
 		}
 	case *types.Tuple:
 		for i, e := range t.Elems {
-			t.Elems[i] = Generalize(level, e)
+			t.Elems[i] = generalize(level, e)
 		}
 	case *types.Array:
-		t.Elem = Generalize(level, t.Elem)
+		t.Elem = generalize(level, t.Elem)
 	case *types.Option:
-		t.Elem = Generalize(level, t.Elem)
+		t.Elem = generalize(level, t.Elem)
 	case *types.Fun:
-		t.Ret = Generalize(level, t.Ret)
+		t.Ret = generalize(level, t.Ret)
 		for i, p := range t.Params {
-			t.Params[i] = Generalize(level, p)
+			t.Params[i] = generalize(level, p)
 		}
 	}
 	return t
