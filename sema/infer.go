@@ -202,6 +202,12 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		inf.Env.Externals[n.Symbol.DisplayName] = t
 		return t, nil
 	case *ast.LetRec:
+		// Considering recursive function call, register function name before inferring its body.
+		// Recursive function may be generic like `let rec f x = f true; x in f 42`.
+		// So register the function as generic type here and later update the type with the result
+		// of inference for body of function.
+		inf.Env.Table[n.Func.Symbol.Name] = NewGeneric()
+
 		// Register parameters of function as variables to table
 		params := make([]Type, len(n.Func.Params))
 		for i, p := range n.Func.Params {
@@ -213,19 +219,11 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 					return nil, locerr.NotefAt(p.Type.Pos(), err, "%s parameter of function", common.Ordinal(i+1))
 				}
 			} else {
-				t = NewGeneric()
+				t = &Var{Level: level + 1}
 			}
 			inf.Env.Table[p.Ident.Name] = t
 			params[i] = t
 		}
-
-		// Need to register function before inferring body because of recursive functions
-		fun := &Fun{
-			Params: params,
-			// In this point return type is unknown. So specify generic for now.
-			Ret: NewGeneric(),
-		}
-		inf.Env.Table[n.Func.Symbol.Name] = fun
 
 		// Infer return type of function from its body
 		ret, err := inf.infer(n.Func.Body, level+1)
@@ -243,10 +241,14 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 			}
 		}
 
-		// Update the return type with the result of inferernce of function body.
-		// Params are already specified as generic if no type annotated. So finally generalize return
-		// type if needed.
-		fun.Ret = Generalize(level, ret)
+		fun := &Fun{
+			Params: params,
+			Ret:    ret,
+		}
+
+		// Update the return type with the result of inference of function body. The function was
+		// registered as generic type for recursive call at the beginning of this method.
+		inf.Env.Table[n.Func.Symbol.Name] = Generalize(level, fun)
 
 		return inf.infer(n.Body, level)
 	case *ast.Apply:
