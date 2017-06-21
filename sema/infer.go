@@ -206,8 +206,9 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		// Recursive function may be generic like `let rec f x = f true; x in f 42`.
 		// So register the function as a type variable here and later update the type with the result
 		// of inference for body of function.
-		f := NewVar(nil, level)
-		inf.Env.Table[n.Func.Symbol.Name] = f
+		// f := NewVar(nil, level)
+		tmpFun := NewGeneric()
+		inf.Env.Table[n.Func.Symbol.Name] = tmpFun
 
 		// Register parameters of function as variables to table
 		params := make([]Type, len(n.Func.Params))
@@ -242,17 +243,34 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 			}
 		}
 
-		fun := &Fun{
-			Params: params,
-			Ret:    ret,
-		}
+		fun := generalize(level, &Fun{ret, params})
 
 		// Update the return type with the result of inference of function body. The function was
 		// registered as generic type for recursive call at the beginning of this method.
-		inf.Env.Table[n.Func.Symbol.Name] = generalize(level, fun)
+		inf.Env.Table[n.Func.Symbol.Name] = fun
 
-		if err := Unify(f, fun); err != nil {
-			return nil, locerr.NotefAt(n.Pos(), err, "Type of function '%s'", n.Func.Symbol.Name)
+		// XXX:
+		// Fix type of the callee which was inferred in recursive function calls.
+		// These generic function calls are instantiated from above 'tmpFun' generic type variable.
+		// And now we replaced it with the inference result of function body (and generalized).
+		// It means that instantiated types don't have the information of the result.
+		// e.g.
+		//   let rec f x = f true; x in f 42;
+		// In the example, type of `f` in `f true` was instantiated from 'tmpFun' as `bool -> ?(2)`.
+		// It's because `f` is specified as 'a at first and the type of `f` is instantiated in the body.
+		// But the type of `f` is updated as `'a -> 'a` later. So we need to instantiate `?(3) -> ?(3)`
+		// from it again for `f true` expression. By unifying `bool -> ?(2)` and `?(3) -> ?(3)`, finally
+		// type of `f` at `f true` is fixed as `bool -> bool`.
+		for _, i := range inf.insts {
+			if i.From == tmpFun {
+				fixed := instantiate(fun, level+1)
+				if err := Unify(fixed.To, i.To); err != nil {
+					return nil, locerr.NotefAt(n.Pos(), err, "Type of recursive function '%s'", n.Func.Symbol.Name)
+				}
+				i.From = fixed.From
+				i.To = fixed.To
+				i.Mapping = fixed.Mapping
+			}
 		}
 
 		return inf.infer(n.Body, level)
