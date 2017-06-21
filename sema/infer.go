@@ -16,12 +16,11 @@ type Inferer struct {
 	Env      *Env
 	conv     *nodeTypeConv
 	inferred InferredTypes
-	insts    map[*ast.VarRef]*Instantiation
 }
 
 // NewInferer creates a new Inferer instance
 func NewInferer() *Inferer {
-	return &Inferer{NewEnv(), nil, map[ast.Expr]Type{}, map[*ast.VarRef]*Instantiation{}}
+	return &Inferer{NewEnv(), nil, map[ast.Expr]Type{}}
 }
 
 func (inf *Inferer) checkNodeType(where string, node ast.Expr, expected Type, level int) error {
@@ -189,7 +188,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 			if inst == nil {
 				return t, nil
 			}
-			inf.insts[n] = inst
+			inf.Env.Instantiations[n] = inst
 			return inst.To, nil
 		}
 		if t, ok := inf.Env.Externals[n.Symbol.Name]; ok {
@@ -206,7 +205,10 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		// Recursive function may be generic like `let rec f x = f true; x in f 42`.
 		// So register the function as a type variable here and later update the type with the result
 		// of inference for body of function.
-		// f := NewVar(nil, level)
+		// 'tmpFun' cannot be &Var{Level: level} because the function may be generic and called
+		// recursively multi times with different types.
+		// e.g.
+		//   let rec f x = f 10; f true; x in f
 		tmpFun := NewGeneric()
 		inf.Env.Table[n.Func.Symbol.Name] = tmpFun
 
@@ -261,7 +263,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		// But the type of `f` is updated as `'a -> 'a` later. So we need to instantiate `?(3) -> ?(3)`
 		// from it again for `f true` expression. By unifying `bool -> ?(2)` and `?(3) -> ?(3)`, finally
 		// type of `f` at `f true` is fixed as `bool -> bool`.
-		for _, i := range inf.insts {
+		for _, i := range inf.Env.Instantiations {
 			if i.From == tmpFun {
 				fixed := instantiate(fun, level+1)
 				if err := Unify(fixed.To, i.To); err != nil {
@@ -494,9 +496,10 @@ func (inf *Inferer) Infer(parsed *ast.AST) error {
 		return locerr.Note(err, "Type of root expression of program must be unit")
 	}
 
+	// XXX: Temporary
 	inf.Env.Dump()
-	fmt.Println("Instantiations:", len(inf.insts))
-	for v, i := range inf.insts {
+	fmt.Println("Instantiations:", len(inf.Env.Instantiations))
+	for v, i := range inf.Env.Instantiations {
 		fmt.Println("\nVAR:", v.Symbol.Name, v.Pos())
 		fmt.Printf("  '%s' ==> '%s'\n", i.From, i.To)
 		fmt.Printf("  Replaced variables: %d\n\n", len(i.Mapping))

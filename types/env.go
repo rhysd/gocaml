@@ -3,7 +3,18 @@ package types
 
 import (
 	"fmt"
+	"github.com/rhysd/gocaml/ast"
 )
+
+// Instantiation is the information of instantiation of a generic type.
+type Instantiation struct {
+	// From is a generic type variable instantiated.
+	From Type
+	// To is a type variable instantiated from generic type variable.
+	To Type
+	// Mapping from ID of generic type variable to actual instantiated type variable
+	Mapping map[VarID]*Var
+}
 
 // Result of type analysis.
 type Env struct {
@@ -23,6 +34,9 @@ type Env struct {
 	// External variable names which are referred but not defined.
 	// External variables are exposed as external symbols in other object files.
 	Externals map[string]Type
+	// GoCaml uses let-polymorphic type inference. It means that instantiation occurs when new
+	// symbol is introduced. So instantiation only occurs at variable reference.
+	Instantiations map[*ast.VarRef]*Instantiation
 }
 
 // NewEnv creates empty Env instance.
@@ -30,6 +44,7 @@ func NewEnv() *Env {
 	return &Env{
 		map[string]Type{},
 		builtinPopulatedTable(),
+		map[*ast.VarRef]*Instantiation{},
 	}
 }
 

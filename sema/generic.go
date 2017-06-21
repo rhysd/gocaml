@@ -83,13 +83,7 @@ func (inst *instantiator) apply(t types.Type) types.Type {
 	}
 }
 
-type Instantiation struct {
-	From    types.Type
-	To      types.Type
-	Mapping map[types.VarID]*types.Var
-}
-
-func instantiate(t types.Type, level int) *Instantiation {
+func instantiate(t types.Type, level int) *types.Instantiation {
 	i := &instantiator{map[types.VarID]*types.Var{}, level}
 	ret := i.apply(t)
 	if len(i.vars) == 0 {
@@ -97,7 +91,7 @@ func instantiate(t types.Type, level int) *Instantiation {
 		// Even if no instantiation occurred, linked type variables may be dereferenced in instantiator.apply().
 		return nil
 	}
-	return &Instantiation{
+	return &types.Instantiation{
 		From:    t,
 		To:      ret,
 		Mapping: i.vars,
