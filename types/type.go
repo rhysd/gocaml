@@ -79,9 +79,9 @@ func (t *Option) String() string {
 
 // INT32_MAX. When this value is specified to variable's level, it means that the variable is
 // 'forall a.a' (generic bound type variable). It's because any other level is smaller than
-// the genericLevel. Type inference algorithm treats type variables whose level is larger than
+// the GenericLevel. Type inference algorithm treats type variables whose level is larger than
 // current level as generic type.
-const genericLevel = 2147483647
+const GenericLevel = 2147483647
 
 type VarID uint64
 type Var struct {
@@ -105,16 +105,16 @@ func (t *Var) AsGeneric() *Var {
 	if t.Ref != nil {
 		panic("FATAL: Cannot promote linked type variable to generic variable")
 	}
-	return &Var{nil, genericLevel, t.ID}
+	return &Var{nil, GenericLevel, t.ID}
 }
 
 func (t *Var) IsGeneric() bool {
-	return t.Level == genericLevel
+	return t.Level == GenericLevel
 }
 
 func NewGeneric() *Var {
 	currentVarID++
-	return &Var{nil, genericLevel, currentVarID}
+	return &Var{nil, GenericLevel, currentVarID}
 }
 
 // Make singleton type values because it doesn't have any contextual information
@@ -212,7 +212,7 @@ func (toStr *toString) ofVar(v *Var) string {
 	if v.Ref != nil {
 		return toStr.ofType(v.Ref)
 	}
-	if v.Level != genericLevel {
+	if v.Level != GenericLevel {
 		return fmt.Sprintf("?(%d)", v.ID)
 	}
 	if s, ok := toStr.generics[v.ID]; ok {

@@ -7,25 +7,43 @@ import (
 	"github.com/rhysd/locerr"
 )
 
-func unwrapVar(variable *Var) (Type, bool) {
-	if variable.Ref != nil {
-		r, ok := unwrap(variable.Ref)
-		if ok {
-			return r, true
-		}
+type typeVarDereferencer struct {
+	err      *locerr.Error
+	env      *Env
+	inferred InferredTypes
+	// Map representing what type variable came from what generic type. From instantiated type
+	// variable to original generic type variable.
+	generics map[VarID]VarID
+}
+
+func (d *typeVarDereferencer) unwrapVar(v *Var) (Type, bool) {
+	if v.Ref != nil {
+		return d.unwrap(v.Ref)
+	}
+
+	fmt.Println("FOO", d.generics)
+	if id, ok := d.generics[v.ID]; ok {
+		// Convert instantiated type variable into original generic type variable *destructively*.
+		// e.g.
+		//   let rec f x = x in f
+		// For example, above `x` is instantiated at body of `f`. So it is typed as `?`. By below
+		// process, the type `?` will be promoted to `'a` where type of `f` is `'a -> 'a`.
+		v.ID = id
+		v.Level = GenericLevel
+		return v, true
 	}
 
 	return nil, false
 }
 
-func unwrapFun(fun *Fun) (Type, bool) {
-	r, ok := unwrap(fun.Ret)
+func (d *typeVarDereferencer) unwrapFun(fun *Fun) (Type, bool) {
+	r, ok := d.unwrap(fun.Ret)
 	if !ok {
 		return nil, false
 	}
 	fun.Ret = r
 	for i, param := range fun.Params {
-		p, ok := unwrap(param)
+		p, ok := d.unwrap(param)
 		if !ok {
 			return nil, false
 		}
@@ -34,40 +52,34 @@ func unwrapFun(fun *Fun) (Type, bool) {
 	return fun, true
 }
 
-func unwrap(target Type) (Type, bool) {
+func (d *typeVarDereferencer) unwrap(target Type) (Type, bool) {
 	switch t := target.(type) {
 	case *Fun:
-		return unwrapFun(t)
+		return d.unwrapFun(t)
 	case *Tuple:
 		for i, elem := range t.Elems {
-			e, ok := unwrap(elem)
+			e, ok := d.unwrap(elem)
 			if !ok {
 				return nil, false
 			}
 			t.Elems[i] = e
 		}
 	case *Array:
-		e, ok := unwrap(t.Elem)
+		e, ok := d.unwrap(t.Elem)
 		if !ok {
 			return nil, false
 		}
 		t.Elem = e
 	case *Option:
-		e, ok := unwrap(t.Elem)
+		e, ok := d.unwrap(t.Elem)
 		if !ok {
 			return nil, false
 		}
 		t.Elem = e
 	case *Var:
-		return unwrapVar(t)
+		return d.unwrapVar(t)
 	}
 	return target, true
-}
-
-type typeVarDereferencer struct {
-	err      *locerr.Error
-	env      *Env
-	inferred InferredTypes
 }
 
 func (d *typeVarDereferencer) errIn(node ast.Expr, msg string) {
@@ -75,6 +87,14 @@ func (d *typeVarDereferencer) errIn(node ast.Expr, msg string) {
 		d.err = locerr.ErrorIn(node.Pos(), node.End(), msg)
 	} else {
 		d.err = d.err.NoteAt(node.Pos(), msg)
+	}
+}
+
+func (d *typeVarDereferencer) errMsg(msg string) {
+	if d.err == nil {
+		d.err = locerr.NewError(msg)
+	} else {
+		d.err = d.err.Note(msg)
 	}
 }
 
@@ -97,7 +117,7 @@ func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
 		panic("FATAL: Cannot dereference unknown symbol: " + sym.Name)
 	}
 
-	t, ok := unwrap(symType)
+	t, ok := d.unwrap(symType)
 	if !ok {
 		d.errIn(node, fmt.Sprintf("Cannot infer type of variable '%s'. Inferred type was '%s'", sym.DisplayName, symType.String()))
 		return
@@ -130,6 +150,9 @@ func (d *typeVarDereferencer) fixExternalFuncRet(ret Type) Type {
 			return ret
 		}
 		if v.Ref == nil {
+			if v.IsGeneric() {
+				return ret
+			}
 			return UnitType
 		}
 		ret = v.Ref
@@ -137,12 +160,9 @@ func (d *typeVarDereferencer) fixExternalFuncRet(ret Type) Type {
 }
 
 func (d *typeVarDereferencer) externalSymError(n string, t Type) {
-	msg := fmt.Sprintf("Cannot infer type of external symbol '%s'. Note: Inferred as '%s'", n, t.String())
-	if d.err == nil {
-		d.err = locerr.NewError(msg)
-		return
-	}
-	d.err = d.err.Note(msg)
+	d.errMsg(fmt.Sprintf("Cannot determine type of external symbol '%s'", n))
+	d.errMsg(fmt.Sprintf("Inferred as '%s'", t.String()))
+	d.errMsg("External symbol cannot be generic type")
 }
 
 func (d *typeVarDereferencer) derefExternalSym(name string, symType Type) Type {
@@ -156,14 +176,14 @@ func (d *typeVarDereferencer) derefExternalSym(name string, symType Type) Type {
 		return d.derefExternalSym(name, ty.Ref)
 	case *Fun:
 		ty.Ret = d.fixExternalFuncRet(ty.Ret)
-		t, ok := unwrapFun(ty)
+		t, ok := d.unwrapFun(ty)
 		if !ok {
 			d.externalSymError(name, symType)
 			return ty
 		}
 		return t
 	default:
-		t, ok := unwrap(symType)
+		t, ok := d.unwrap(symType)
 		if !ok {
 			d.externalSymError(name, symType)
 			return symType
@@ -255,7 +275,7 @@ func (d *typeVarDereferencer) VisitBottomup(node ast.Expr) {
 		return
 	}
 
-	unwrapped, ok := unwrap(t)
+	unwrapped, ok := d.unwrap(t)
 	if !ok {
 		d.errIn(node, fmt.Sprintf("Cannot infer type of expression. Type annotation is needed. Inferred type was '%s'", t.String()))
 		return
@@ -265,7 +285,15 @@ func (d *typeVarDereferencer) VisitBottomup(node ast.Expr) {
 }
 
 func derefTypeVars(env *Env, root ast.Expr, inferred InferredTypes) error {
-	v := &typeVarDereferencer{nil, env, inferred}
+	// Create a map from instantiated type variables to original generic type variable
+	gens := map[VarID]VarID{}
+	for _, i := range env.Instantiations {
+		for from, to := range i.Mapping {
+			gens[to.ID] = from
+		}
+	}
+
+	v := &typeVarDereferencer{nil, env, inferred, gens}
 	for n, t := range env.Externals {
 		env.Externals[n] = v.derefExternalSym(n, t)
 	}
