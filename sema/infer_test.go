@@ -34,7 +34,7 @@ func TestEdgeCases(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			_, err = i.infer(ast.Root)
+			_, err = i.infer(ast.Root, 0)
 			if err != nil {
 				t.Fatalf("Type check raised an error for code '%s': %s", tc.code, err.Error())
 			}
@@ -387,6 +387,9 @@ func TestUnificationFailure(t *testing.T) {
 			}
 			i := NewInferer()
 			err = i.Infer(ast)
+			if err == nil {
+				t.Fatal("Error should occur:", testcase.code)
+			}
 			if !strings.Contains(err.Error(), testcase.expected) {
 				t.Fatalf("Expected error message '%s' to contain '%s'", err.Error(), testcase.expected)
 			}
@@ -417,7 +420,7 @@ func TestInferSuccess(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			_, err = i.infer(ast.Root)
+			_, err = i.infer(ast.Root, 0)
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -15,9 +15,9 @@ type typeVarDereferencer struct {
 	// variable to original generic type variable.
 }
 
-func (d *typeVarDereferencer) unwrapVar(v *Var) (Type, bool) {
+func unwrapVar(v *Var) (Type, bool) {
 	if v.Ref != nil {
-		return d.unwrap(v.Ref)
+		return unwrap(v.Ref)
 	}
 
 	if v.IsGeneric() {
@@ -27,14 +27,14 @@ func (d *typeVarDereferencer) unwrapVar(v *Var) (Type, bool) {
 	return nil, false
 }
 
-func (d *typeVarDereferencer) unwrapFun(fun *Fun) (Type, bool) {
-	r, ok := d.unwrap(fun.Ret)
+func unwrapFun(fun *Fun) (Type, bool) {
+	r, ok := unwrap(fun.Ret)
 	if !ok {
 		return nil, false
 	}
 	fun.Ret = r
 	for i, param := range fun.Params {
-		p, ok := d.unwrap(param)
+		p, ok := unwrap(param)
 		if !ok {
 			return nil, false
 		}
@@ -43,32 +43,32 @@ func (d *typeVarDereferencer) unwrapFun(fun *Fun) (Type, bool) {
 	return fun, true
 }
 
-func (d *typeVarDereferencer) unwrap(target Type) (Type, bool) {
+func unwrap(target Type) (Type, bool) {
 	switch t := target.(type) {
 	case *Fun:
-		return d.unwrapFun(t)
+		return unwrapFun(t)
 	case *Tuple:
 		for i, elem := range t.Elems {
-			e, ok := d.unwrap(elem)
+			e, ok := unwrap(elem)
 			if !ok {
 				return nil, false
 			}
 			t.Elems[i] = e
 		}
 	case *Array:
-		e, ok := d.unwrap(t.Elem)
+		e, ok := unwrap(t.Elem)
 		if !ok {
 			return nil, false
 		}
 		t.Elem = e
 	case *Option:
-		e, ok := d.unwrap(t.Elem)
+		e, ok := unwrap(t.Elem)
 		if !ok {
 			return nil, false
 		}
 		t.Elem = e
 	case *Var:
-		return d.unwrapVar(t)
+		return unwrapVar(t)
 	}
 	return target, true
 }
@@ -108,7 +108,7 @@ func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
 		panic("FATAL: Cannot dereference unknown symbol: " + sym.Name)
 	}
 
-	t, ok := d.unwrap(symType)
+	t, ok := unwrap(symType)
 	if !ok {
 		d.errIn(node, fmt.Sprintf("Cannot infer type of variable '%s'. Inferred type was '%s'", sym.DisplayName, symType.String()))
 		return
@@ -167,14 +167,14 @@ func (d *typeVarDereferencer) derefExternalSym(name string, symType Type) Type {
 		return d.derefExternalSym(name, ty.Ref)
 	case *Fun:
 		ty.Ret = d.fixExternalFuncRet(ty.Ret)
-		t, ok := d.unwrapFun(ty)
+		t, ok := unwrapFun(ty)
 		if !ok {
 			d.externalSymError(name, symType)
 			return ty
 		}
 		return t
 	default:
-		t, ok := d.unwrap(symType)
+		t, ok := unwrap(symType)
 		if !ok {
 			d.externalSymError(name, symType)
 			return symType
@@ -266,7 +266,7 @@ func (d *typeVarDereferencer) VisitBottomup(node ast.Expr) {
 		return
 	}
 
-	unwrapped, ok := d.unwrap(t)
+	unwrapped, ok := unwrap(t)
 	if !ok {
 		d.errIn(node, fmt.Sprintf("Cannot infer type of expression. Type annotation is needed. Inferred type was '%s'", t.String()))
 		return

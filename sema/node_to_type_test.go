@@ -191,7 +191,7 @@ func TestSuccess(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.what, func(t *testing.T) {
-			have, err := c.nodeToType(tc.node)
+			have, err := c.nodeToType(tc.node, 0)
 			if err != nil {
 				t.Fatal(tc.node.Name(), "caused an error:", err)
 			}
@@ -269,7 +269,7 @@ func TestErrors(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			_, err = c.nodeToType(tc.node)
+			_, err = c.nodeToType(tc.node, 0)
 			if err == nil {
 				t.Fatal("Error did not occur")
 			}

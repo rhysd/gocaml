@@ -11,6 +11,10 @@ import (
 	"testing"
 )
 
+func varT(t Type) *Var {
+	return NewVar(t, 0)
+}
+
 func testTypeEquals(l, r Type) bool {
 	switch l := l.(type) {
 	case *Unit, *Int, *Float, *Bool, *String:
@@ -68,7 +72,7 @@ func TestDerefFailure(t *testing.T) {
 	pos := locerr.Pos{0, 0, 0, s}
 	tok := &token.Token{token.ILLEGAL, pos, pos, s}
 	env := NewEnv()
-	env.Table["hello"] = &Var{}
+	env.Table["hello"] = varT(nil)
 	v := &typeVarDereferencer{nil, env, map[ast.Expr]Type{}}
 	root := &ast.Let{
 		tok,
@@ -88,11 +92,11 @@ func TestDerefFailure(t *testing.T) {
 }
 
 func TestUnwrapEmptyTypeVar(t *testing.T) {
-	e := &Var{}
+	e := varT(nil)
 	for _, ty := range []Type{
 		e,
-		&Var{e},
-		&Var{&Var{e}},
+		varT(e),
+		varT(varT(e)),
 		&Tuple{[]Type{e}},
 		&Fun{e, []Type{}},
 		&Fun{IntType, []Type{e}},
@@ -143,11 +147,11 @@ func TestUnwrapTypeVarsInExternals(t *testing.T) {
 		input    Type
 		expected Type
 	}{
-		{&Var{UnitType}, UnitType},
-		{&Var{&Var{IntType}}, IntType},
-		{&Tuple{[]Type{&Var{FloatType}, &Var{IntType}}}, &Tuple{[]Type{FloatType, IntType}}},
-		{&Array{&Var{&Tuple{[]Type{&Var{IntType}, UnitType}}}}, &Array{&Tuple{[]Type{IntType, UnitType}}}},
-		{&Option{&Var{&Option{&Var{IntType}}}}, &Option{&Option{IntType}}},
+		{varT(UnitType), UnitType},
+		{varT(varT(IntType)), IntType},
+		{&Tuple{[]Type{varT(FloatType), varT(IntType)}}, &Tuple{[]Type{FloatType, IntType}}},
+		{&Array{varT(&Tuple{[]Type{varT(IntType), UnitType}})}, &Array{&Tuple{[]Type{IntType, UnitType}}}},
+		{&Option{varT(&Option{varT(IntType)})}, &Option{&Option{IntType}}},
 	} {
 		actual := v.derefExternalSym("test", tc.input)
 		if !testTypeEquals(actual, tc.expected) {
@@ -162,14 +166,14 @@ func TestUnwrapTypeVarsInExternals(t *testing.T) {
 func TestRaiseErrorOnUnknownTypeInExternals(t *testing.T) {
 	v := &typeVarDereferencer{nil, NewEnv(), map[ast.Expr]Type{}}
 	for _, ty := range []Type{
-		&Var{},
-		&Var{&Var{}},
-		&Tuple{[]Type{IntType, &Var{}}},
-		&Array{&Var{}},
-		&Fun{IntType, []Type{&Var{&Var{}}}},
-		&Fun{&Array{&Var{}}, []Type{}},
-		&Option{&Var{}},
-		&Fun{&Option{&Var{}}, []Type{}},
+		varT(nil),
+		varT(varT(nil)),
+		&Tuple{[]Type{IntType, varT(nil)}},
+		&Array{varT(nil)},
+		&Fun{IntType, []Type{varT(varT(nil))}},
+		&Fun{&Array{varT(nil)}, []Type{}},
+		&Option{varT(nil)},
+		&Fun{&Option{varT(nil)}, []Type{}},
 	} {
 		v.derefExternalSym("test", ty)
 		if v.err == nil {
@@ -181,9 +185,9 @@ func TestRaiseErrorOnUnknownTypeInExternals(t *testing.T) {
 func TestFixReturnTypeOfExternalFunction(t *testing.T) {
 	v := &typeVarDereferencer{nil, NewEnv(), map[ast.Expr]Type{}}
 	for _, ty := range []Type{
-		&Fun{&Var{}, []Type{}},
-		&Fun{&Var{&Var{}}, []Type{IntType}},
-		&Var{&Fun{&Var{}, []Type{FloatType}}},
+		&Fun{varT(nil), []Type{}},
+		&Fun{varT(varT(nil)), []Type{IntType}},
+		varT(&Fun{varT(nil), []Type{FloatType}}),
 	} {
 		derefed := v.derefExternalSym("test", ty)
 		f, ok := derefed.(*Fun)
