@@ -41,7 +41,7 @@ func occur(v *Var, rhs Type) bool {
 	return false
 }
 
-func unifyTuple(left, right *Tuple) error {
+func unifyTuple(left, right *Tuple) *locerr.Error {
 	length := len(left.Elems)
 	if length != len(right.Elems) {
 		return locerr.Errorf("Number of elements of tuple does not match: %d vs %d (between '%s' and '%s')", length, len(right.Elems), left.String(), right.String())
@@ -58,7 +58,7 @@ func unifyTuple(left, right *Tuple) error {
 	return nil
 }
 
-func unifyFun(left, right *Fun) error {
+func unifyFun(left, right *Fun) *locerr.Error {
 	if err := Unify(left.Ret, right.Ret); err != nil {
 		return locerr.Notef(err, "On unifying functions' return types of '%s' and '%s'\n", left.String(), right.String())
 	}
@@ -77,7 +77,7 @@ func unifyFun(left, right *Fun) error {
 	return nil
 }
 
-func assignVar(v *Var, t Type) error {
+func assignVar(v *Var, t Type) *locerr.Error {
 	// When rv.Ref == nil
 	if occur(v, t) {
 		return locerr.Errorf("Cannot resolve uninstantiated type variable. Cyclic dependency found while unification with '%s'", t.String())
@@ -86,7 +86,7 @@ func assignVar(v *Var, t Type) error {
 	return nil
 }
 
-func Unify(left, right Type) error {
+func Unify(left, right Type) *locerr.Error {
 	switch l := left.(type) {
 	case *Unit, *Bool, *Int, *Float, *String:
 		// Types for Unit, Bool, Int, Float and String are singleton instance.

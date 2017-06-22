@@ -28,8 +28,8 @@ func (inf *Inferer) checkNodeType(where string, node ast.Expr, expected Type) er
 	if err != nil {
 		return err
 	}
-	if err = Unify(expected, t); err != nil {
-		return locerr.NotefAt(node.Pos(), err, "Type error: %s must be '%s'", where, expected.String())
+	if err := Unify(expected, t); err != nil {
+		return err.In(node.Pos(), node.End()).NotefAt(node.Pos(), "Type error: %s must be '%s'", where, expected.String())
 	}
 	return nil
 }
@@ -43,11 +43,11 @@ func (inf *Inferer) inferArithmeticBinOp(op string, left, right ast.Expr, operan
 	if err != nil {
 		return nil, err
 	}
-	if err = Unify(operand, l); err != nil {
-		return nil, locerr.NotefAt(left.Pos(), err, "Left hand of operator '%s' must be %s", op, operand.String())
+	if err := Unify(operand, l); err != nil {
+		return nil, err.In(left.Pos(), left.End()).NotefAt(left.Pos(), "Left hand of operator '%s' must be %s", op, operand.String())
 	}
-	if err = Unify(operand, r); err != nil {
-		return nil, locerr.NotefAt(right.Pos(), err, "Right hand of operator '%s' must be %s", op, operand.String())
+	if err := Unify(operand, r); err != nil {
+		return nil, err.In(right.Pos(), right.End()).NotefAt(right.Pos(), "Right hand of operator '%s' must be %s", op, operand.String())
 	}
 	// Returns the same type as operands
 	return operand, nil
@@ -62,8 +62,8 @@ func (inf *Inferer) inferRelationalBinOp(op string, left, right ast.Expr) (Type,
 	if err != nil {
 		return nil, err
 	}
-	if err = Unify(l, r); err != nil {
-		return nil, locerr.NotefAt(left.Pos(), err, "Type mismatch at operands of relational operator '%s'", op)
+	if err := Unify(l, r); err != nil {
+		return nil, err.In(left.Pos(), right.End()).NotefAt(left.Pos(), "Type mismatch at operands of relational operator '%s'", op)
 	}
 	return BoolType, nil
 }
@@ -74,8 +74,8 @@ func (inf *Inferer) inferLogicalOp(op string, left, right ast.Expr) (Type, error
 		if err != nil {
 			return nil, err
 		}
-		if err = Unify(BoolType, t); err != nil {
-			return nil, locerr.NotefAt(e.Pos(), err, "Type mismatch at %dth operand of logical operator '%s'", i+1, op)
+		if err := Unify(BoolType, t); err != nil {
+			return nil, err.In(left.Pos(), right.End()).NotefAt(e.Pos(), "Type mismatch at %dth operand of logical operator '%s'", i+1, op)
 		}
 	}
 	return BoolType, nil
@@ -157,8 +157,8 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 			return nil, err
 		}
 
-		if err = Unify(t, e); err != nil {
-			return nil, locerr.NoteAt(n.Pos(), err, "Mismatch of types for 'then' clause and 'else' clause in 'if' expression")
+		if err := Unify(t, e); err != nil {
+			return nil, err.In(n.Pos(), n.End()).NoteAt(n.Pos(), "Mismatch of types for 'then' clause and 'else' clause in 'if' expression")
 		}
 
 		return t, nil
@@ -175,7 +175,7 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 				return nil, err
 			}
 			if err := Unify(t, bound); err != nil {
-				return nil, locerr.NotefAt(n.Body.Pos(), err, "Type of variable '%s'", n.Symbol.DisplayName)
+				return nil, err.In(n.Body.Pos(), n.Body.End()).NotefAt(n.Body.Pos(), "Type of variable '%s'", n.Symbol.DisplayName)
 			}
 		}
 
@@ -222,12 +222,13 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 		}
 
 		if n.Func.RetType != nil {
-			t, err := inf.conv.nodeToType(n.Func.RetType)
+			e := n.Func.RetType
+			t, err := inf.conv.nodeToType(e)
 			if err != nil {
-				return nil, locerr.NoteAt(n.Func.RetType.Pos(), err, "Return type of function")
+				return nil, locerr.NoteAt(e.Pos(), err, "Return type of function")
 			}
-			if err = Unify(t, ret); err != nil {
-				return nil, locerr.NoteAt(n.Func.RetType.Pos(), err, "Return type of function")
+			if err := Unify(t, ret); err != nil {
+				return nil, err.In(e.Pos(), e.End()).NoteAt(e.Pos(), "Return type of function")
 			}
 		}
 
@@ -238,8 +239,8 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 
 		// n.Func.Type represents its function type. So unify it with
 		// inferred function type from its parameters and body.
-		if err = Unify(fun, f); err != nil {
-			return nil, locerr.NotefAt(n.Pos(), err, "Function '%s'", n.Func.Symbol.DisplayName)
+		if err := Unify(fun, f); err != nil {
+			return nil, err.In(n.Pos(), n.End()).NotefAt(n.Pos(), "Function '%s'", n.Func.Symbol.DisplayName)
 		}
 
 		return inf.infer(n.Body)
@@ -266,8 +267,8 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 			return nil, err
 		}
 
-		if err = Unify(callee, fun); err != nil {
-			return nil, locerr.NoteAt(n.Pos(), err, "Type of called function")
+		if err := Unify(callee, fun); err != nil {
+			return nil, err.In(n.Pos(), n.End()).NoteAt(n.Pos(), "Type of called function")
 		}
 
 		return ret, nil
@@ -375,10 +376,10 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 		for i, e := range n.Elems[1:] {
 			t, err := inf.infer(e)
 			if err != nil {
-				return nil, locerr.NotefAt(n.Pos(), err, "%s element type of array literal is incorrect", common.Ordinal(i+2))
+				return nil, locerr.NotefAt(e.Pos(), err, "%s element type of array literal is incorrect", common.Ordinal(i+2))
 			}
 			if err := Unify(elem, t); err != nil {
-				return nil, locerr.NotefAt(n.Pos(), err, "Mismatch between 1st element and %s element in array literal", common.Ordinal(i+2))
+				return nil, err.In(e.Pos(), e.End()).NotefAt(e.Pos(), "Mismatch between 1st element and %s element in array literal", common.Ordinal(i+2))
 			}
 		}
 		return &Array{elem}, nil
@@ -406,8 +407,8 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 		if err != nil {
 			return nil, err
 		}
-		if err = Unify(some, none); err != nil {
-			return nil, locerr.NoteAt(n.Pos(), err, "Mismatch of types between 'Some' arm and 'None' arm in 'match' expression")
+		if err := Unify(some, none); err != nil {
+			return nil, err.In(n.Pos(), n.End()).NoteAt(n.Pos(), "Mismatch of types between 'Some' arm and 'None' arm in 'match' expression")
 		}
 		return some, nil
 	case *ast.Typed:
@@ -421,8 +422,8 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 			return nil, err
 		}
 
-		if err = Unify(t, child); err != nil {
-			return nil, locerr.NoteAt(n.Pos(), err, "Mismatch between inferred type and specified type")
+		if err := Unify(t, child); err != nil {
+			return nil, err.In(n.Pos(), n.End()).NoteAt(n.Pos(), "Mismatch between inferred type and specified type")
 		}
 
 		return child, nil
@@ -454,7 +455,7 @@ func (inf *Inferer) Infer(parsed *ast.AST) error {
 	}
 
 	if err := Unify(UnitType, root); err != nil {
-		return locerr.Note(err, "Type of root expression of program must be unit")
+		return err.At(parsed.Root.Pos()).Note("Type of root expression of program must be unit")
 	}
 
 	// While dereferencing type variables in table, we can detect type variables
