@@ -41,9 +41,21 @@ func occur(v *Var, rhs Type) bool {
 			}
 			return occur(v, t.Ref)
 		}
-		if t.IsGeneric() {
-			panic("FATAL: occurs check for generic type")
-		}
+		// XXX:
+		// In original algorithm, type variable is never generic here.
+		// However, in this type inference, it occurs in function body because of recursive function
+		// call. For type inference of function, the declared function symbol before apply type inference
+		// to the function body considering recursive function call. After inferred return type, type
+		// of the function is generalized. Generalization modifies the type destructively. So types
+		// in the body which contains the generalized type will contain generic type variable and may
+		// be unified.
+		//
+		// e.g.
+		//   let rec f x = x > x in f
+		//
+		// At first, `f` is set as 'a. After type inference for function body, the type reveals as
+		// 'a -> 'a. The generalization from ? -> ? to 'a -> 'a is done destructively so `x` in the
+		// function body is typed as 'a. 'a is unified because of `>` binary expression in the body.
 	}
 	return false
 }

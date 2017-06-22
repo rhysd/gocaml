@@ -264,15 +264,22 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		// from it again for `f true` expression. By unifying `bool -> ?(2)` and `?(3) -> ?(3)`, finally
 		// type of `f` at `f true` is fixed as `bool -> bool`.
 		for _, i := range inf.Env.Instantiations {
-			if i.From == tmpFun {
-				fixed := instantiate(fun, level+1)
-				if err := Unify(fixed.To, i.To); err != nil {
-					return nil, locerr.NotefAt(n.Pos(), err, "Type of recursive function '%s'", n.Func.Symbol.Name)
-				}
-				i.From = fixed.From
-				i.To = fixed.To
-				i.Mapping = fixed.Mapping
+			if i.From != tmpFun {
+				continue
 			}
+
+			fixed := instantiate(fun, level+1)
+			if fixed == nil {
+				// No generic variable is contained in 'fun'
+				break
+			}
+
+			if err := Unify(fixed.To, i.To); err != nil {
+				return nil, locerr.NotefAt(n.Pos(), err, "Type of recursive function '%s'", n.Func.Symbol.Name)
+			}
+			i.From = fixed.From
+			i.To = fixed.To
+			i.Mapping = fixed.Mapping
 		}
 
 		return inf.infer(n.Body, level)

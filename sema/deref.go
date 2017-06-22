@@ -13,7 +13,6 @@ type typeVarDereferencer struct {
 	inferred InferredTypes
 	// Map representing what type variable came from what generic type. From instantiated type
 	// variable to original generic type variable.
-	generics map[VarID]VarID
 }
 
 func (d *typeVarDereferencer) unwrapVar(v *Var) (Type, bool) {
@@ -21,15 +20,7 @@ func (d *typeVarDereferencer) unwrapVar(v *Var) (Type, bool) {
 		return d.unwrap(v.Ref)
 	}
 
-	fmt.Println("FOO", d.generics)
-	if id, ok := d.generics[v.ID]; ok {
-		// Convert instantiated type variable into original generic type variable *destructively*.
-		// e.g.
-		//   let rec f x = x in f
-		// For example, above `x` is instantiated at body of `f`. So it is typed as `?`. By below
-		// process, the type `?` will be promoted to `'a` where type of `f` is `'a -> 'a`.
-		v.ID = id
-		v.Level = GenericLevel
+	if v.IsGeneric() {
 		return v, true
 	}
 
@@ -285,15 +276,7 @@ func (d *typeVarDereferencer) VisitBottomup(node ast.Expr) {
 }
 
 func derefTypeVars(env *Env, root ast.Expr, inferred InferredTypes) error {
-	// Create a map from instantiated type variables to original generic type variable
-	gens := map[VarID]VarID{}
-	for _, i := range env.Instantiations {
-		for from, to := range i.Mapping {
-			gens[to.ID] = from
-		}
-	}
-
-	v := &typeVarDereferencer{nil, env, inferred, gens}
+	v := &typeVarDereferencer{nil, env, inferred}
 	for n, t := range env.Externals {
 		env.Externals[n] = v.derefExternalSym(n, t)
 	}

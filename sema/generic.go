@@ -4,11 +4,8 @@ import (
 	"github.com/rhysd/gocaml/types"
 )
 
-// Generalization cannot modify given type destructively. It sometimes breaks existing other type variable.
-// For example, in `let rec f x = f true; x in f 42`, first function call `f true` is inferred as `bool -> 'a`
-// after type inference because `f true;` is equivalent to `let $unused = f true in`. 'let' expression causes
-// generalization and $unused is inferred as 'a. It changes type of the `f` from `bool -> ?` to `bool -> 'a`
-// if generalization changed a given type destructively.
+// Generalize given type variable. It means binding a free type variable. This function modifies
+// all free variables to bound generic variable *destructively*.
 func generalize(level int, t types.Type) types.Type {
 	switch t := t.(type) {
 	case *types.Var:
@@ -16,30 +13,23 @@ func generalize(level int, t types.Type) types.Type {
 			return generalize(level, t.Ref)
 		}
 		if t.Level > level {
-			// Bind free variable 'a' as 'forall a.a'
-			return t.AsGeneric()
+			t.SetGeneric()
 		}
-		return t
 	case *types.Tuple:
-		ts := make([]types.Type, 0, len(t.Elems))
-		for _, e := range t.Elems {
-			ts = append(ts, generalize(level, e))
+		for i, e := range t.Elems {
+			t.Elems[i] = generalize(level, e)
 		}
-		return &types.Tuple{ts}
 	case *types.Array:
-		return &types.Array{generalize(level, t.Elem)}
+		t.Elem = generalize(level, t.Elem)
 	case *types.Option:
-		return &types.Option{generalize(level, t.Elem)}
+		t.Elem = generalize(level, t.Elem)
 	case *types.Fun:
-		ret := generalize(level, t.Ret)
-		params := make([]types.Type, 0, len(t.Params))
-		for _, p := range t.Params {
-			params = append(params, generalize(level, p))
+		t.Ret = generalize(level, t.Ret)
+		for i, p := range t.Params {
+			t.Params[i] = generalize(level, p)
 		}
-		return &types.Fun{ret, params}
-	default:
-		return t
 	}
+	return t
 }
 
 type instantiator struct {
