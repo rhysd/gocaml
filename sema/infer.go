@@ -503,15 +503,6 @@ func (inf *Inferer) Infer(parsed *ast.AST) error {
 		return locerr.Note(err, "Type of root expression of program must be unit")
 	}
 
-	// XXX: Temporary
-	inf.Env.Dump()
-	fmt.Println("Instantiations:", len(inf.Env.Instantiations))
-	for v, i := range inf.Env.Instantiations {
-		fmt.Println("\nVAR:", v.Symbol.Name, v.Pos())
-		fmt.Printf("  '%s' ==> '%s'\n", i.From, i.To)
-		fmt.Printf("  Replaced variables: %d\n\n", len(i.Mapping))
-	}
-
 	// While dereferencing type variables in table, we can detect type variables
 	// which does not have exact type and raise an error for that.
 	// External variables must be well-typed also.

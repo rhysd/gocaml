@@ -676,8 +676,8 @@ Flags:
     	Emit assembler code to stdout
   -ast
     	Show AST for input
-  -externals
-    	Display external symbols
+  -dump-env
+    	Dump analyzed symbols and types information to stdout
   -g	Compile with debug information
   -help
     	Show this help

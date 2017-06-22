@@ -160,8 +160,8 @@ func TestUnificationFailure(t *testing.T) {
 		},
 		{
 			what:     "mismatch parameter type",
-			code:     "let rec f a b = a < b in (f 1 1) = (f 1.0 1.0)",
-			expected: "On unifying 1st parameter of function 'int -> int -> bool' and 'float -> float -> bool'",
+			code:     "let rec f a b = a < b in f 1.0 1",
+			expected: "On unifying 2nd parameter of function 'float -> float -> bool' and 'float -> int -> bool'",
 		},
 		{
 			what:     "does not meet parameter type requirements",

@@ -88,6 +88,19 @@ func (d *Driver) SemanticAnalysis(src *locerr.Source) (*types.Env, sema.Inferred
 	return sema.Analyze(a)
 }
 
+func (d *Driver) DumpEnvToStdout(src *locerr.Source) error {
+	env, inferred, err := d.SemanticAnalysis(src)
+	if err != nil {
+		return err
+	}
+	env.Dump()
+	fmt.Println("\nType Information:\n")
+	for expr, ty := range inferred {
+		fmt.Printf("  %s: %s (%s-%s)\n", expr.Name(), ty.String(), expr.Pos().String(), expr.End().String())
+	}
+	return nil
+}
+
 // EmitMIR emits MIR tree representation.
 func (d *Driver) EmitMIR(src *locerr.Source) (*mir.Program, *types.Env, error) {
 	parsed, err := d.Parse(src)

@@ -55,11 +55,22 @@ func (env *Env) Dump() {
 	}
 	fmt.Println()
 	env.DumpExternals()
+	fmt.Println()
+	env.DumpInstantiations()
 }
 
 func (env *Env) DumpExternals() {
 	fmt.Println("External Variables:")
 	for s, t := range env.Externals {
 		fmt.Printf("  %s: %s\n", s, t.String())
+	}
+}
+
+func (env *Env) DumpInstantiations() {
+	fmt.Println("Instantiations:")
+	for ref, inst := range env.Instantiations {
+		fmt.Printf("  '%s' at %s\n", ref.Symbol.DisplayName, ref.Pos().String())
+		fmt.Printf("    From: %s\n", inst.From.String())
+		fmt.Printf("    To:   %s\n", inst.To.String())
 	}
 }
