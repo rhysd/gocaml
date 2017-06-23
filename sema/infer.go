@@ -201,16 +201,13 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		inf.Env.Externals[n.Symbol.DisplayName] = t
 		return t, nil
 	case *ast.LetRec:
-		// Considering recursive function call, register function name before inferring its body.
-		// Recursive function may be generic like `let rec f x = f true; x in f 42`.
-		// So register the function as a type variable here and later update the type with the result
-		// of inference for body of function.
-		// 'tmpFun' cannot be &Var{Level: level} because the function may be generic and called
-		// recursively multi times with different types.
-		// e.g.
-		//   let rec f x = f 10; f true; x in f
-		tmpFun := NewGeneric()
-		inf.Env.Table[n.Func.Symbol.Name] = tmpFun
+		// Note:
+		// LetRec is different from other Let or LetTuple because it may be recursive.
+		// It's the point to separe LetRec to recursive variable declaration and function expression.
+		//   before: let rec f a b = a > b in ...
+		//   after:  let rec f = fun a b -> a > b in ...
+		// It means that type variables of parameters should be made with level + 1. And type variable
+		// of return type is also. Then type of `f` should be generalized with level.
 
 		// Register parameters of function as variables to table
 		params := make([]Type, len(n.Func.Params))
@@ -228,6 +225,17 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 			inf.Env.Table[p.Ident.Name] = t
 			params[i] = t
 		}
+
+		// Considering recursive function call, register function name before inferring its body.
+		// Recursive function may be generic like `let rec f x = f true; f 3.0; x in f 42`.
+		// So register the function as a type variable here and later update the type with the result
+		// of inference for body of function.
+		// 'tmpFun' cannot be &Var{Level: level} because the function may be generic and called
+		// recursively multi times with different types.
+		// e.g.
+		//   let rec f x = f 10; f true; x in f
+		tmpFun := &Fun{NewVar(nil, level+1), params}
+		inf.Env.Table[n.Func.Symbol.Name] = generalize(level, tmpFun)
 
 		// Infer return type of function from its body
 		ret, err := inf.infer(n.Func.Body, level+1)
@@ -250,56 +258,6 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		// Update the return type with the result of inference of function body. The function was
 		// registered as generic type for recursive call at the beginning of this method.
 		inf.Env.Table[n.Func.Symbol.Name] = fun
-
-		// XXX:
-		// Fix type of the callee which was inferred in recursive function calls.
-		// These generic function calls are instantiated from above 'tmpFun' generic type variable.
-		// And now we replaced it with the inference result of function body (and generalized).
-		// It means that instantiated types don't have the information of the result.
-		// e.g.
-		//   let rec f x = f true; x in f 42;
-		// In the example, type of `f` in `f true` was instantiated from 'tmpFun' as `bool -> ?(2)`.
-		// It's because `f` is specified as 'a at first and the type of `f` is instantiated in the body.
-		// But the type of `f` is updated as `'a -> 'a` later. So we need to instantiate `?(3) -> ?(3)`
-		// from it again for `f true` expression. By unifying `bool -> ?(2)` and `?(3) -> ?(3)`, finally
-		// type of `f` at `f true` is fixed as `bool -> bool`.
-		for _, i := range inf.Env.Instantiations {
-			if i.From != tmpFun {
-				continue
-			}
-
-			// XXX:
-			// Check cyclic dependency of the function. When the function is recursive, it instantiates
-			// itself in its body. In the case, occur check cannot detect recursive type variable of
-			// the function.
-			//
-			// e.g.
-			//   let rec f x = f in f
-			//
-			// Type variable of 'f' contains itself. At first type of 'f' is set to 'a. Then from
-			// its body, the return type is inferred as ? -> 'b. It's because 'f' in body is instantiated
-			// as ? -> ? and generalized as ? -> 'b. Instantiated type variable is different from
-			// the original 'a. So occur check does not fail.
-			if g, ok := i.Mapping[tmpFun.ID]; ok {
-				if err := Unify(g, fun); err != nil {
-					return nil, locerr.NotefAt(n.Pos(), err, "Type of recursively instantiated function '%s'", n.Func.Symbol.Name)
-				}
-			}
-
-			fixed := instantiate(fun, level+1)
-			if fixed == nil {
-				// No generic variable is contained in 'fun'
-				break
-			}
-
-			if err := Unify(fixed.To, i.To); err != nil {
-				return nil, locerr.NotefAt(n.Pos(), err, "Type of recursive function '%s'", n.Func.Symbol.Name)
-			}
-
-			i.From = fixed.From
-			i.To = fixed.To
-			i.Mapping = fixed.Mapping
-		}
 
 		return inf.infer(n.Body, level)
 	case *ast.Apply:
