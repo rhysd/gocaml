@@ -268,6 +268,24 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 				continue
 			}
 
+			// XXX:
+			// Check cyclic dependency of the function. When the function is recursive, it instantiates
+			// itself in its body. In the case, occur check cannot detect recursive type variable of
+			// the function.
+			//
+			// e.g.
+			//   let rec f x = f in f
+			//
+			// Type variable of 'f' contains itself. At first type of 'f' is set to 'a. Then from
+			// its body, the return type is inferred as ? -> 'b. It's because 'f' in body is instantiated
+			// as ? -> ? and generalized as ? -> 'b. Instantiated type variable is different from
+			// the original 'a. So occur check does not fail.
+			if g, ok := i.Mapping[tmpFun.ID]; ok {
+				if err := Unify(g, fun); err != nil {
+					return nil, locerr.NotefAt(n.Pos(), err, "Type of recursively instantiated function '%s'", n.Func.Symbol.Name)
+				}
+			}
+
 			fixed := instantiate(fun, level+1)
 			if fixed == nil {
 				// No generic variable is contained in 'fun'
@@ -277,6 +295,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 			if err := Unify(fixed.To, i.To); err != nil {
 				return nil, locerr.NotefAt(n.Pos(), err, "Type of recursive function '%s'", n.Func.Symbol.Name)
 			}
+
 			i.From = fixed.From
 			i.To = fixed.To
 			i.Mapping = fixed.Mapping

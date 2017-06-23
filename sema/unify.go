@@ -101,6 +101,11 @@ func assignVar(v *Var, t Type) error {
 	if occur(v, t) {
 		return locerr.Errorf("Cannot resolve uninstantiated type variable. Cyclic dependency found while unification with '%s'", t.String())
 	}
+
+	if v.IsGeneric() {
+		return nil
+	}
+
 	v.Ref = t
 	return nil
 }
