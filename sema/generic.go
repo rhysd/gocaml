@@ -4,8 +4,7 @@ import (
 	"github.com/rhysd/gocaml/types"
 )
 
-// Generalize given type variable. It means binding a free type variable. This function modifies
-// all free variables to bound generic variable *destructively*.
+// Generalize given type variable. It means binding proper free type variables in the type.
 func generalize(level int, t types.Type) types.Type {
 	switch t := t.(type) {
 	case *types.Var:
@@ -13,23 +12,28 @@ func generalize(level int, t types.Type) types.Type {
 			return generalize(level, t.Ref)
 		}
 		if t.Level > level {
-			t.SetGeneric()
+			return t.AsGeneric()
 		}
+		return t
 	case *types.Tuple:
-		for i, e := range t.Elems {
-			t.Elems[i] = generalize(level, e)
+		elems := make([]types.Type, 0, len(t.Elems))
+		for _, e := range t.Elems {
+			elems = append(elems, generalize(level, e))
 		}
+		return &types.Tuple{elems}
 	case *types.Array:
-		t.Elem = generalize(level, t.Elem)
+		return &types.Array{generalize(level, t.Elem)}
 	case *types.Option:
-		t.Elem = generalize(level, t.Elem)
+		return &types.Option{generalize(level, t.Elem)}
 	case *types.Fun:
-		t.Ret = generalize(level, t.Ret)
-		for i, p := range t.Params {
-			t.Params[i] = generalize(level, p)
+		params := make([]types.Type, 0, len(t.Params))
+		for _, p := range t.Params {
+			params = append(params, generalize(level, p))
 		}
+		return &types.Fun{generalize(level, t.Ret), params}
+	default:
+		return t
 	}
-	return t
 }
 
 type instantiator struct {
