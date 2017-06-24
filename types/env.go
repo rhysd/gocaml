@@ -48,15 +48,21 @@ func NewEnv() *Env {
 	}
 }
 
+// TODO: Dump environment as JSON
+
 func (env *Env) Dump() {
+	env.DumpVariables()
+	fmt.Println()
+	env.DumpInstantiations()
+	fmt.Println()
+	env.DumpExternals()
+}
+
+func (env *Env) DumpVariables() {
 	fmt.Println("Variables:")
 	for s, t := range env.Table {
 		fmt.Printf("  %s: %s\n", s, t.String())
 	}
-	fmt.Println()
-	env.DumpExternals()
-	fmt.Println()
-	env.DumpInstantiations()
 }
 
 func (env *Env) DumpExternals() {
@@ -73,4 +79,19 @@ func (env *Env) DumpInstantiations() {
 		fmt.Printf("    From: %s\n", inst.From.String())
 		fmt.Printf("    To:   %s\n", inst.To.String())
 	}
+}
+
+func (env *Env) DumpDebug() {
+	fmt.Println("Variables:")
+	for s, t := range env.Table {
+		fmt.Printf("  %s: %s\n", s, Debug(t))
+	}
+	fmt.Println("\nInstantiations:")
+	for ref, inst := range env.Instantiations {
+		fmt.Printf("  '%s' at %s\n", ref.Symbol.DisplayName, ref.Pos().String())
+		fmt.Printf("    From: %s\n", Debug(inst.From))
+		fmt.Printf("    To:   %s\n", Debug(inst.To))
+	}
+	fmt.Println()
+	env.DumpExternals()
 }

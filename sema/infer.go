@@ -480,7 +480,7 @@ func (inf *Inferer) Infer(parsed *ast.AST) error {
 		return locerr.Note(err, "Type of root expression of program must be unit")
 	}
 
-	inf.Env.Dump()
+	inf.Env.DumpDebug()
 
 	// While dereferencing type variables in table, we can detect type variables
 	// which does not have exact type and raise an error for that.

@@ -15,6 +15,8 @@ func TestDumpResult(t *testing.T) {
 	env.Table["external_ident"] = UnitType
 	env.Table["external_ident2"] = FloatType
 
+	// TODO: Add dummy instantiations
+
 	old := os.Stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w
@@ -44,6 +46,8 @@ func TestDumpResult(t *testing.T) {
 		}
 	}
 }
+
+// TODO: TestDumpDebug
 
 func TestEnvHasBuiltins(t *testing.T) {
 	env := NewEnv()

@@ -61,7 +61,7 @@ func TestGenGeneric(t *testing.T) {
 	if g2.IsGeneric() {
 		t.Fatal("Level 0 type variable should not be generic")
 	}
-	g2.SetGeneric()
+	g2 = g2.AsGeneric()
 	if !g2.IsGeneric() {
 		t.Fatal("Type variabel after SetGeneric() should eb generic")
 	}
@@ -78,7 +78,7 @@ func TestGenGeneric(t *testing.T) {
 		}
 	}()
 	v := NewVar(IntType, 0)
-	v.SetGeneric()
+	v.AsGeneric()
 }
 
 func TestGenericString(t *testing.T) {
@@ -106,5 +106,16 @@ func TestGenericString(t *testing.T) {
 	s = (&Tuple{ts}).String()
 	if !strings.HasSuffix(s, " * 'a1") {
 		t.Fatal("Generic name must be rotated with count:", s)
+	}
+}
+
+func TestDebug(t *testing.T) {
+	currentVarID = 0
+	g := NewGeneric()
+	ty := NewVar(&Tuple{[]Type{g, g, NewVar(nil, 2)}}, 1)
+	have := Debug(ty)
+	want := "?('a(1) * 'a(1) * ?(2, 2), 3, 1)"
+	if have != want {
+		t.Fatal("Unexpected debug string:", have, ", want:", want)
 	}
 }

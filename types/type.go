@@ -130,10 +130,11 @@ type toString struct {
 	generics map[VarID]string
 	count    int
 	char     rune
+	debug    bool
 }
 
 func newToString() *toString {
-	return &toString{map[VarID]string{}, 0, 'a'}
+	return &toString{map[VarID]string{}, 0, 'a', false}
 }
 
 func (toStr *toString) newGenName() string {
@@ -210,15 +211,30 @@ func (toStr *toString) ofOption(o *Option) string {
 
 func (toStr *toString) ofVar(v *Var) string {
 	if v.Ref != nil {
+		if toStr.debug {
+			return fmt.Sprintf("?(%s, %d, %d)", toStr.ofType(v.Ref), v.ID, v.Level)
+		}
 		return toStr.ofType(v.Ref)
 	}
 	if v.Level != GenericLevel {
+		if toStr.debug {
+			return fmt.Sprintf("?(%d, %d)", v.ID, v.Level)
+		}
 		return fmt.Sprintf("?(%d)", v.ID)
 	}
 	if s, ok := toStr.generics[v.ID]; ok {
 		return s
 	}
 	s := toStr.newGenName()
+	if toStr.debug {
+		s = fmt.Sprintf("%s(%d)", s, v.ID)
+	}
 	toStr.generics[v.ID] = s
 	return s
+}
+
+// Debug represents the given type as string with detailed type variable information.
+func Debug(t Type) string {
+	tos := &toString{map[VarID]string{}, 0, 'a', true}
+	return tos.ofType(t)
 }
