@@ -4,41 +4,65 @@ import (
 	"github.com/rhysd/gocaml/types"
 )
 
-// Generalize given type variable. It means binding proper free type variables in the type.
-func generalize(level int, t types.Type) types.Type {
+type boundIDs map[types.VarID]struct{}
+
+func (ids boundIDs) add(id types.VarID) {
+	ids[id] = struct{}{}
+}
+
+func (ids boundIDs) contains(id types.VarID) bool {
+	_, ok := ids[id]
+	return ok
+}
+
+type generalizer struct {
+	bounds boundIDs
+	level  int
+}
+
+func (gen *generalizer) apply(t types.Type) types.Type {
 	switch t := t.(type) {
 	case *types.Var:
 		if t.Ref != nil {
-			return generalize(level, t.Ref)
+			return gen.apply(t.Ref)
 		}
-		if t.Level > level {
+		if t.Level > gen.level {
+			gen.bounds.add(t.ID)
 			return t.AsGeneric()
 		}
 		return t
 	case *types.Tuple:
 		elems := make([]types.Type, 0, len(t.Elems))
 		for _, e := range t.Elems {
-			elems = append(elems, generalize(level, e))
+			elems = append(elems, gen.apply(e))
 		}
 		return &types.Tuple{elems}
 	case *types.Array:
-		return &types.Array{generalize(level, t.Elem)}
+		return &types.Array{gen.apply(t.Elem)}
 	case *types.Option:
-		return &types.Option{generalize(level, t.Elem)}
+		return &types.Option{gen.apply(t.Elem)}
 	case *types.Fun:
 		params := make([]types.Type, 0, len(t.Params))
 		for _, p := range t.Params {
-			params = append(params, generalize(level, p))
+			params = append(params, gen.apply(p))
 		}
-		return &types.Fun{generalize(level, t.Ret), params}
+		return &types.Fun{gen.apply(t.Ret), params}
 	default:
 		return t
 	}
 }
 
+// Generalize given type variable. It means binding proper free type variables in the type. It returns
+// generalized type and IDs of bound type variables in given type.
+func generalize(t types.Type, level int) (types.Type, boundIDs) {
+	gen := &generalizer{boundIDs{}, level}
+	t = gen.apply(t)
+	return t, gen.bounds
+}
+
 type instantiator struct {
-	vars  map[types.VarID]*types.Var
-	level int
+	freeVars map[types.VarID]*types.Var
+	level    int
 }
 
 func (inst *instantiator) apply(t types.Type) types.Type {
@@ -50,10 +74,10 @@ func (inst *instantiator) apply(t types.Type) types.Type {
 		if !t.IsGeneric() {
 			return t
 		}
-		v, ok := inst.vars[t.ID]
+		v, ok := inst.freeVars[t.ID]
 		if !ok {
 			v = types.NewVar(nil, inst.level)
-			inst.vars[t.ID] = v
+			inst.freeVars[t.ID] = v
 		}
 		return v
 	case *types.Tuple:
@@ -80,7 +104,7 @@ func (inst *instantiator) apply(t types.Type) types.Type {
 func instantiate(t types.Type, level int) *types.Instantiation {
 	i := &instantiator{map[types.VarID]*types.Var{}, level}
 	ret := i.apply(t)
-	if len(i.vars) == 0 {
+	if len(i.freeVars) == 0 {
 		// Should return the original type 't' here?
 		// Even if no instantiation occurred, linked type variables may be dereferenced in instantiator.apply().
 		return nil
@@ -88,6 +112,6 @@ func instantiate(t types.Type, level int) *types.Instantiation {
 	return &types.Instantiation{
 		From:    t,
 		To:      ret,
-		Mapping: i.vars,
+		Mapping: i.freeVars,
 	}
 }

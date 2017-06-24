@@ -8,33 +8,51 @@ import (
 )
 
 type typeVarDereferencer struct {
-	err      *locerr.Error
-	env      *Env
-	inferred InferredTypes
-	// Map representing what type variable came from what generic type. From instantiated type
-	// variable to original generic type variable.
+	err       *locerr.Error
+	env       *Env
+	inferred  InferredTypes
+	schemes   schemes
+	symBounds map[string]boundIDs
 }
 
-func unwrapVar(v *Var) (Type, bool) {
+func (d *typeVarDereferencer) isInstantiated(id VarID) bool {
+	for _, ids := range d.symBounds {
+		if ids.contains(id) {
+			return true
+		}
+	}
+	return false
+}
+
+func (d *typeVarDereferencer) unwrapVar(v *Var) (Type, bool) {
 	if v.Ref != nil {
-		return unwrap(v.Ref)
+		return d.unwrap(v.Ref)
 	}
 
 	if v.IsGeneric() {
+		if !d.isInstantiated(v.ID) {
+			d.errMsg("Cannot instantiate generic type variable")
+			return nil, false
+		}
 		return v, true
 	}
 
+	if d.isInstantiated(v.ID) {
+		return v.AsGeneric(), true
+	}
+
+	d.errMsg("Cannot instantiate free type variable")
 	return nil, false
 }
 
-func unwrapFun(fun *Fun) (Type, bool) {
-	r, ok := unwrap(fun.Ret)
+func (d *typeVarDereferencer) unwrapFun(fun *Fun) (Type, bool) {
+	r, ok := d.unwrap(fun.Ret)
 	if !ok {
 		return nil, false
 	}
 	fun.Ret = r
 	for i, param := range fun.Params {
-		p, ok := unwrap(param)
+		p, ok := d.unwrap(param)
 		if !ok {
 			return nil, false
 		}
@@ -43,32 +61,32 @@ func unwrapFun(fun *Fun) (Type, bool) {
 	return fun, true
 }
 
-func unwrap(target Type) (Type, bool) {
+func (d *typeVarDereferencer) unwrap(target Type) (Type, bool) {
 	switch t := target.(type) {
 	case *Fun:
-		return unwrapFun(t)
+		return d.unwrapFun(t)
 	case *Tuple:
 		for i, elem := range t.Elems {
-			e, ok := unwrap(elem)
+			e, ok := d.unwrap(elem)
 			if !ok {
 				return nil, false
 			}
 			t.Elems[i] = e
 		}
 	case *Array:
-		e, ok := unwrap(t.Elem)
+		e, ok := d.unwrap(t.Elem)
 		if !ok {
 			return nil, false
 		}
 		t.Elem = e
 	case *Option:
-		e, ok := unwrap(t.Elem)
+		e, ok := d.unwrap(t.Elem)
 		if !ok {
 			return nil, false
 		}
 		t.Elem = e
 	case *Var:
-		return unwrapVar(t)
+		return d.unwrapVar(t)
 	}
 	return target, true
 }
@@ -89,6 +107,16 @@ func (d *typeVarDereferencer) errMsg(msg string) {
 	}
 }
 
+func (d *typeVarDereferencer) pushScheme(sym *ast.Symbol) {
+	t, ok := d.env.Table[sym.Name] // FIXME: derefSym() also looks up type
+	if !ok {
+		panic("FATAL: Cannot dereference unknown symbol: " + sym.Name)
+	}
+	if bounds, isGen := d.schemes[t]; isGen {
+		d.symBounds[sym.Name] = bounds
+	}
+}
+
 func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
 	symType, ok := d.env.Table[sym.Name]
 
@@ -96,7 +124,7 @@ func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
 		// Parser expands `foo; bar` to `let $unused = foo in bar`. In this situation, type of the
 		// variable will never be determined because it's unused.
 		// So skipping it in order to avoid unknown type error for the unused variable.
-		if v, ok := symType.(*Var); ok && v.Ref == nil {
+		if v, ok := symType.(*Var); ok && v.Ref == nil && !d.isInstantiated(v.ID) {
 			// $unused variables are never be used. So its type may not be determined. In the case,
 			// it's type should be fixed to unit type.
 			v.Ref = UnitType
@@ -108,9 +136,9 @@ func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
 		panic("FATAL: Cannot dereference unknown symbol: " + sym.Name)
 	}
 
-	t, ok := unwrap(symType)
+	t, ok := d.unwrap(symType)
 	if !ok {
-		d.errIn(node, fmt.Sprintf("Cannot infer type of variable '%s'. Inferred type was '%s'", sym.DisplayName, symType.String()))
+		d.err.In(node.Pos(), node.End()).Notef("Cannot infer type of variable '%s'. Inferred type was '%s'", sym.DisplayName, symType.String())
 		return
 	}
 
@@ -167,14 +195,14 @@ func (d *typeVarDereferencer) derefExternalSym(name string, symType Type) Type {
 		return d.derefExternalSym(name, ty.Ref)
 	case *Fun:
 		ty.Ret = d.fixExternalFuncRet(ty.Ret)
-		t, ok := unwrapFun(ty)
+		t, ok := d.unwrapFun(ty)
 		if !ok {
 			d.externalSymError(name, symType)
 			return ty
 		}
 		return t
 	default:
-		t, ok := unwrap(symType)
+		t, ok := d.unwrap(symType)
 		if !ok {
 			d.externalSymError(name, symType)
 			return symType
@@ -186,8 +214,10 @@ func (d *typeVarDereferencer) derefExternalSym(name string, symType Type) Type {
 func (d *typeVarDereferencer) VisitTopdown(node ast.Expr) ast.Visitor {
 	switch n := node.(type) {
 	case *ast.Let:
+		d.pushScheme(n.Symbol)
 		d.derefSym(n, n.Symbol)
 	case *ast.LetRec:
+		d.pushScheme(n.Func.Symbol)
 		// Note:
 		// Need to dereference parameters at first because type of the function depends on type
 		// of its parameters and parameters may be specified as '_'.
@@ -198,9 +228,11 @@ func (d *typeVarDereferencer) VisitTopdown(node ast.Expr) ast.Visitor {
 		d.derefSym(n, n.Func.Symbol)
 	case *ast.LetTuple:
 		for _, sym := range n.Symbols {
+			d.pushScheme(sym)
 			d.derefSym(n, sym)
 		}
 	case *ast.Match:
+		d.pushScheme(n.SomeIdent)
 		d.derefSym(n, n.SomeIdent)
 	}
 	return d
@@ -266,21 +298,39 @@ func (d *typeVarDereferencer) VisitBottomup(node ast.Expr) {
 		return
 	}
 
-	unwrapped, ok := unwrap(t)
+	unwrapped, ok := d.unwrap(t)
 	if !ok {
-		d.errIn(node, fmt.Sprintf("Cannot infer type of expression. Type annotation is needed. Inferred type was '%s'", t.String()))
+		d.err.In(node.Pos(), node.End()).Notef("Cannot infer type of expression. Type annotation is needed. Inferred type was '%s'", t.String())
 		return
 	}
 
 	d.inferred[node] = unwrapped
+
+	// Pop bound IDs
+	switch n := node.(type) {
+	case *ast.Let:
+		delete(d.symBounds, n.Symbol.Name)
+	case *ast.LetRec:
+		delete(d.symBounds, n.Func.Symbol.Name)
+	case *ast.Match:
+		delete(d.symBounds, n.SomeIdent.Name)
+	case *ast.LetTuple:
+		for _, s := range n.Symbols {
+			delete(d.symBounds, s.Name)
+		}
+	}
 }
 
-func derefTypeVars(env *Env, root ast.Expr, inferred InferredTypes) error {
-	v := &typeVarDereferencer{nil, env, inferred}
+func derefTypeVars(env *Env, root ast.Expr, inferred InferredTypes, ss schemes) error {
+	v := &typeVarDereferencer{nil, env, inferred, ss, map[string]boundIDs{}}
 	for n, t := range env.Externals {
 		env.Externals[n] = v.derefExternalSym(n, t)
 	}
 	ast.Visit(v, root)
+
+	if len(v.symBounds) != 0 {
+		panic(fmt.Sprint("FATAL: Bound type variable must not exist at toplevel:", v.symBounds))
+	}
 
 	// Note:
 	// Cannot return v.err directly because `return v.err` returns typed nil (typed as *locerr.Error).

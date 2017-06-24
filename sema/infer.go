@@ -11,16 +11,29 @@ import (
 // InferredTypes is a dictonary from an AST nodes to inferred types.
 type InferredTypes map[ast.Expr]Type
 
+// Type schemes for generic types
+type schemes map[Type]boundIDs
+
 // Inferer is a visitor to infer types in the AST
 type Inferer struct {
 	Env      *Env
 	conv     *nodeTypeConv
 	inferred InferredTypes
+	// Map from generic type to bound type variables in the generic type
+	schemes schemes
 }
 
 // NewInferer creates a new Inferer instance
 func NewInferer() *Inferer {
-	return &Inferer{NewEnv(), nil, map[ast.Expr]Type{}}
+	return &Inferer{NewEnv(), nil, map[ast.Expr]Type{}, map[Type]boundIDs{}}
+}
+
+func (inf *Inferer) generalize(t Type, level int) Type {
+	t, bounds := generalize(t, level)
+	if len(bounds) > 0 {
+		inf.schemes[t] = bounds
+	}
+	return t
 }
 
 func (inf *Inferer) checkNodeType(where string, node ast.Expr, expected Type, level int) error {
@@ -167,7 +180,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		if err != nil {
 			return nil, err
 		}
-		bound = generalize(level, bound)
+		bound = inf.generalize(bound, level)
 
 		if n.Type != nil {
 			// When let x: type = ...
@@ -235,7 +248,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		// e.g.
 		//   let rec f x = f 10; f true; x in f
 		tmpFun := &Fun{NewVar(nil, level+1), params}
-		inf.Env.Table[n.Func.Symbol.Name] = generalize(level, tmpFun)
+		inf.Env.Table[n.Func.Symbol.Name] = inf.generalize(tmpFun, level)
 
 		// Infer return type of function from its body
 		ret, err := inf.infer(n.Func.Body, level+1)
@@ -253,7 +266,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 			}
 		}
 
-		fun := generalize(level, &Fun{ret, params})
+		fun := inf.generalize(&Fun{ret, params}, level)
 
 		// Update the return type with the result of inference of function body. The function was
 		// registered as generic type for recursive call at the beginning of this method.
@@ -332,7 +345,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		if err != nil {
 			return nil, err
 		}
-		bound = generalize(level, bound)
+		bound = inf.generalize(bound, level)
 
 		// Bound value must be tuple
 		if err := Unify(t, bound); err != nil {
@@ -480,10 +493,8 @@ func (inf *Inferer) Infer(parsed *ast.AST) error {
 		return locerr.Note(err, "Type of root expression of program must be unit")
 	}
 
-	inf.Env.DumpDebug()
-
 	// While dereferencing type variables in table, we can detect type variables
 	// which does not have exact type and raise an error for that.
 	// External variables must be well-typed also.
-	return derefTypeVars(inf.Env, parsed.Root, inf.inferred)
+	return derefTypeVars(inf.Env, parsed.Root, inf.inferred, inf.schemes)
 }
