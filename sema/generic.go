@@ -2,6 +2,7 @@ package sema
 
 import (
 	"github.com/rhysd/gocaml/types"
+	"github.com/rhysd/locerr"
 )
 
 type boundIDs map[types.VarID]struct{}
@@ -114,4 +115,36 @@ func instantiate(t types.Type, level int) *types.Instantiation {
 		To:      ret,
 		Mapping: i.freeVars,
 	}
+}
+
+type emptyVarCheck struct {
+	failed bool
+}
+
+func (v *emptyVarCheck) VisitTopdown(t types.Type) types.Visitor {
+	if v.failed {
+		return nil
+	}
+	if t, ok := t.(*types.Var); ok && t.Ref == nil {
+		v.failed = true
+		return nil
+	}
+	return v
+}
+
+func (v *emptyVarCheck) VisitBottomup(types.Type) {
+}
+
+func checkInstantiations(env *types.Env) *locerr.Error {
+	for ref, inst := range env.Instantiations {
+		// TODO: Add "While instantiating 'xxx' note" after variables have its name as field
+		v := &emptyVarCheck{false}
+		types.Visit(v, inst.To)
+		if v.failed {
+			err := locerr.ErrorfIn(ref.Pos(), ref.End(), "Cannot instantiate '%s' typed as generic type '%s'", ref.Symbol.DisplayName, inst.From.String())
+			err = err.NotefAt(ref.Pos(), "Tried to instantiate the generic type as '%s'", inst.To.String())
+			return err
+		}
+	}
+	return nil
 }

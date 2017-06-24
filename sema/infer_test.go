@@ -239,9 +239,9 @@ func TestUnificationFailure(t *testing.T) {
 			expected: "'int' and 'float'",
 		},
 		{
-			what:     "occur check",
+			what:     "cyclic dependency",
 			code:     "let rec f x = f in f 4",
-			expected: "Cyclic dependency found while unification with",
+			expected: "Type mismatch between 'unit' and '?",
 		},
 		{
 			what:     "pre-registered external functions (param type)",
@@ -390,8 +390,9 @@ func TestUnificationFailure(t *testing.T) {
 			if err == nil {
 				t.Fatal("Error should occur:", testcase.code)
 			}
-			if !strings.Contains(err.Error(), testcase.expected) {
-				t.Fatalf("Expected error message '%s' to contain '%s'", err.Error(), testcase.expected)
+			msg := err.Error()
+			if !strings.Contains(msg, testcase.expected) {
+				t.Fatalf("Expected error message '%s' to contain '%s'", msg, testcase.expected)
 			}
 		})
 	}

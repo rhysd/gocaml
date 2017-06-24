@@ -180,7 +180,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		if err != nil {
 			return nil, err
 		}
-		bound = inf.generalize(bound, level)
+		inf.Env.Table[n.Symbol.Name] = inf.generalize(bound, level)
 
 		if n.Type != nil {
 			// When let x: type = ...
@@ -193,7 +193,6 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 			}
 		}
 
-		inf.Env.Table[n.Symbol.Name] = bound
 		return inf.infer(n.Body, level)
 	case *ast.VarRef:
 		if t, ok := inf.Env.Table[n.Symbol.Name]; ok {
@@ -335,7 +334,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 			for i, sym := range n.Symbols {
 				// Bound elements' types are unknown in this point
 				v := NewVar(nil, level)
-				inf.Env.Table[sym.Name] = v
+				inf.Env.Table[sym.Name] = inf.generalize(v, level)
 				elems[i] = v
 			}
 			t = &Tuple{Elems: elems}
@@ -345,7 +344,6 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		if err != nil {
 			return nil, err
 		}
-		bound = inf.generalize(bound, level)
 
 		// Bound value must be tuple
 		if err := Unify(t, bound); err != nil {
@@ -493,8 +491,11 @@ func (inf *Inferer) Infer(parsed *ast.AST) error {
 		return locerr.Note(err, "Type of root expression of program must be unit")
 	}
 
-	// While dereferencing type variables in table, we can detect type variables
-	// which does not have exact type and raise an error for that.
-	// External variables must be well-typed also.
-	return derefTypeVars(inf.Env, parsed.Root, inf.inferred, inf.schemes)
+	if err := checkInstantiations(inf.Env); err != nil {
+		return err
+	}
+	if err := derefTypeVars(inf.Env, parsed.Root, inf.inferred, inf.schemes); err != nil {
+		return err
+	}
+	return nil
 }

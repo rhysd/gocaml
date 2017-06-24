@@ -73,7 +73,13 @@ func TestDerefFailure(t *testing.T) {
 	tok := &token.Token{token.ILLEGAL, pos, pos, s}
 	env := NewEnv()
 	env.Table["hello"] = varT(nil)
-	v := &typeVarDereferencer{nil, env, map[ast.Expr]Type{}}
+	v := &typeVarDereferencer{
+		nil,
+		env,
+		map[ast.Expr]Type{},
+		schemes{},
+		map[string]boundIDs{},
+	}
 	root := &ast.Let{
 		tok,
 		ast.NewSymbol("hello"),
@@ -103,7 +109,14 @@ func TestUnwrapEmptyTypeVar(t *testing.T) {
 		&Option{e},
 		&Array{e},
 	} {
-		_, ok := unwrap(ty)
+		v := &typeVarDereferencer{
+			nil,
+			NewEnv(),
+			map[ast.Expr]Type{},
+			schemes{},
+			map[string]boundIDs{},
+		}
+		_, ok := v.unwrap(ty)
 		if ok {
 			t.Error("Unwrapping type variable must cause an error:", ty.String())
 		}
@@ -111,7 +124,13 @@ func TestUnwrapEmptyTypeVar(t *testing.T) {
 }
 
 func TestUnwrapExternalSimpleTypes(t *testing.T) {
-	v := &typeVarDereferencer{nil, NewEnv(), map[ast.Expr]Type{}}
+	v := &typeVarDereferencer{
+		nil,
+		NewEnv(),
+		map[ast.Expr]Type{},
+		schemes{},
+		map[string]boundIDs{},
+	}
 	for _, ty := range []Type{
 		UnitType,
 		IntType,
@@ -142,7 +161,13 @@ func TestUnwrapExternalSimpleTypes(t *testing.T) {
 }
 
 func TestUnwrapTypeVarsInExternals(t *testing.T) {
-	v := &typeVarDereferencer{nil, NewEnv(), map[ast.Expr]Type{}}
+	v := &typeVarDereferencer{
+		nil,
+		NewEnv(),
+		map[ast.Expr]Type{},
+		schemes{},
+		map[string]boundIDs{},
+	}
 	for _, tc := range []struct {
 		input    Type
 		expected Type
@@ -164,7 +189,13 @@ func TestUnwrapTypeVarsInExternals(t *testing.T) {
 }
 
 func TestRaiseErrorOnUnknownTypeInExternals(t *testing.T) {
-	v := &typeVarDereferencer{nil, NewEnv(), map[ast.Expr]Type{}}
+	v := &typeVarDereferencer{
+		nil,
+		NewEnv(),
+		map[ast.Expr]Type{},
+		schemes{},
+		map[string]boundIDs{},
+	}
 	for _, ty := range []Type{
 		varT(nil),
 		varT(varT(nil)),
@@ -183,7 +214,13 @@ func TestRaiseErrorOnUnknownTypeInExternals(t *testing.T) {
 }
 
 func TestFixReturnTypeOfExternalFunction(t *testing.T) {
-	v := &typeVarDereferencer{nil, NewEnv(), map[ast.Expr]Type{}}
+	v := &typeVarDereferencer{
+		nil,
+		NewEnv(),
+		map[ast.Expr]Type{},
+		schemes{},
+		map[string]boundIDs{},
+	}
 	for _, ty := range []Type{
 		&Fun{varT(nil), []Type{}},
 		&Fun{varT(varT(nil)), []Type{IntType}},
