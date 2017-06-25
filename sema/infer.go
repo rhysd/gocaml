@@ -206,7 +206,7 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 			if p.Type != nil {
 				t, err = inf.conv.nodeToType(p.Type)
 				if err != nil {
-					return nil, locerr.NotefAt(p.Type.Pos(), err, "%s parameter of function", common.Ordinal(i+1))
+					return nil, locerr.NotefAt(p.Type.Pos(), err, "%s parameter of function '%s'", common.Ordinal(i+1), n.Func.Symbol.DisplayName)
 				}
 			} else {
 				t = &Var{}
@@ -225,10 +225,10 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 			e := n.Func.RetType
 			t, err := inf.conv.nodeToType(e)
 			if err != nil {
-				return nil, locerr.NoteAt(e.Pos(), err, "Return type of function")
+				return nil, locerr.NotefAt(e.Pos(), err, "Return type of function '%s'", n.Func.Symbol.DisplayName)
 			}
 			if err := Unify(t, ret); err != nil {
-				return nil, err.In(e.Pos(), e.End()).NoteAt(e.Pos(), "Return type of function")
+				return nil, err.In(e.Pos(), e.End()).NotefAt(e.Pos(), "Return type of function '%s'", n.Func.Symbol.DisplayName)
 			}
 		}
 
