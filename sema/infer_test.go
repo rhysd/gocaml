@@ -373,6 +373,11 @@ func TestUnificationFailure(t *testing.T) {
 			code:     "42",
 			expected: "Type of root expression of program must be unit",
 		},
+		{
+			what:     "invalid ret type annotation",
+			code:     "let rec f x: (int, bool) array = x in f 10",
+			expected: "Return type of function 'f'",
+		},
 	}
 
 	for _, testcase := range testcases {
