@@ -265,7 +265,8 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		if err != nil {
 			return nil, err
 		}
-		if err := Unify(ret, ret2); err != nil {
+
+		if err := Unify(ret2, ret); err != nil {
 			return nil, err.In(n.Pos(), n.End()).NotefAt(n.Pos(), "Return type of function '%s'", n.Func.Symbol.DisplayName)
 		}
 

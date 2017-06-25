@@ -31,18 +31,18 @@ func occur(v *Var, rhs Type) bool {
 			}
 		}
 	case *Var:
-		if v == t {
-			return true
-		}
 		if t.Ref != nil {
-			if t.Level > v.Level {
-				// Adjust levels
-				t.Level = v.Level
-			}
 			return occur(v, t.Ref)
 		}
 		if t.IsGeneric() {
 			panic("FATAL: Generic type variable must not appear in occur check")
+		}
+		if v == t {
+			return true
+		}
+		if t.Level > v.Level {
+			// Adjust levels
+			t.Level = v.Level
 		}
 	}
 	return false
