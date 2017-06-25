@@ -88,7 +88,7 @@ func (env *Env) DumpDebug() {
 	}
 	fmt.Println("\nInstantiations:")
 	for ref, inst := range env.Instantiations {
-		fmt.Printf("  '%s' at %s\n", ref.Symbol.DisplayName, ref.Pos().String())
+		fmt.Printf("  '%s' at %s\n", ref.Symbol.Name, ref.Pos().String())
 		fmt.Printf("    From: %s\n", Debug(inst.From))
 		fmt.Printf("    To:   %s\n", Debug(inst.To))
 	}

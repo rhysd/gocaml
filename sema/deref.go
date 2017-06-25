@@ -256,6 +256,18 @@ func (d *typeVarDereferencer) VisitTopdown(node ast.Expr) ast.Visitor {
 		ast.Visit(d, n.IfSome)
 		d.VisitBottomup(node)
 		return nil
+	case *ast.VarRef:
+		if inst, ok := d.env.Instantiations[n]; ok {
+			if t, ok := d.unwrap(inst.To); ok {
+				// XXX: Update inst.Mapping also? Is inst.Mapping really necessary?
+				inst.To = t
+			} else {
+				msg := fmt.Sprintf("Cannot instantiate '%s' typed as generic type '%s'", n.Symbol.DisplayName, inst.From.String())
+				d.errIn(n, msg)
+				d.err = d.err.NotefAt(n.Pos(), "Tried to instantiate the generic type as '%s'", inst.To.String())
+				return nil
+			}
+		}
 	}
 	return d
 }

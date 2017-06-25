@@ -87,7 +87,7 @@ func unifyFun(left, right *Fun) *locerr.Error {
 func assignVar(v *Var, t Type) *locerr.Error {
 	// When rv.Ref == nil
 	if occur(v, t) {
-		return locerr.Errorf("Cannot resolve uninstantiated type variable. Cyclic dependency found while unification with '%s'", t.String())
+		return locerr.Errorf("Cannot resolve free type variable. Cyclic dependency found for free type variable '%s' while unification with '%s'", v.String(), t.String())
 	}
 
 	if v.IsGeneric() {

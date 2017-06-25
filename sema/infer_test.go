@@ -241,7 +241,7 @@ func TestUnificationFailure(t *testing.T) {
 		{
 			what:     "cyclic dependency",
 			code:     "let rec f x = f in f 4",
-			expected: "Type mismatch between 'unit' and '?",
+			expected: "Cyclic dependency found for free type variable",
 		},
 		{
 			what:     "pre-registered external functions (param type)",

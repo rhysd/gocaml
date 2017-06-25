@@ -239,39 +239,39 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 			params[i] = t
 		}
 
-		// Considering recursive function call, register function name before inferring its body.
-		// Recursive function may be generic like `let rec f x = f true; f 3.0; x in f 42`.
-		// So register the function as a type variable here and later update the type with the result
-		// of inference for body of function.
-		// 'tmpFun' cannot be &Var{Level: level} because the function may be generic and called
-		// recursively multi times with different types.
-		// e.g.
-		//   let rec f x = f 10; f true; x in f
-		tmpFun := &Fun{NewVar(nil, level+1), params}
-		inf.Env.Table[n.Func.Symbol.Name] = inf.generalize(tmpFun, level)
-
-		// Infer return type of function from its body
-		ret, err := inf.infer(n.Func.Body, level+1)
-		if err != nil {
-			return nil, err
-		}
-
+		var ret Type
 		if n.Func.RetType != nil {
 			r := n.Func.RetType
 			t, err := inf.conv.nodeToType(r, level+1)
 			if err != nil {
 				return nil, locerr.NotefAt(r.Pos(), err, "Return type of function '%s'", n.Func.Symbol.DisplayName)
 			}
-			if err := Unify(t, ret); err != nil {
-				return nil, err.In(r.Pos(), r.End()).NotefAt(r.Pos(), "Return type of function '%s'", n.Func.Symbol.DisplayName)
-			}
+			ret = t
+		} else {
+			ret = NewVar(nil, level+1)
 		}
 
-		fun := inf.generalize(&Fun{ret, params}, level)
-
-		// Update the return type with the result of inference of function body. The function was
-		// registered as generic type for recursive call at the beginning of this method.
+		// Considering recursive function call, register function name before inferring type of its
+		// body. Register the function as a type variable here and later update the type with the
+		// result of type inference for body of function.
+		// Type of recursive function is *NOT* generic while inferring type of its body. For example,
+		// `let rec f x = f 10 in f true` causes compilation error because of mismatch between 'int'
+		// and 'bool'.
+		fun := &Fun{ret, params}
 		inf.Env.Table[n.Func.Symbol.Name] = fun
+
+		// Infer return type of function from its body
+		ret2, err := inf.infer(n.Func.Body, level+1)
+		if err != nil {
+			return nil, err
+		}
+		if err := Unify(ret, ret2); err != nil {
+			return nil, err.In(n.Pos(), n.End()).NotefAt(n.Pos(), "Return type of function '%s'", n.Func.Symbol.DisplayName)
+		}
+
+		// Update the return type with the result of type inference of function body. The function was
+		// registered as non-polymorphic type for recursive call before inferring its body.
+		inf.Env.Table[n.Func.Symbol.Name] = inf.generalize(fun, level)
 
 		return inf.infer(n.Body, level)
 	case *ast.Apply:
@@ -493,9 +493,8 @@ func (inf *Inferer) Infer(parsed *ast.AST) error {
 		return err.At(parsed.Root.Pos()).Note("Type of root expression of program must be unit")
 	}
 
-	if err := checkInstantiations(inf.Env); err != nil {
-		return err
-	}
+	// inf.Env.DumpDebug()
+
 	if err := derefTypeVars(inf.Env, parsed.Root, inf.inferred, inf.schemes); err != nil {
 		return err
 	}
