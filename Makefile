@@ -61,6 +61,7 @@ TESTS := \
 	sema/semantics_check_test.go \
 	sema/scope_test.go \
 	sema/alpha_transform_test.go \
+	sema/algorithm_w_test.go \
 	mir/block_test.go \
 	mir/elim_ref_test.go \
 	mir/program_test.go \
