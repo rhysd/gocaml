@@ -12,6 +12,7 @@ SRCS := \
 	types/env.go \
 	types/type.go \
 	types/visitor.go \
+	types/equals.go \
 	sema/unify.go \
 	sema/generic.go \
 	sema/deref.go \

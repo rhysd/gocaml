@@ -195,7 +195,7 @@ func TestSuccess(t *testing.T) {
 			if err != nil {
 				t.Fatal(tc.node.Name(), "caused an error:", err)
 			}
-			if !testTypeEquals(have, tc.want) {
+			if !Equals(have, tc.want) {
 				t.Fatal("Converted into unexpected type. want:", tc.want.String(), ", have:", have.String())
 			}
 		})

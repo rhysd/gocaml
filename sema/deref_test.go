@@ -15,58 +15,6 @@ func varT(t Type) *Var {
 	return NewVar(t, 0)
 }
 
-func testTypeEquals(l, r Type) bool {
-	switch l := l.(type) {
-	case *Unit, *Int, *Float, *Bool, *String:
-		return l == r
-	case *Tuple:
-		r, ok := r.(*Tuple)
-		if !ok || len(l.Elems) != len(r.Elems) {
-			return false
-		}
-		for i, e := range l.Elems {
-			if !testTypeEquals(e, r.Elems[i]) {
-				return false
-			}
-		}
-		return true
-	case *Array:
-		r, ok := r.(*Array)
-		if !ok {
-			return false
-		}
-		return testTypeEquals(l.Elem, r.Elem)
-	case *Fun:
-		r, ok := r.(*Fun)
-		if !ok || !testTypeEquals(l.Ret, r.Ret) || len(l.Params) != len(r.Params) {
-			return false
-		}
-		for i, p := range l.Params {
-			if !testTypeEquals(p, r.Params[i]) {
-				return false
-			}
-		}
-		return true
-	case *Var:
-		r, ok := r.(*Var)
-		if !ok {
-			return false
-		}
-		if l.Ref == nil || r.Ref == nil {
-			return l.Ref == nil && r.Ref == nil
-		}
-		return testTypeEquals(l.Ref, r.Ref)
-	case *Option:
-		r, ok := r.(*Option)
-		if !ok {
-			return false
-		}
-		return testTypeEquals(l.Elem, r.Elem)
-	default:
-		panic("Unreachable")
-	}
-}
-
 func TestDerefFailure(t *testing.T) {
 	s := locerr.NewDummySource("")
 	pos := locerr.Pos{0, 0, 0, s}
@@ -179,7 +127,7 @@ func TestUnwrapTypeVarsInExternals(t *testing.T) {
 		{&Option{varT(&Option{varT(IntType)})}, &Option{&Option{IntType}}},
 	} {
 		actual := v.derefExternalSym("test", tc.input)
-		if !testTypeEquals(actual, tc.expected) {
+		if !Equals(actual, tc.expected) {
 			t.Errorf("Expected dereferenced type to be '%s' but actually '%s'", tc.expected.String(), actual.String())
 		}
 		if v.err != nil {
