@@ -91,6 +91,9 @@ func (env *Env) DumpDebug() {
 		fmt.Printf("  '%s' at %s\n", ref.Symbol.Name, ref.Pos().String())
 		fmt.Printf("    From: %s\n", Debug(inst.From))
 		fmt.Printf("    To:   %s\n", Debug(inst.To))
+		for id, free := range inst.Mapping {
+			fmt.Printf("      VAR %d: => '%s'\n", id, free.String())
+		}
 	}
 	fmt.Println()
 	env.DumpExternals()

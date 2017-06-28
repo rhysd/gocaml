@@ -61,7 +61,7 @@ func TestGenGeneric(t *testing.T) {
 	if g2.IsGeneric() {
 		t.Fatal("Level 0 type variable should not be generic")
 	}
-	g2 = g2.AsGeneric()
+	g2.SetGeneric()
 	if !g2.IsGeneric() {
 		t.Fatal("Type variabel after SetGeneric() should eb generic")
 	}
@@ -78,7 +78,7 @@ func TestGenGeneric(t *testing.T) {
 		}
 	}()
 	v := NewVar(IntType, 0)
-	v.AsGeneric()
+	v.SetGeneric()
 }
 
 func TestGenericString(t *testing.T) {

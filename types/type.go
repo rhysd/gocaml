@@ -101,11 +101,11 @@ func NewVar(t Type, l int) *Var {
 	return &Var{t, l, currentVarID}
 }
 
-func (t *Var) AsGeneric() *Var {
+func (t *Var) SetGeneric() {
 	if t.Ref != nil {
 		panic("FATAL: Cannot promote linked type variable to generic variable")
 	}
-	return &Var{Level: GenericLevel, ID: t.ID}
+	t.Level = GenericLevel
 }
 
 func (t *Var) IsGeneric() bool {

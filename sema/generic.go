@@ -28,7 +28,7 @@ func (gen *generalizer) apply(t types.Type) types.Type {
 		}
 		if t.Level > gen.level {
 			gen.bounds.add(t.ID)
-			return t.AsGeneric()
+			t.SetGeneric()
 		}
 		return t
 	case *types.Tuple:

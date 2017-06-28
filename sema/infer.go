@@ -180,7 +180,6 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		if err != nil {
 			return nil, err
 		}
-		inf.Env.Table[n.Symbol.Name] = inf.generalize(bound, level)
 
 		if n.Type != nil {
 			// When let x: type = ...
@@ -193,6 +192,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 				return nil, err.In(b.Pos(), b.End()).NotefAt(b.Pos(), "Type of variable '%s'", n.Symbol.DisplayName)
 			}
 		}
+		inf.Env.Table[n.Symbol.Name] = inf.generalize(bound, level)
 
 		return inf.infer(n.Body, level)
 	case *ast.VarRef:
@@ -330,7 +330,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 				return nil, locerr.ErrorfIn(n.Type.Pos(), n.Type.End(), "Type error: Mismatch numbers of elements of specified tuple type and symbols in 'let (...)' expression: %d vs %d", len(tpl.Elems), len(n.Symbols))
 			}
 			for i, sym := range n.Symbols {
-				inf.Env.Table[sym.Name] = tpl.Elems[i]
+				inf.Env.Table[sym.Name] = inf.generalize(tpl.Elems[i], level)
 			}
 		} else {
 			elems := make([]Type, len(n.Symbols))

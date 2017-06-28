@@ -37,10 +37,6 @@ func (d *typeVarDereferencer) unwrapVar(v *Var) (Type, bool) {
 		return v, true
 	}
 
-	if d.isInstantiated(v.ID) {
-		return v.AsGeneric(), true
-	}
-
 	d.errMsg("Cannot instantiate free type variable: " + v.String())
 	return nil, false
 }

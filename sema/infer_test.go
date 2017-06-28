@@ -405,6 +405,11 @@ func TestInferSuccess(t *testing.T) {
 	}
 	for _, file := range files {
 		t.Run(file, func(t *testing.T) {
+			defer func() {
+				if err := recover(); err != nil {
+					t.Fatal(err)
+				}
+			}()
 			s, err := locerr.NewSourceFromFile(file)
 			if err != nil {
 				panic(err)
