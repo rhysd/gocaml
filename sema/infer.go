@@ -494,10 +494,11 @@ func (inf *Inferer) Infer(parsed *ast.AST) error {
 		return err.At(parsed.Root.Pos()).Note("Type of root expression of program must be unit")
 	}
 
-	// inf.Env.DumpDebug()
-
 	if err := derefTypeVars(inf.Env, parsed.Root, inf.inferred, inf.schemes); err != nil {
 		return err
 	}
+
+	inf.Env.DumpDebug()
+
 	return nil
 }

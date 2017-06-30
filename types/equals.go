@@ -40,7 +40,11 @@ func Equals(l, r Type) bool {
 			return false
 		}
 		if l.Ref == nil && r.Ref == nil {
-			return l.IsGeneric() == r.IsGeneric()
+			lgen, rgen := l.IsGeneric(), r.IsGeneric()
+			if lgen && rgen {
+				return l.ID == r.ID
+			}
+			return !lgen && !rgen
 		}
 		if l.Ref == nil || r.Ref == nil {
 			return false

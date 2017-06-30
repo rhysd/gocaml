@@ -31,13 +31,11 @@ func (d *typeVarDereferencer) unwrapVar(v *Var) (Type, bool) {
 
 	if v.IsGeneric() {
 		if !d.isInstantiated(v.ID) {
-			d.errMsg("Cannot instantiate generic type variable")
 			return nil, false
 		}
 		return v, true
 	}
 
-	d.errMsg("Cannot instantiate free type variable: " + v.String())
 	return nil, false
 }
 
@@ -103,21 +101,23 @@ func (d *typeVarDereferencer) errMsg(msg string) {
 	}
 }
 
-// Push bound IDs in the type scheme of the symbol. Bound IDs are used for checking the unbound or
-// generic type variables are actually free or instantiated at any point of parent nodes.
-func (d *typeVarDereferencer) pushScheme(sym *ast.Symbol) {
-	t, ok := d.env.Table[sym.Name] // FIXME: derefSym() also looks up type
+func (d *typeVarDereferencer) typeOfSym(sym *ast.Symbol) Type {
+	t, ok := d.env.Table[sym.Name]
 	if !ok {
 		panic("FATAL: Cannot dereference unknown symbol: " + sym.Name)
 	}
+	return t
+}
+
+// Push bound IDs in the type scheme of the symbol. Bound IDs are used for checking the unbound or
+// generic type variables are actually free or instantiated at any point of parent nodes.
+func (d *typeVarDereferencer) pushScheme(sym *ast.Symbol, t Type) {
 	if bounds, isGen := d.schemes[t]; isGen {
 		d.symBounds[sym.Name] = bounds
 	}
 }
 
-func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
-	symType, ok := d.env.Table[sym.Name]
-
+func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol, symType Type) {
 	if sym.IsIgnored() {
 		// Parser expands `foo; bar` to `let $unused = foo in bar`. In this situation, type of the
 		// variable will never be determined because it's unused.
@@ -130,13 +130,10 @@ func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
 		return
 	}
 
-	if !ok {
-		panic("FATAL: Cannot dereference unknown symbol: " + sym.Name)
-	}
-
 	t, ok := d.unwrap(symType)
 	if !ok {
-		d.err.In(node.Pos(), node.End()).Notef("Cannot infer type of variable '%s'. Inferred type was '%s'", sym.DisplayName, symType.String())
+		msg := fmt.Sprintf("Cannot infer type of variable '%s'. Inferred type was '%s'", sym.DisplayName, symType.String())
+		d.errIn(node, msg)
 		return
 	}
 
@@ -212,33 +209,36 @@ func (d *typeVarDereferencer) derefExternalSym(name string, symType Type) Type {
 func (d *typeVarDereferencer) VisitTopdown(node ast.Expr) ast.Visitor {
 	switch n := node.(type) {
 	case *ast.Let:
+		t := d.typeOfSym(n.Symbol)
 		// n.Bound must be visited before pushing bounds IDs because the type is not instantiated
 		// yet at 'e1' of 'let x = e1 in e2'.
 		ast.Visit(d, n.Bound)
-		d.pushScheme(n.Symbol)
-		d.derefSym(n, n.Symbol)
+		d.pushScheme(n.Symbol, t)
+		d.derefSym(n, n.Symbol, t)
 		ast.Visit(d, n.Body)
 		d.VisitBottomup(node)
 		return nil
 	case *ast.LetRec:
+		t := d.typeOfSym(n.Func.Symbol)
 		// Consdidering recursive function declaration. Declared function name should be visible
 		// in its body. So push bound IDs at first.
-		d.pushScheme(n.Func.Symbol)
+		d.pushScheme(n.Func.Symbol, t)
 		// Note:
 		// Need to dereference parameters at first because type of the function depends on type
 		// of its parameters and parameters may be specified as '_'. '_' is unused. So its type
 		// may not be determined and need to be fixed as unit type.
 		for _, p := range n.Func.Params {
-			d.derefSym(n, p.Ident)
+			d.derefSym(n, p.Ident, d.typeOfSym(p.Ident))
 		}
-		d.derefSym(n, n.Func.Symbol)
+		d.derefSym(n, n.Func.Symbol, t)
 	case *ast.LetTuple:
 		// n.Bound must be visited before pushing bounds IDs because the type is not instantiated
 		// yet at 'e1' of 'let (a, b, c) = e1 in e2'.
 		ast.Visit(d, n.Bound)
 		for _, sym := range n.Symbols {
-			d.pushScheme(sym)
-			d.derefSym(n, sym)
+			t := d.typeOfSym(sym)
+			d.pushScheme(sym, t)
+			d.derefSym(n, sym, t)
 		}
 		ast.Visit(d, n.Body)
 		d.VisitBottomup(node)
@@ -247,18 +247,23 @@ func (d *typeVarDereferencer) VisitTopdown(node ast.Expr) ast.Visitor {
 		ast.Visit(d, n.Target)
 		// Visit IfNone at first because identifier is not visible from None clause.
 		ast.Visit(d, n.IfNone)
-		d.pushScheme(n.SomeIdent)
-		d.derefSym(n, n.SomeIdent)
+		someTy := d.typeOfSym(n.SomeIdent)
+		d.pushScheme(n.SomeIdent, someTy)
+		d.derefSym(n, n.SomeIdent, someTy)
 		ast.Visit(d, n.IfSome)
 		d.VisitBottomup(node)
 		return nil
 	case *ast.VarRef:
 		if inst, ok := d.env.Instantiations[n]; ok {
 			if t, ok := d.unwrap(inst.To); ok {
-				// XXX: Update inst.Mapping also? Is inst.Mapping really necessary?
 				inst.To = t
+				for id, to := range inst.Mapping {
+					if t, ok := d.unwrap(to); ok {
+						inst.Mapping[id] = t
+					}
+				}
 			} else {
-				msg := fmt.Sprintf("Cannot instantiate '%s' typed as generic type '%s'", n.Symbol.DisplayName, inst.From.String())
+				msg := fmt.Sprintf("Cannot instantiate declaration '%s' typed as type '%s'", n.Symbol.DisplayName, inst.From.String())
 				d.errIn(n, msg)
 				d.err = d.err.NotefAt(n.Pos(), "Tried to instantiate the generic type as '%s'", inst.To.String())
 				return nil
@@ -330,7 +335,8 @@ func (d *typeVarDereferencer) VisitBottomup(node ast.Expr) {
 
 	unwrapped, ok := d.unwrap(t)
 	if !ok {
-		d.err.In(node.Pos(), node.End()).Notef("Cannot infer type of expression. Type annotation is needed. Inferred type was '%s'", t.String())
+		msg := fmt.Sprintf("Cannot infer type of expression. Type annotation is needed. Inferred type was '%s'", t.String())
+		d.errIn(node, msg)
 		return
 	}
 
@@ -366,6 +372,7 @@ func derefTypeVars(env *Env, root ast.Expr, inferred InferredTypes, ss schemes) 
 	// Note:
 	// Cannot return v.err directly because `return v.err` returns typed nil (typed as *locerr.Error).
 	if v.err != nil {
+		env.DumpDebug()
 		return v.err
 	}
 	return nil

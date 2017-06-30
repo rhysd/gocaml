@@ -58,7 +58,7 @@ func unifyTuple(left, right *Tuple) *locerr.Error {
 		l := left.Elems[i]
 		r := right.Elems[i]
 		if err := Unify(l, r); err != nil {
-			return locerr.Notef(err, "On unifying tuples' %s elements of '%s' and '%s'\n", common.Ordinal(i+1), left.String(), right.String())
+			return locerr.Notef(err, "On unifying tuples' %s elements of '%s' and '%s'", common.Ordinal(i+1), left.String(), right.String())
 		}
 	}
 
@@ -67,7 +67,7 @@ func unifyTuple(left, right *Tuple) *locerr.Error {
 
 func unifyFun(left, right *Fun) *locerr.Error {
 	if err := Unify(left.Ret, right.Ret); err != nil {
-		return locerr.Notef(err, "On unifying functions' return types of '%s' and '%s'\n", left.String(), right.String())
+		return locerr.Notef(err, "On unifying functions' return types of '%s' and '%s'", left.String(), right.String())
 	}
 
 	if len(left.Params) != len(right.Params) {
@@ -77,7 +77,7 @@ func unifyFun(left, right *Fun) *locerr.Error {
 	for i, l := range left.Params {
 		r := right.Params[i]
 		if err := Unify(l, r); err != nil {
-			return locerr.Notef(err, "On unifying %s parameter of function '%s' and '%s'\n", common.Ordinal(i+1), left.String(), right.String())
+			return locerr.Notef(err, "On unifying %s parameter of function '%s' and '%s'", common.Ordinal(i+1), left.String(), right.String())
 		}
 	}
 

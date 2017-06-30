@@ -61,7 +61,7 @@ func generalize(t types.Type, level int) (types.Type, boundIDs) {
 }
 
 type instantiator struct {
-	freeVars map[types.VarID]*types.Var
+	freeVars map[types.VarID]types.Type
 	level    int
 }
 
@@ -102,7 +102,7 @@ func (inst *instantiator) apply(t types.Type) types.Type {
 }
 
 func instantiate(t types.Type, level int) *types.Instantiation {
-	i := &instantiator{map[types.VarID]*types.Var{}, level}
+	i := &instantiator{map[types.VarID]types.Type{}, level}
 	ret := i.apply(t)
 	if len(i.freeVars) == 0 {
 		// Should return the original type 't' here?

@@ -42,6 +42,8 @@ func (e *emitter) emitBinaryInsn(op mir.OperatorKind, lhs, rhs, node ast.Expr) *
 }
 
 func (e *emitter) emitLetInsn(node *ast.Let) *mir.Insn {
+	// TODO: Do not emit insn if it's unused generic decl
+
 	// Note:
 	// Instroduce shortcut about symbol to reduce number of instruction nodes.
 	//
@@ -66,6 +68,8 @@ func (e *emitter) emitLetInsn(node *ast.Let) *mir.Insn {
 }
 
 func (e *emitter) emitFunInsn(node *ast.LetRec) *mir.Insn {
+	// TODO: Do not emit insn if it's unused generic function
+
 	name := node.Func.Symbol.Name
 	ty, ok := e.env.Table[name]
 	if !ok {
@@ -101,6 +105,7 @@ func (e *emitter) emitMatchInsn(node *ast.Match) *mir.Insn {
 	e.env.Table[id] = types.BoolType
 	cond := mir.Concat(mir.NewInsn(id, &mir.IsSome{matched.Ident}, pos), matched)
 
+	// TODO: Do not emit insn if it's unused generic decl
 	matchedTy, ok := e.env.Table[matched.Ident].(*types.Option)
 	if !ok {
 		panic("Type of 'match' expression target not found")
@@ -130,6 +135,7 @@ func (e *emitter) emitLetTupleInsn(node *ast.LetTuple) *mir.Insn {
 
 	insn := bound
 	for i, sym := range node.Symbols {
+		// TODO: Do not emit insn if it's unused generic decl
 		name := sym.Name
 		e.env.Table[name] = boundTy.Elems[i]
 		insn = mir.Concat(mir.NewInsn(

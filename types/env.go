@@ -13,7 +13,7 @@ type Instantiation struct {
 	// To is a type variable instantiated from generic type variable.
 	To Type
 	// Mapping from ID of generic type variable to actual instantiated type variable
-	Mapping map[VarID]*Var
+	Mapping map[VarID]Type
 }
 
 // Result of type analysis.
