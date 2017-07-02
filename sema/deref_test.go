@@ -20,7 +20,7 @@ func TestDerefFailure(t *testing.T) {
 	pos := locerr.Pos{0, 0, 0, s}
 	tok := &token.Token{token.ILLEGAL, pos, pos, s}
 	env := NewEnv()
-	env.Table["hello"] = varT(nil)
+	env.DeclTable["hello"] = varT(nil)
 	v := &typeVarDereferencer{
 		nil,
 		env,

@@ -30,9 +30,12 @@ func (d *typeVarDereferencer) unwrapVar(v *Var) (Type, bool) {
 	}
 
 	if v.IsGeneric() {
-		if !d.isInstantiated(v.ID) {
-			return nil, false
-		}
+		// Note:
+		// If `d.isInstantiated(v.ID)` is true here, it meands that this type variable will be instantiated later.
+		// e.g.
+		//   let o = None in o = Some 42; o = Some true
+		// In this example, type of `o` and `None` is 'a and will be instantiated `int option` and
+		// `bool option` later.
 		return v, true
 	}
 
@@ -102,7 +105,7 @@ func (d *typeVarDereferencer) errMsg(msg string) {
 }
 
 func (d *typeVarDereferencer) typeOfSym(sym *ast.Symbol) Type {
-	t, ok := d.env.Table[sym.Name]
+	t, ok := d.env.DeclTable[sym.Name]
 	if !ok {
 		panic("FATAL: Cannot dereference unknown symbol: " + sym.Name)
 	}
@@ -122,7 +125,7 @@ func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol, symType T
 		// Parser expands `foo; bar` to `let $unused = foo in bar`. In this situation, type of the
 		// variable will never be determined because it's unused.
 		// So skipping it in order to avoid unknown type error for the unused variable.
-		if v, ok := symType.(*Var); ok && v.Ref == nil && !d.isInstantiated(v.ID) {
+		if v, ok := symType.(*Var); ok && v.Ref == nil && !v.IsGeneric() {
 			// $unused variables are never be used. So its type may not be determined. In the case,
 			// it's type should be fixed to unit type.
 			v.Ref = UnitType
@@ -138,7 +141,7 @@ func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol, symType T
 	}
 
 	// Also dereference type variable in symbol
-	d.env.Table[sym.Name] = t
+	d.env.DeclTable[sym.Name] = t
 }
 
 // XXX: Different behavior from MinCaml.
@@ -254,12 +257,12 @@ func (d *typeVarDereferencer) VisitTopdown(node ast.Expr) ast.Visitor {
 		d.VisitBottomup(node)
 		return nil
 	case *ast.VarRef:
-		if inst, ok := d.env.Instantiations[n]; ok {
+		if inst, ok := d.env.RefInsts[n]; ok {
 			if t, ok := d.unwrap(inst.To); ok {
 				inst.To = t
-				for id, to := range inst.Mapping {
-					if t, ok := d.unwrap(to); ok {
-						inst.Mapping[id] = t
+				for _, m := range inst.Mapping {
+					if t, ok := d.unwrap(m.Type); ok {
+						m.Type = t
 					}
 				}
 			} else {
@@ -358,22 +361,45 @@ func (d *typeVarDereferencer) VisitBottomup(node ast.Expr) {
 	}
 }
 
-func derefTypeVars(env *Env, root ast.Expr, inferred InferredTypes, ss schemes) *locerr.Error {
-	v := &typeVarDereferencer{nil, env, inferred, ss, map[string]boundIDs{}}
-	for n, t := range env.Externals {
-		env.Externals[n] = v.derefExternalSym(n, t)
+func (d *typeVarDereferencer) normalizePolyTypes() {
+	polys := make(map[Type][]*Instantiation, len(d.schemes))
+	for t := range d.schemes {
+		polys[t] = make([]*Instantiation, 0, 3)
 	}
-	ast.Visit(v, root)
+RefLoop:
+	for _, inst := range d.env.RefInsts {
+		insts := polys[inst.From]
+		for _, i := range insts {
+			if Equals(i.To, inst.To) {
+				inst.To = i.To
+				inst.Mapping = i.Mapping
+				continue RefLoop
+			}
+		}
+		polys[inst.From] = append(insts, inst)
+	}
+	d.env.PolyTypes = polys
+}
 
-	if len(v.symBounds) != 0 {
-		panic(fmt.Sprint("FATAL: Bound type variable must not exist at toplevel:", v.symBounds))
+func derefTypeVars(env *Env, root ast.Expr, inferred InferredTypes, ss schemes) *locerr.Error {
+	deref := &typeVarDereferencer{nil, env, inferred, ss, map[string]boundIDs{}}
+	for n, t := range env.Externals {
+		env.Externals[n] = deref.derefExternalSym(n, t)
 	}
+	ast.Visit(deref, root)
+
+	if len(deref.symBounds) != 0 {
+		panic(fmt.Sprint("FATAL: Bound type variable must not exist at toplevel:", deref.symBounds))
+	}
+
+	deref.normalizePolyTypes()
 
 	// Note:
 	// Cannot return v.err directly because `return v.err` returns typed nil (typed as *locerr.Error).
-	if v.err != nil {
+	if deref.err != nil {
 		env.DumpDebug()
-		return v.err
+		return deref.err
 	}
+
 	return nil
 }

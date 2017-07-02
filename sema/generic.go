@@ -61,7 +61,7 @@ func generalize(t types.Type, level int) (types.Type, boundIDs) {
 }
 
 type instantiator struct {
-	freeVars map[types.VarID]types.Type
+	freeVars []*types.VarMapping
 	level    int
 }
 
@@ -74,11 +74,13 @@ func (inst *instantiator) apply(t types.Type) types.Type {
 		if !t.IsGeneric() {
 			return t
 		}
-		v, ok := inst.freeVars[t.ID]
-		if !ok {
-			v = types.NewVar(nil, inst.level)
-			inst.freeVars[t.ID] = v
+		for _, m := range inst.freeVars {
+			if t.ID == m.ID {
+				return m.Type
+			}
 		}
+		v := types.NewVar(nil, inst.level)
+		inst.freeVars = append(inst.freeVars, &types.VarMapping{t.ID, v})
 		return v
 	case *types.Tuple:
 		ts := make([]types.Type, 0, len(t.Elems))
@@ -102,7 +104,7 @@ func (inst *instantiator) apply(t types.Type) types.Type {
 }
 
 func instantiate(t types.Type, level int) *types.Instantiation {
-	i := &instantiator{map[types.VarID]types.Type{}, level}
+	i := &instantiator{[]*types.VarMapping{}, level}
 	ret := i.apply(t)
 	if len(i.freeVars) == 0 {
 		// Should return the original type 't' here?

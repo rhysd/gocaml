@@ -31,7 +31,7 @@ func (elim *elimRef) elimRef(ident string) string {
 
 	i := entry.insn
 	i.RemoveFromList()
-	delete(elim.types.Table, i.Ident)
+	delete(elim.types.DeclTable, i.Ident)
 	return entry.ident
 }
 

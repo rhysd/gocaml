@@ -30,7 +30,7 @@ func (e *emitter) typeOf(node ast.Expr) types.Type {
 
 func (e *emitter) insn(val mir.Val, prev *mir.Insn, node ast.Expr) *mir.Insn {
 	id := e.genID()
-	e.env.Table[id] = e.typeOf(node)
+	e.env.DeclTable[id] = e.typeOf(node)
 	return mir.Concat(mir.NewInsn(id, val, node.Pos()), prev)
 }
 
@@ -54,12 +54,12 @@ func (e *emitter) emitLetInsn(node *ast.Let) *mir.Insn {
 	// After:
 	//   $sym$t1 = some_insn
 	bound := e.emitInsn(node.Bound)
-	t, found := e.env.Table[bound.Ident]
-	delete(e.env.Table, bound.Ident)
+	t, found := e.env.DeclTable[bound.Ident]
+	delete(e.env.DeclTable, bound.Ident)
 
 	bound.Ident = node.Symbol.Name
 	if found {
-		e.env.Table[bound.Ident] = t
+		e.env.DeclTable[bound.Ident] = t
 	}
 
 	body := e.emitInsn(node.Body)
@@ -71,7 +71,7 @@ func (e *emitter) emitFunInsn(node *ast.LetRec) *mir.Insn {
 	// TODO: Do not emit insn if it's unused generic function
 
 	name := node.Func.Symbol.Name
-	ty, ok := e.env.Table[name]
+	ty, ok := e.env.DeclTable[name]
 	if !ok {
 		// Note: Symbol in LetRec cannot be an external symbol.
 		panic("FATAL: Unknown function: " + name)
@@ -90,7 +90,7 @@ func (e *emitter) emitFunInsn(node *ast.LetRec) *mir.Insn {
 		false,
 	}
 
-	e.env.Table[name] = ty
+	e.env.DeclTable[name] = ty
 	insn := mir.NewInsn(name, val, node.Pos())
 
 	body := e.emitInsn(node.Body)
@@ -102,16 +102,16 @@ func (e *emitter) emitMatchInsn(node *ast.Match) *mir.Insn {
 	pos := node.Pos()
 	matched := e.emitInsn(node.Target)
 	id := e.genID()
-	e.env.Table[id] = types.BoolType
+	e.env.DeclTable[id] = types.BoolType
 	cond := mir.Concat(mir.NewInsn(id, &mir.IsSome{matched.Ident}, pos), matched)
 
 	// TODO: Do not emit insn if it's unused generic decl
-	matchedTy, ok := e.env.Table[matched.Ident].(*types.Option)
+	matchedTy, ok := e.env.DeclTable[matched.Ident].(*types.Option)
 	if !ok {
 		panic("Type of 'match' expression target not found")
 	}
 	name := node.SomeIdent.Name
-	e.env.Table[name] = matchedTy.Elem
+	e.env.DeclTable[name] = matchedTy.Elem
 
 	derefInsn := mir.NewInsn(name, &mir.DerefSome{matched.Ident}, pos)
 	someBlk := e.emitBlock("then", node.IfSome)
@@ -137,7 +137,7 @@ func (e *emitter) emitLetTupleInsn(node *ast.LetTuple) *mir.Insn {
 	for i, sym := range node.Symbols {
 		// TODO: Do not emit insn if it's unused generic decl
 		name := sym.Name
-		e.env.Table[name] = boundTy.Elems[i]
+		e.env.DeclTable[name] = boundTy.Elems[i]
 		insn = mir.Concat(mir.NewInsn(
 			name,
 			&mir.TplLoad{
@@ -221,7 +221,7 @@ func (e *emitter) emitInsn(node ast.Expr) *mir.Insn {
 	case *ast.Let:
 		return e.emitLetInsn(n)
 	case *ast.VarRef:
-		if _, ok := e.env.Table[n.Symbol.Name]; ok {
+		if _, ok := e.env.DeclTable[n.Symbol.Name]; ok {
 			return e.insn(&mir.Ref{n.Symbol.Name}, nil, node)
 		} else if _, ok := e.env.Externals[n.Symbol.Name]; ok {
 			return e.insn(&mir.XRef{n.Symbol.Name}, nil, node)

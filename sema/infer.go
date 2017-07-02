@@ -192,16 +192,16 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 				return nil, err.In(b.Pos(), b.End()).NotefAt(b.Pos(), "Type of variable '%s'", n.Symbol.DisplayName)
 			}
 		}
-		inf.Env.Table[n.Symbol.Name] = inf.generalize(bound, level)
+		inf.Env.DeclTable[n.Symbol.Name] = inf.generalize(bound, level)
 
 		return inf.infer(n.Body, level)
 	case *ast.VarRef:
-		if t, ok := inf.Env.Table[n.Symbol.Name]; ok {
+		if t, ok := inf.Env.DeclTable[n.Symbol.Name]; ok {
 			inst := instantiate(t, level)
 			if inst == nil {
 				return t, nil
 			}
-			inf.Env.Instantiations[n] = inst
+			inf.Env.RefInsts[n] = inst
 			return inst.To, nil
 		}
 		if t, ok := inf.Env.Externals[n.Symbol.Name]; ok {
@@ -235,7 +235,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 			} else {
 				t = NewVar(nil, level+1)
 			}
-			inf.Env.Table[p.Ident.Name] = t
+			inf.Env.DeclTable[p.Ident.Name] = t
 			params[i] = t
 		}
 
@@ -258,7 +258,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		// `let rec f x = f 10 in f true` causes compilation error because of mismatch between 'int'
 		// and 'bool'.
 		fun := &Fun{ret, params}
-		inf.Env.Table[n.Func.Symbol.Name] = fun
+		inf.Env.DeclTable[n.Func.Symbol.Name] = fun
 
 		// Infer return type of function from its body
 		ret2, err := inf.infer(n.Func.Body, level+1)
@@ -272,7 +272,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 
 		// Update the return type with the result of type inference of function body. The function was
 		// registered as non-polymorphic type for recursive call before inferring its body.
-		inf.Env.Table[n.Func.Symbol.Name] = inf.generalize(fun, level)
+		inf.Env.DeclTable[n.Func.Symbol.Name] = inf.generalize(fun, level)
 
 		return inf.infer(n.Body, level)
 	case *ast.Apply:
@@ -330,14 +330,14 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 				return nil, locerr.ErrorfIn(n.Type.Pos(), n.Type.End(), "Type error: Mismatch numbers of elements of specified tuple type and symbols in 'let (...)' expression: %d vs %d", len(tpl.Elems), len(n.Symbols))
 			}
 			for i, sym := range n.Symbols {
-				inf.Env.Table[sym.Name] = inf.generalize(tpl.Elems[i], level)
+				inf.Env.DeclTable[sym.Name] = inf.generalize(tpl.Elems[i], level)
 			}
 		} else {
 			elems := make([]Type, len(n.Symbols))
 			for i, sym := range n.Symbols {
 				// Bound elements' types are unknown in this point
 				v := NewVar(nil, level)
-				inf.Env.Table[sym.Name] = inf.generalize(v, level)
+				inf.Env.DeclTable[sym.Name] = inf.generalize(v, level)
 				elems[i] = v
 			}
 			t = &Tuple{Elems: elems}
@@ -434,7 +434,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 			return nil, err
 		}
 
-		inf.Env.Table[n.SomeIdent.Name] = elem
+		inf.Env.DeclTable[n.SomeIdent.Name] = elem
 		some, err := inf.infer(n.IfSome, level)
 		if err != nil {
 			return nil, err
@@ -495,6 +495,7 @@ func (inf *Inferer) Infer(parsed *ast.AST) error {
 	}
 
 	if err := derefTypeVars(inf.Env, parsed.Root, inf.inferred, inf.schemes); err != nil {
+		inf.Env.DumpDebug()
 		return err
 	}
 

@@ -18,7 +18,7 @@ func TestDump(t *testing.T) {
 	}
 
 	env := types.NewEnv()
-	env.Table["$k1"] = types.UnitType
+	env.DeclTable["$k1"] = types.UnitType
 
 	var buf bytes.Buffer
 	prog.Dump(&buf, env)

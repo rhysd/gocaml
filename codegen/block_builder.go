@@ -51,7 +51,7 @@ func (b *blockBuilder) resolve(ident string) llvm.Value {
 }
 
 func (b *blockBuilder) typeOf(ident string) types.Type {
-	if t, ok := b.env.Table[ident]; ok {
+	if t, ok := b.env.DeclTable[ident]; ok {
 		return t
 	}
 	// Note:
@@ -543,7 +543,7 @@ func (b *blockBuilder) buildVal(ident string, val mir.Val) llvm.Value {
 			panic("Closure for function not found: " + val.Fun)
 		}
 
-		funcT, ok := b.env.Table[val.Fun].(*types.Fun)
+		funcT, ok := b.env.DeclTable[val.Fun].(*types.Fun)
 		if !ok {
 			panic(fmt.Sprintf("Type of function '%s' not found!", val.Fun))
 		}

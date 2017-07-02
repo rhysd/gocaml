@@ -279,7 +279,7 @@ func TestEliminatingRefNew(t *testing.T) {
 			}
 			env := types.NewEnv()
 			for i, t := range tc.table {
-				env.Table[i] = t
+				env.DeclTable[i] = t
 			}
 			for i, t := range tc.ext {
 				env.Externals[i] = t
