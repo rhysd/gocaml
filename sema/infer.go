@@ -12,7 +12,7 @@ import (
 type InferredTypes map[ast.Expr]Type
 
 // Type schemes for generic types
-type schemes map[Type]boundIDs
+type schemes map[Type]boundVarIDs
 
 // Inferer is a visitor to infer types in the AST
 type Inferer struct {
@@ -25,7 +25,7 @@ type Inferer struct {
 
 // NewInferer creates a new Inferer instance
 func NewInferer() *Inferer {
-	return &Inferer{NewEnv(), nil, map[ast.Expr]Type{}, map[Type]boundIDs{}}
+	return &Inferer{NewEnv(), nil, map[ast.Expr]Type{}, map[Type]boundVarIDs{}}
 }
 
 func (inf *Inferer) generalize(t Type, level int) Type {

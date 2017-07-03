@@ -4,19 +4,19 @@ import (
 	"github.com/rhysd/gocaml/types"
 )
 
-type boundIDs map[types.VarID]struct{}
+type boundVarIDs map[types.VarID]struct{}
 
-func (ids boundIDs) add(id types.VarID) {
+func (ids boundVarIDs) add(id types.VarID) {
 	ids[id] = struct{}{}
 }
 
-func (ids boundIDs) contains(id types.VarID) bool {
+func (ids boundVarIDs) contains(id types.VarID) bool {
 	_, ok := ids[id]
 	return ok
 }
 
 type generalizer struct {
-	bounds boundIDs
+	bounds boundVarIDs
 	level  int
 }
 
@@ -54,8 +54,8 @@ func (gen *generalizer) apply(t types.Type) types.Type {
 
 // Generalize given type variable. It means binding proper free type variables in the type. It returns
 // generalized type and IDs of bound type variables in given type.
-func generalize(t types.Type, level int) (types.Type, boundIDs) {
-	gen := &generalizer{boundIDs{}, level}
+func generalize(t types.Type, level int) (types.Type, boundVarIDs) {
+	gen := &generalizer{boundVarIDs{}, level}
 	t = gen.apply(t)
 	return t, gen.bounds
 }

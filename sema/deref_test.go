@@ -26,7 +26,8 @@ func TestDerefFailure(t *testing.T) {
 		env,
 		map[ast.Expr]Type{},
 		schemes{},
-		map[string]boundIDs{},
+		map[string]boundVarIDs{},
+		map[VarID][]Type{},
 	}
 	root := &ast.Let{
 		tok,
@@ -62,7 +63,8 @@ func TestUnwrapEmptyTypeVar(t *testing.T) {
 			NewEnv(),
 			map[ast.Expr]Type{},
 			schemes{},
-			map[string]boundIDs{},
+			map[string]boundVarIDs{},
+			map[VarID][]Type{},
 		}
 		_, ok := v.unwrap(ty)
 		if ok {
@@ -77,7 +79,8 @@ func TestUnwrapExternalSimpleTypes(t *testing.T) {
 		NewEnv(),
 		map[ast.Expr]Type{},
 		schemes{},
-		map[string]boundIDs{},
+		map[string]boundVarIDs{},
+		map[VarID][]Type{},
 	}
 	for _, ty := range []Type{
 		UnitType,
@@ -114,7 +117,8 @@ func TestUnwrapTypeVarsInExternals(t *testing.T) {
 		NewEnv(),
 		map[ast.Expr]Type{},
 		schemes{},
-		map[string]boundIDs{},
+		map[string]boundVarIDs{},
+		map[VarID][]Type{},
 	}
 	for _, tc := range []struct {
 		input    Type
@@ -142,7 +146,8 @@ func TestRaiseErrorOnUnknownTypeInExternals(t *testing.T) {
 		NewEnv(),
 		map[ast.Expr]Type{},
 		schemes{},
-		map[string]boundIDs{},
+		map[string]boundVarIDs{},
+		map[VarID][]Type{},
 	}
 	for _, ty := range []Type{
 		varT(nil),
@@ -167,7 +172,8 @@ func TestFixReturnTypeOfExternalFunction(t *testing.T) {
 		NewEnv(),
 		map[ast.Expr]Type{},
 		schemes{},
-		map[string]boundIDs{},
+		map[string]boundVarIDs{},
+		map[VarID][]Type{},
 	}
 	for _, ty := range []Type{
 		&Fun{varT(nil), []Type{}},
