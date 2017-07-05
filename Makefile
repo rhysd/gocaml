@@ -22,6 +22,9 @@ SRCS := \
 	sema/to_mir.go \
 	sema/alpha_transform.go \
 	sema/scope.go \
+	monomorphize/codedup.go \
+	monomorphize/assign_type_vars.go \
+	monomorphize/assign_table.go \
 	mir/val.go \
 	mir/block.go \
 	mir/printer.go \
@@ -94,7 +97,7 @@ test: $(TESTS)
 
 cover.out: $(TESTS)
 	go get github.com/haya14busa/goverage
-	goverage -coverprofile=cover.out -covermode=count ./ast ./mir ./closure ./syntax ./token ./sema ./codegen ./common
+	goverage -coverprofile=cover.out -covermode=count ./ast ./mir ./closure ./syntax ./token ./sema ./codegen ./common ./codedup
 
 cov: cover.out
 	go get golang.org/x/tools/cmd/cover

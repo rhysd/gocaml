@@ -208,7 +208,7 @@ func (d *typeVarDereferencer) VisitTopdown(node ast.Expr) ast.Visitor {
 	case *ast.Match:
 		d.derefSym(n, n.SomeIdent)
 	case *ast.VarRef:
-		if inst, ok := d.env.RefInsts[n]; ok {
+		if inst, ok := d.env.RefInsts[n.Symbol.Name]; ok {
 			unwrapped, ok := d.unwrap(inst.To)
 			if !ok {
 				msg := fmt.Sprintf("Cannot instantiate declaration '%s' typed as type '%s'", n.Symbol.DisplayName, inst.From.String())
@@ -303,8 +303,10 @@ func (d *typeVarDereferencer) VisitBottomup(node ast.Expr) {
 
 func (d *typeVarDereferencer) normalizePolyTypes() {
 	polys := make(map[Type][]*Instantiation, len(d.schemes))
-	for t := range d.schemes {
-		polys[t] = make([]*Instantiation, 0, 3)
+	for t, ids := range d.schemes {
+		if len(ids) > 0 {
+			polys[t] = make([]*Instantiation, 0, 3)
+		}
 	}
 RefLoop:
 	for _, inst := range d.env.RefInsts {

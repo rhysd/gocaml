@@ -3,7 +3,6 @@ package types
 
 import (
 	"fmt"
-	"github.com/rhysd/gocaml/ast"
 )
 
 type VarMapping struct {
@@ -41,7 +40,7 @@ type Env struct {
 	Externals map[string]Type
 	// GoCaml uses let-polymorphic type inference. It means that instantiation occurs when new
 	// symbol is introduced. So instantiation only occurs at variable reference.
-	RefInsts map[*ast.VarRef]*Instantiation
+	RefInsts map[string]*Instantiation
 	// Mappings from generic type to instantiated types for each declarations.
 	// e.g.
 	//   'a -> 'a => {int -> int, bool -> bool, float -> float}
@@ -55,7 +54,7 @@ func NewEnv() *Env {
 	return &Env{
 		map[string]Type{},
 		builtinPopulatedTable(),
-		map[*ast.VarRef]*Instantiation{},
+		map[string]*Instantiation{},
 		nil,
 	}
 }
@@ -89,7 +88,7 @@ func (env *Env) DumpExternals() {
 func (env *Env) DumpInstantiations() {
 	fmt.Println("Instantiations:")
 	for ref, inst := range env.RefInsts {
-		fmt.Printf("  '%s' at %s\n", ref.Symbol.DisplayName, ref.Pos().String())
+		fmt.Printf("  '%s'\n", ref)
 		fmt.Printf("    From: %s\n", inst.From.String())
 		fmt.Printf("    To:   %s\n", inst.To.String())
 	}
@@ -112,7 +111,7 @@ func (env *Env) DumpDebug() {
 	}
 	fmt.Println("\nInstantiations:")
 	for ref, inst := range env.RefInsts {
-		fmt.Printf("  '%s' at %s\n", ref.Symbol.Name, ref.Pos().String())
+		fmt.Printf("  '%s'\n", ref)
 		fmt.Printf("    From: %s\n", Debug(inst.From))
 		fmt.Printf("    To:   %s\n", Debug(inst.To))
 		for i, m := range inst.Mapping {

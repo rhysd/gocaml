@@ -201,7 +201,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 			if inst == nil {
 				return t, nil
 			}
-			inf.Env.RefInsts[n] = inst
+			inf.Env.RefInsts[n.Symbol.Name] = inst
 			return inst.To, nil
 		}
 		if t, ok := inf.Env.Externals[n.Symbol.Name]; ok {
