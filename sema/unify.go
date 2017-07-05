@@ -90,9 +90,13 @@ func assignVar(v *Var, t Type) *locerr.Error {
 		return locerr.Errorf("Cannot resolve free type variable. Cyclic dependency found for free type variable '%s' while unification with '%s'", v.String(), t.String())
 	}
 
-	if v.IsGeneric() {
-		panic("FATAL: Generic variable must not appear in unification")
-	}
+	// Note:
+	// 'v' may be generic type variable because of external symbols.
+	// e.g.
+	//   let _ = x in x + x
+	// The `x` is an external symbol and typed as ?. And it is bound to `_` in `let` expression.
+	// The `_` is typed as 'a so the type of `x` will be 'a.
+	// In `x + x`, type of `x` is unified although its type is generic.
 
 	v.Ref = t
 	return nil
