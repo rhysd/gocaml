@@ -495,11 +495,8 @@ func (inf *Inferer) Infer(parsed *ast.AST) error {
 	}
 
 	if err := derefTypeVars(inf.Env, parsed.Root, inf.inferred, inf.schemes); err != nil {
-		inf.Env.DumpDebug()
 		return err
 	}
-
-	inf.Env.DumpDebug()
 
 	return nil
 }

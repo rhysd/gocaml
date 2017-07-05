@@ -8,21 +8,10 @@ import (
 )
 
 type typeVarDereferencer struct {
-	err          *locerr.Error
-	env          *Env
-	inferred     InferredTypes
-	schemes      schemes
-	generalized  map[string]boundVarIDs
-	instantiated map[VarID][]Type
-}
-
-func (d *typeVarDereferencer) isGeneralized(id VarID) bool {
-	for _, ids := range d.generalized {
-		if ids.contains(id) {
-			return true
-		}
-	}
-	return false
+	err      *locerr.Error
+	env      *Env
+	inferred InferredTypes
+	schemes  schemes
 }
 
 func (d *typeVarDereferencer) unwrapVar(v *Var) (Type, bool) {
@@ -105,23 +94,12 @@ func (d *typeVarDereferencer) errMsg(msg string) {
 	}
 }
 
-func (d *typeVarDereferencer) typeOfSym(sym *ast.Symbol) Type {
-	t, ok := d.env.DeclTable[sym.Name]
+func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
+	symType, ok := d.env.DeclTable[sym.Name]
 	if !ok {
 		panic("FATAL: Cannot dereference unknown symbol: " + sym.Name)
 	}
-	return t
-}
 
-// Push bound IDs in the type scheme of the symbol. Bound IDs are used for checking the unbound or
-// generic type variables are actually free or instantiated at any point of parent nodes.
-func (d *typeVarDereferencer) pushGeneralized(sym *ast.Symbol, t Type) {
-	if bounds, isGen := d.schemes[t]; isGen {
-		d.generalized[sym.Name] = bounds
-	}
-}
-
-func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol, symType Type) {
 	if sym.IsIgnored() {
 		// Parser expands `foo; bar` to `let $unused = foo in bar`. In this situation, type of the
 		// variable will never be determined because it's unused.
@@ -213,50 +191,22 @@ func (d *typeVarDereferencer) derefExternalSym(name string, symType Type) Type {
 func (d *typeVarDereferencer) VisitTopdown(node ast.Expr) ast.Visitor {
 	switch n := node.(type) {
 	case *ast.Let:
-		t := d.typeOfSym(n.Symbol)
-		// n.Bound must be visited before pushing bounds IDs because the type is not instantiated
-		// yet at 'e1' of 'let x = e1 in e2'.
-		ast.Visit(d, n.Bound)
-		d.pushGeneralized(n.Symbol, t)
-		d.derefSym(n, n.Symbol, t)
-		ast.Visit(d, n.Body)
-		d.VisitBottomup(node)
-		return nil
+		d.derefSym(n, n.Symbol)
 	case *ast.LetRec:
-		t := d.typeOfSym(n.Func.Symbol)
-		// Consdidering recursive function declaration. Declared function name should be visible
-		// in its body. So push bound IDs at first.
-		d.pushGeneralized(n.Func.Symbol, t)
 		// Note:
 		// Need to dereference parameters at first because type of the function depends on type
 		// of its parameters and parameters may be specified as '_'. '_' is unused. So its type
 		// may not be determined and need to be fixed as unit type.
 		for _, p := range n.Func.Params {
-			d.derefSym(n, p.Ident, d.typeOfSym(p.Ident))
+			d.derefSym(n, p.Ident)
 		}
-		d.derefSym(n, n.Func.Symbol, t)
+		d.derefSym(n, n.Func.Symbol)
 	case *ast.LetTuple:
-		// n.Bound must be visited before pushing bounds IDs because the type is not instantiated
-		// yet at 'e1' of 'let (a, b, c) = e1 in e2'.
-		ast.Visit(d, n.Bound)
 		for _, sym := range n.Symbols {
-			t := d.typeOfSym(sym)
-			d.pushGeneralized(sym, t)
-			d.derefSym(n, sym, t)
+			d.derefSym(n, sym)
 		}
-		ast.Visit(d, n.Body)
-		d.VisitBottomup(node)
-		return nil
 	case *ast.Match:
-		ast.Visit(d, n.Target)
-		// Visit IfNone at first because identifier is not visible from None clause.
-		ast.Visit(d, n.IfNone)
-		someTy := d.typeOfSym(n.SomeIdent)
-		d.pushGeneralized(n.SomeIdent, someTy)
-		d.derefSym(n, n.SomeIdent, someTy)
-		ast.Visit(d, n.IfSome)
-		d.VisitBottomup(node)
-		return nil
+		d.derefSym(n, n.SomeIdent)
 	case *ast.VarRef:
 		if inst, ok := d.env.RefInsts[n]; ok {
 			unwrapped, ok := d.unwrap(inst.To)
@@ -266,7 +216,6 @@ func (d *typeVarDereferencer) VisitTopdown(node ast.Expr) ast.Visitor {
 				d.err = d.err.NotefAt(n.Pos(), "Tried to instantiate the generic type as '%s'", inst.To.String())
 				return nil
 			}
-			fmt.Printf("Instantiated check at %s: %s\n", n.Symbol.Name, Debug(unwrapped))
 			inst.To = unwrapped
 			for _, m := range inst.Mapping {
 				t, ok := d.unwrap(m.Type)
@@ -276,8 +225,6 @@ func (d *typeVarDereferencer) VisitTopdown(node ast.Expr) ast.Visitor {
 					return nil
 				}
 				m.Type = t
-				d.instantiated[m.ID] = append(d.instantiated[m.ID], t)
-				fmt.Printf("  Var ID %d: %s\n", m.ID, Debug(t))
 			}
 		}
 	}
@@ -352,21 +299,6 @@ func (d *typeVarDereferencer) VisitBottomup(node ast.Expr) {
 	}
 
 	d.inferred[node] = unwrapped
-
-	// Pop generalized bound IDs. Bound IDs are used for checking the unbound or generic type
-	// variables are actually free or instantiated at any point of parent nodes.
-	switch n := node.(type) {
-	case *ast.Let:
-		delete(d.generalized, n.Symbol.Name)
-	case *ast.LetRec:
-		delete(d.generalized, n.Func.Symbol.Name)
-	case *ast.Match:
-		delete(d.generalized, n.SomeIdent.Name)
-	case *ast.LetTuple:
-		for _, s := range n.Symbols {
-			delete(d.generalized, s.Name)
-		}
-	}
 }
 
 func (d *typeVarDereferencer) normalizePolyTypes() {
@@ -390,32 +322,19 @@ RefLoop:
 }
 
 func derefTypeVars(env *Env, root ast.Expr, inferred InferredTypes, ss schemes) *locerr.Error {
-	deref := &typeVarDereferencer{nil, env, inferred, ss, make(map[string]boundVarIDs, len(ss)), make(map[VarID][]Type, 10)}
+	deref := &typeVarDereferencer{nil, env, inferred, ss}
 	for n, t := range env.Externals {
 		env.Externals[n] = deref.derefExternalSym(n, t)
 	}
 	ast.Visit(deref, root)
 
-	if len(deref.generalized) != 0 {
-		panic(fmt.Sprint("FATAL: Bound type variable must not exist at toplevel:", deref.generalized))
-	}
-
-	deref.normalizePolyTypes()
-
-	fmt.Println("\nInstantiated!")
-	for id, ts := range deref.instantiated {
-		fmt.Printf("  '%d (%d instances)\n", id, len(ts))
-		for _, t := range ts {
-			fmt.Printf("    %s\n", Debug(t))
-		}
-	}
-
 	// Note:
 	// Cannot return v.err directly because `return v.err` returns typed nil (typed as *locerr.Error).
 	if deref.err != nil {
-		env.DumpDebug()
 		return deref.err
 	}
+
+	deref.normalizePolyTypes()
 
 	return nil
 }
