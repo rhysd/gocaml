@@ -6,7 +6,7 @@ export USE_SYSTEM_LLVM=true
 
 if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
     brew update
-    brew install bdw-gc llvm coreutils
+    brew install bdw-gc llvm
 else
     go get golang.org/x/tools/cmd/cover
     go get github.com/haya14busa/goverage
