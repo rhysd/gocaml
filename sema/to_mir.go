@@ -51,14 +51,14 @@ func (e *emitter) emitLetInsn(node *ast.Let) *mir.Insn {
 	//
 	// After:
 	//   $sym$t1 = some_insn
+	//
+	// Here `$k1` is `bound.Ident`.
 	bound := e.emitInsn(node.Bound)
-	t, found := e.env.Table[bound.Ident]
+	t, _ := e.env.Table[bound.Ident]
 	delete(e.env.Table, bound.Ident)
 
 	bound.Ident = node.Symbol.Name
-	if found {
-		e.env.Table[bound.Ident] = t
-	}
+	e.env.Table[bound.Ident] = t
 
 	body := e.emitInsn(node.Body)
 	body.Append(bound)
