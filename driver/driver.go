@@ -8,7 +8,6 @@ import (
 	"github.com/rhysd/gocaml/closure"
 	"github.com/rhysd/gocaml/codegen"
 	"github.com/rhysd/gocaml/mir"
-	"github.com/rhysd/gocaml/monomorphize"
 	"github.com/rhysd/gocaml/sema"
 	"github.com/rhysd/gocaml/syntax"
 	"github.com/rhysd/gocaml/token"
@@ -113,7 +112,6 @@ func (d *Driver) EmitMIR(src *locerr.Source) (*mir.Program, *types.Env, error) {
 		return nil, nil, err
 	}
 	mir.ElimRefs(ir, env)
-	monomorphize.CodeDup(ir, env)
 	prog := closure.Transform(ir)
 	return prog, env, nil
 }
