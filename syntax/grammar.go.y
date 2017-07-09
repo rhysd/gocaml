@@ -22,7 +22,7 @@ import (
 	decls []*ast.Symbol
 	decl *ast.Symbol
 	params []ast.Param
-	type_decls []*ast.TypeDecl
+	program *ast.AST
 }
 
 %token<token> ILLEGAL
@@ -77,6 +77,7 @@ import (
 %token<token> BAR_RBRACKET
 %token<token> LBRACKET
 %token<token> RBRACKET
+%token<token> EXTERNAL
 
 %nonassoc IN
 %right prec_let
@@ -120,7 +121,7 @@ import (
 %type<nodes> arrow_types
 %type<nodes> simple_type_star_list
 %type<nodes> type_comma_list
-%type<type_decls> type_decls
+%type<program> toplevels
 %type<> opt_semi
 %type<> program
 
@@ -129,18 +130,35 @@ import (
 %%
 
 program:
-	type_decls seq_exp
+	toplevels seq_exp
 		{
-			yylex.(*pseudoLexer).result = &ast.AST{Root: $2, TypeDecls: $1}
+			tree := $1
+			tree.Root = $2
+			yylex.(*pseudoLexer).result = tree
 		}
 
-type_decls:
+toplevels:
 	/* empty */
-		{ $$ = []*ast.TypeDecl{} }
-	| type_decls TYPE IDENT EQUAL type SEMICOLON
+		{ $$ = &ast.AST{} }
+	| toplevels TYPE IDENT EQUAL type SEMICOLON
 		{
 			decl := &ast.TypeDecl{$2, ast.NewSymbol($3.Value()), $5}
-			$$ = append($1, decl)
+			tree := $1
+			tree.TypeDecls = append(tree.TypeDecls, decl)
+			$$ = tree
+		}
+	| toplevels EXTERNAL IDENT COLON type EQUAL STRING_LITERAL SEMICOLON
+		{
+			from := $7.Value()
+			lit, err := strconv.Unquote(from)
+			if err != nil {
+				yylex.Error(fmt.Sprintf("Parse error at string literal in 'external' decl: %s: %s", from, err.Error()))
+			} else {
+				tree := $1
+				ext := &ast.External{$2, $7, sym($3), $5, lit}
+				tree.Externals = append(tree.Externals, ext)
+				$$ = tree
+			}
 		}
 
 seq_exp:
@@ -438,4 +456,5 @@ func sym(tok *token.Token) *ast.Symbol {
 		return ast.NewSymbol(s)
 	}
 }
+
 // vim: noet
