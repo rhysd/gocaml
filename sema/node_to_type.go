@@ -7,11 +7,12 @@ import (
 )
 
 type nodeTypeConv struct {
-	aliases map[string]Type
+	aliases        map[string]Type
+	acceptsAnyType bool
 }
 
 func newNodeTypeConv(decls []*ast.TypeDecl) (*nodeTypeConv, error) {
-	conv := &nodeTypeConv{make(map[string]Type, len(decls)+5 /*primitives*/)}
+	conv := &nodeTypeConv{make(map[string]Type, len(decls)+5 /*primitives*/), true}
 	conv.aliases["unit"] = UnitType
 	conv.aliases["int"] = IntType
 	conv.aliases["bool"] = BoolType
@@ -61,6 +62,9 @@ func (conv *nodeTypeConv) nodeToType(node ast.Expr) (Type, error) {
 		len := len(n.ParamTypes)
 		if len == 0 {
 			if n.Ctor.Name == "_" {
+				if !conv.acceptsAnyType {
+					return nil, locerr.ErrorIn(n.Pos(), n.End(), "'_' is not permitted for type declaration in this context")
+				}
 				// '_' accepts any type.
 				return &Var{}, nil
 			}

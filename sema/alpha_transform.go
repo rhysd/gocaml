@@ -3,6 +3,7 @@ package sema
 import (
 	"fmt"
 	"github.com/rhysd/gocaml/ast"
+	"github.com/rhysd/gocaml/types"
 	"github.com/rhysd/locerr"
 )
 
@@ -43,6 +44,7 @@ type transformer struct {
 	varId     uint
 	tyId      uint
 	err       error
+	externals map[string]struct{}
 }
 
 func newTransformer() *transformer {
@@ -51,6 +53,7 @@ func newTransformer() *transformer {
 		typeScope: newScope(nil),
 		varId:     0,
 		tyId:      0,
+		externals: nil,
 	}
 }
 
@@ -150,12 +153,14 @@ func (t *transformer) VisitTopdown(node ast.Expr) ast.Visitor {
 			t.err = locerr.ErrorIn(n.Pos(), n.End(), "Cannot refer '_' variable because creating '_' variable is not permitted")
 			return nil
 		}
-		mapped, ok := t.current.resolve(n.Symbol.DisplayName)
-		if !ok {
-			// External symbol is ignored because name should be identical.
+		if mapped, ok := t.current.resolve(n.Symbol.DisplayName); ok {
+			n.Symbol = mapped
 			return nil
 		}
-		n.Symbol = mapped
+		// Check external it's an external symbol
+		if _, ok := t.externals[n.Symbol.Name]; !ok {
+			t.err = locerr.ErrorfIn(n.Pos(), n.End(), "Undefined variable '%s'", n.Symbol.DisplayName)
+		}
 		return nil
 	case *ast.CtorType:
 		if isBuiltinTypeCtor(n.Ctor.DisplayName) {
@@ -182,7 +187,7 @@ func (t *transformer) VisitBottomup(ast.Expr) {
 // AlphaTransform adds identical names to all identifiers in AST nodes.
 // If there are some duplicate names, it causes an error.
 // External symbols are named the same as display names.
-func AlphaTransform(tree *ast.AST) error {
+func AlphaTransform(tree *ast.AST, env *types.Env) error {
 	v := newTransformer()
 	for _, decl := range tree.TypeDecls {
 		ast.Visit(v, decl.Type)
@@ -199,6 +204,22 @@ func AlphaTransform(tree *ast.AST) error {
 		i.Name = v.newTyID(i.DisplayName)
 		v.typeScope.mapSymbol(i.DisplayName, i)
 	}
+
+	// TODO: Check C name duplicates
+	exts := make(map[string]struct{}, len(tree.Externals)+len(env.Externals))
+	// Register built-in external symbols
+	for n := range env.Externals {
+		exts[n] = struct{}{}
+	}
+	// Register declared external symbols
+	for _, e := range tree.Externals {
+		if e.Ident.IsIgnored() {
+			return locerr.ErrorIn(e.Pos(), e.End(), "Cannot define external symbol as '_'")
+		}
+		exts[e.Ident.Name] = struct{}{}
+	}
+	v.externals = exts
+
 	ast.Visit(v, tree.Root)
 	return v.err
 }
