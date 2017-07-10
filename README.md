@@ -40,11 +40,9 @@ You can see [more examples][examples]. (e.g. [Brainfxxk interpreter][Brainfxxk i
 
 ## Difference from Original MinCaml
 
-- MinCaml assumes external symbols' types are `int` when it can't be inferred. GoCaml does not have such an assumption.
-  GoCaml assumes unknown return type of external functions as `()` (`void` in C), but in other cases, falls into compilation error.
-  When you use nested external functions call, you need to clarify the return type of inner function call. For example, when `f` in
-  `g (f ())` returns `int`, you need to show it like `g ((f ()) + 0)`. Note that this pitfall does not occur for built-in functions
-  because a compiler knows their types.
+- MinCaml assumes external symbols' types are `int` when it can't be inferred. GoCaml requires explicit declaration for external
+  symbols with `external` syntax like OCaml. All external symbols (except for builtins) must be declared. Otherwise, undeclared
+  symbols are reported undefined symbols as compilation error.
 - MinCaml allows `-` unary operator for float literal. So for example `-3.14` is valid but `-f` (where `f` is `float`) is not valid.
   GoCaml does not allow `-` unary operator for float values totally. You need to use `-.` unary operator instead (e.g. `-.3.14`).
 - GoCaml adds more operators. `*` and `/` for integers, `&&` and `||` for booleans.
@@ -556,27 +554,33 @@ never used. In this case, compiler regards type of `f` as `unit -> int` and comp
 
 ### External Symbols
 
-All symbols which are not defined but used are treated as external symbols.
-External symbol means `extern` names in C. So you have responsibility to define the symbols
-in other object which will be linked to executable. Please see below 'How to Work with C'
-section to know how to do that.
-
-Note that all external symbols' types MUST be determined by type inference. Unknown type symbol
-causes compilation error.
+All external symbol must be declared with `external` syntax.
 
 ```ml
-(* This causes compile error because type of 'x' is unknown *)
-x;
-
-(* Type of 'y' is known as 'int' because it's passed to argument of `println_int` *)
-println_int y;
-
-(* When return type of function is (), it is treated as void in C *)
-some_func ();
-
-(* Below 'pow' function is inferred as float -> float -> float *)
-print_float (pow 3.0 1.0 2.0)
+external name: type = "c_name";
 ```
+
+The `name` is a symbol name of the external symbol. And the `"c_name"` is a symbol name linked in
+C level. The `type` cannot contain any generic type variable and `_`.
+For example, when you define `gocaml_int foo(gocaml_int i)` function in C, then you need to declare
+`"foo"` external C name with type `int -> int` to use it from GoCaml.
+
+```ml
+external foo: int -> int = "foo";
+foo 42
+```
+
+Or when you define a global variable `gocaml_int x` in C, you need to declare external `"x"` C name
+to use the global variable value from GoCaml.
+
+```ml
+external x: int = "x";
+println_int x
+```
+
+If C name does not exist in link phase, compiler will cause a linker error at compiling the source.
+
+Like `type` syntax, all `external` declarations should be written before any expression.
 
 ## Prerequisites
 
