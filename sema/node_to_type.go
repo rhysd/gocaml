@@ -63,7 +63,7 @@ func (conv *nodeTypeConv) nodeToType(node ast.Expr) (Type, error) {
 		if len == 0 {
 			if n.Ctor.Name == "_" {
 				if !conv.acceptsAnyType {
-					return nil, locerr.ErrorIn(n.Pos(), n.End(), "'_' is not permitted for type declaration in this context")
+					return nil, locerr.ErrorIn(n.Pos(), n.End(), "'_' is not permitted for type annotation in this context")
 				}
 				// '_' accepts any type.
 				return &Var{}, nil

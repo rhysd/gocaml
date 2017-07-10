@@ -62,6 +62,8 @@ match c with
     println_str s
   | None ->
     println_str "ooooops!";
+let o = None in
+match o with Some p -> let (_, _): int * int = p in () | None -> println_str "none of tuple!";
 
 (* array *)
 let arr = Array.make 7 None in

@@ -316,6 +316,11 @@ func TestUnificationFailure(t *testing.T) {
 			expected: "Return type of function",
 		},
 		{
+			what:     "Type mismatch at return type (2)",
+			code:     "let rec f x = -x in (f : int -> float)",
+			expected: "On unifying functions' return types of 'int -> float' and 'int -> int'",
+		},
+		{
 			what:     "Invalid parameter type",
 			code:     "let rec f (x:(int, int) array) = x in f",
 			expected: "1st parameter of function",
@@ -424,5 +429,47 @@ func TestInferSuccess(t *testing.T) {
 				t.Fatal(err)
 			}
 		})
+	}
+}
+
+func TestTypeDeclError(t *testing.T) {
+	s := locerr.NewDummySource("type foo = (int, bool) array; ()")
+	tree, err := syntax.Parse(s)
+	if err != nil {
+		panic(err)
+	}
+	env := types.NewEnv()
+	if err := AlphaTransform(tree, env); err != nil {
+		t.Fatal(err)
+	}
+	i := NewInferer(env)
+	err = i.Infer(tree)
+	if err == nil {
+		t.Fatal("Error should have occurred")
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, "Invalid array type") {
+		t.Fatal("Unexpected error message:", msg)
+	}
+}
+
+func TestExternalDeclError(t *testing.T) {
+	s := locerr.NewDummySource(`external foo: _ = "c_foo"; ()`)
+	tree, err := syntax.Parse(s)
+	if err != nil {
+		panic(err)
+	}
+	env := types.NewEnv()
+	if err := AlphaTransform(tree, env); err != nil {
+		t.Fatal(err)
+	}
+	i := NewInferer(env)
+	err = i.Infer(tree)
+	if err == nil {
+		t.Fatal("Error should have occurred")
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, "'_' is not permitted for type annotation in this context") {
+		t.Fatal("Unexpected error message:", msg)
 	}
 }

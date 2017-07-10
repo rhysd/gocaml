@@ -19,7 +19,7 @@ func TestEmitInsn(t *testing.T) {
 	}{
 		{
 			"int",
-			"42",
+			"(42 : int)",
 			[]string{"int 42 ; type=int"},
 		},
 		{
@@ -62,7 +62,7 @@ func TestEmitInsn(t *testing.T) {
 		},
 		{
 			"binary int op",
-			"1 + 2; 1 * 2; 1 / 2",
+			"1 + 2; 1 * 2; 1 / 2; 5 % 2",
 			[]string{
 				"int 1 ; type=int",
 				"int 2 ; type=int",
@@ -73,6 +73,9 @@ func TestEmitInsn(t *testing.T) {
 				"int 1 ; type=int",
 				"int 2 ; type=int",
 				"binary / $k7 $k8 ; type=int",
+				"int 5 ; type=int",
+				"int 2 ; type=int",
+				"binary % $k10 $k11 ; type=int",
 			},
 		},
 		{
