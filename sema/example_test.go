@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/syntax"
+	"github.com/rhysd/gocaml/types"
 	"github.com/rhysd/locerr"
 	"os"
 	"path/filepath"
@@ -26,8 +27,11 @@ func ExampleInferer_Infer() {
 		return
 	}
 
+	// Type environment for analysis
+	env := types.NewEnv()
+
 	// First, resolve all symbols by alpha transform
-	if err := AlphaTransform(parsed); err != nil {
+	if err := AlphaTransform(parsed, env); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return
 	}
@@ -35,7 +39,7 @@ func ExampleInferer_Infer() {
 	// Second, run unification on all nodes and dereference type variables
 
 	// Make a visitor to do type inferernce
-	inferer := NewInferer()
+	inferer := NewInferer(env)
 
 	// Do type inference. It returns error if type mismatch was detected.
 	if err := inferer.Infer(parsed); err != nil {

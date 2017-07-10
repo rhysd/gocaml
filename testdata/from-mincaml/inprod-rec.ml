@@ -1,3 +1,4 @@
+external truncate: float -> int = "truncate";
 let rec inprod v1 v2 i =
   if i < 0 then 0.0 else
   v1.(i) *. v2.(i) +. inprod v1 v2 (i - 1) in

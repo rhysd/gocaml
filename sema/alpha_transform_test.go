@@ -9,8 +9,6 @@ import (
 	"testing"
 )
 
-var env = types.NewEnv()
-
 func TestFlatScope(t *testing.T) {
 	tok := &token.Token{
 		Start: locerr.Pos{},
@@ -27,7 +25,7 @@ func TestFlatScope(t *testing.T) {
 		ref,
 		nil,
 	}
-	if err := AlphaTransform(&ast.AST{Root: root}, env); err != nil {
+	if err := AlphaTransform(&ast.AST{Root: root}, types.NewEnv()); err != nil {
 		t.Fatal(err)
 	}
 	if ref.Symbol.Name != "test$t1" {
@@ -62,7 +60,7 @@ func TestNested(t *testing.T) {
 		nil,
 	}
 
-	if err := AlphaTransform(&ast.AST{Root: root}, env); err != nil {
+	if err := AlphaTransform(&ast.AST{Root: root}, types.NewEnv()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -105,7 +103,7 @@ func TestMatch(t *testing.T) {
 		nil,
 	}
 
-	if err := AlphaTransform(&ast.AST{Root: root}, env); err != nil {
+	if err := AlphaTransform(&ast.AST{Root: root}, types.NewEnv()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -137,7 +135,7 @@ func TestLetTuple(t *testing.T) {
 		nil,
 	}
 
-	if err := AlphaTransform(&ast.AST{Root: root}, env); err != nil {
+	if err := AlphaTransform(&ast.AST{Root: root}, types.NewEnv()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -172,7 +170,7 @@ func TestLetTupleHasDuplicateName(t *testing.T) {
 		nil,
 	}
 
-	if err := AlphaTransform(&ast.AST{Root: root}, env); err == nil {
+	if err := AlphaTransform(&ast.AST{Root: root}, types.NewEnv()); err == nil {
 		t.Fatalf("LetTuple contains duplicate symbols but error did not occur")
 	}
 }
@@ -205,7 +203,7 @@ func TestLetRec(t *testing.T) {
 		ref,
 	}
 
-	if err := AlphaTransform(&ast.AST{Root: root}, env); err != nil {
+	if err := AlphaTransform(&ast.AST{Root: root}, types.NewEnv()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -256,7 +254,7 @@ func TestRecursiveFunc(t *testing.T) {
 		&ast.Int{tok, 42},
 	}
 
-	if err := AlphaTransform(&ast.AST{Root: root}, env); err != nil {
+	if err := AlphaTransform(&ast.AST{Root: root}, types.NewEnv()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -294,7 +292,7 @@ func TestFuncAndParamHaveSameName(t *testing.T) {
 		ref2,
 	}
 
-	if err := AlphaTransform(&ast.AST{Root: root}, env); err != nil {
+	if err := AlphaTransform(&ast.AST{Root: root}, types.NewEnv()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -333,7 +331,7 @@ func TestParamDuplicate(t *testing.T) {
 		&ast.Int{tok, 42},
 	}
 
-	if err := AlphaTransform(&ast.AST{Root: root}, env); err == nil {
+	if err := AlphaTransform(&ast.AST{Root: root}, types.NewEnv()); err == nil {
 		t.Fatal("Duplicate in parameters must raise an error")
 	}
 }
@@ -347,7 +345,7 @@ func TestUnderscoreName(t *testing.T) {
 		tok,
 		ast.NewSymbol("_"),
 	}
-	err := AlphaTransform(&ast.AST{Root: ref}, env)
+	err := AlphaTransform(&ast.AST{Root: ref}, types.NewEnv())
 	if err == nil {
 		t.Fatal("Error was expected")
 	}
@@ -404,6 +402,7 @@ func TestInvalidTypeAlias(t *testing.T) {
 		},
 	}
 
+	env := types.NewEnv()
 	for _, tc := range cases {
 		t.Run(tc.what, func(t *testing.T) {
 			tree := &ast.AST{tc.root, tc.types, nil}
@@ -463,7 +462,7 @@ func TestTypeAlias(t *testing.T) {
 
 	tree := &ast.AST{root, decls, nil}
 
-	if err := AlphaTransform(tree, env); err != nil {
+	if err := AlphaTransform(tree, types.NewEnv()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -530,7 +529,7 @@ func TestExternalSymbols(t *testing.T) {
 			"c_level_foobar",
 		},
 	}
-	if err := AlphaTransform(&ast.AST{root, nil, exts}, env); err != nil {
+	if err := AlphaTransform(&ast.AST{root, nil, exts}, types.NewEnv()); err != nil {
 		t.Fatal(err)
 	}
 	if ref1.Symbol.Name != "println_int" {
@@ -541,7 +540,90 @@ func TestExternalSymbols(t *testing.T) {
 	}
 }
 
-// TODO: Error cases for external symbol
-// func TestUnderscoreInExternal(t *testing.T) {
-// func TestDuplicateCName(t *testing.T) {
-// func TestUndefinedSymbol(t *testing.T) {
+func TestInvalidExternalDecls(t *testing.T) {
+	pos := locerr.Pos{}
+	tok := &token.Token{
+		Start: pos,
+		End:   pos,
+		File:  locerr.NewDummySource(""),
+	}
+	env := types.NewEnv()
+	ty := &ast.CtorType{
+		nil,
+		tok,
+		nil,
+		ast.NewSymbol("int"),
+	}
+
+	ext := func(s *ast.Symbol, c string) *ast.External {
+		return &ast.External{tok, tok, s, ty, c}
+	}
+
+	cases := []struct {
+		what  string
+		want  string
+		decls []*ast.External
+	}{
+		{
+			what: "external name named '_'",
+			want: "Cannot define external symbol as '_'",
+			decls: []*ast.External{
+				ext(ast.IgnoredSymbol(), "c_level_name"),
+			},
+		},
+		{
+			what: "duplicate with builtin symbol",
+			want: "Cannot redeclare existing C symbol 'println_int'",
+			decls: []*ast.External{
+				ext(ast.NewSymbol("my_println_int"), "println_int"),
+			},
+		},
+		{
+			what: "duplicate with other external symbol",
+			want: "Cannot redeclare existing C symbol 'c_my_blahblah'",
+			decls: []*ast.External{
+				ext(ast.NewSymbol("my_blahblah"), "c_my_blahblah"),
+				ext(ast.NewSymbol("my_blahblah2"), "c_my_blahblah"),
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.what, func(t *testing.T) {
+			tree := &ast.AST{&ast.Unit{}, nil, tc.decls}
+			err := AlphaTransform(tree, env)
+			if err == nil {
+				t.Fatal("Should have caused an error")
+			}
+			have := err.Error()
+			if !strings.Contains(have, tc.want) {
+				t.Fatal("Unexpected error message:", have)
+			}
+		})
+	}
+}
+
+func TestUndefinedSymbol(t *testing.T) {
+	pos := locerr.Pos{}
+	tok := &token.Token{
+		Start: pos,
+		End:   pos,
+		File:  locerr.NewDummySource(""),
+	}
+	ref := &ast.VarRef{
+		tok,
+		ast.NewSymbol("x"),
+	}
+
+	err := AlphaTransform(&ast.AST{Root: ref}, types.NewEnv())
+	if err == nil {
+		t.Fatal("Error should have been caused")
+	}
+
+	want := "Undefined variable 'x'"
+	have := err.Error()
+
+	if !strings.Contains(have, want) {
+		t.Fatal("Unexpected error message:", have, ", wanted:", want)
+	}
+}

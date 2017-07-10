@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/rhysd/gocaml/syntax"
+	"github.com/rhysd/gocaml/types"
 	"github.com/rhysd/locerr"
 	"strings"
 	"testing"
@@ -238,14 +239,14 @@ func TestEmitInsn(t *testing.T) {
 		},
 		{
 			"external symbol references",
-			"x + 0",
+			`external x: int = "c_my_int"; x + 0`,
 			[]string{
 				"xref x ; type=int",
 			},
 		},
 		{
 			"external symbol references 2",
-			"x < 3",
+			`external x: int = "c_my_int"; x < 3`,
 			[]string{
 				"xref x ; type=int",
 			},
@@ -356,10 +357,11 @@ func TestEmitInsn(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err = AlphaTransform(ast); err != nil {
+			env := types.NewEnv()
+			if err := AlphaTransform(ast, env); err != nil {
 				t.Fatal(err)
 			}
-			inf := NewInferer()
+			inf := NewInferer(env)
 			if err := inf.Infer(ast); err != nil {
 				t.Fatal(err)
 			}

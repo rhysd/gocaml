@@ -141,16 +141,21 @@ func TestEmitOptimizedAggressive(t *testing.T) {
 }
 
 func TestEmitIRContainingExternalSymbols(t *testing.T) {
-	e, err := testCreateEmitter("x; y; f (x + y)", OptimizeDefault, true)
+	code := `
+	external f: int -> unit = "c_f";
+	external x: int = "c_x";
+	external y: int = "c_y";
+	x; y; f (x + y)`
+	e, err := testCreateEmitter(code, OptimizeDefault, true)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer e.Dispose()
 	ir := e.EmitLLVMIR()
 	expects := []string{
-		"@x = external local_unnamed_addr global i64",
-		"@y = external local_unnamed_addr global i64",
-		"declare void @f(i64)",
+		"@c_x = external local_unnamed_addr global i64",
+		"@c_y = external local_unnamed_addr global i64",
+		"declare void @c_f(i64)",
 	}
 	for _, expect := range expects {
 		if !strings.Contains(ir, expect) {
@@ -160,7 +165,14 @@ func TestEmitIRContainingExternalSymbols(t *testing.T) {
 }
 
 func TestDisposeEmitter(t *testing.T) {
-	e, err := testCreateEmitter("x; y; f (x + y); g (x < y)", OptimizeDefault, true)
+	code := `
+	external f: int -> unit = "c_f";
+	external g: bool -> unit = "c_g";
+	external x: int = "c_x";
+	external y: int = "c_y";
+	x; y; f (x + y); g (x < y)
+	`
+	e, err := testCreateEmitter(code, OptimizeDefault, true)
 	if err != nil {
 		t.Fatal(err)
 	}

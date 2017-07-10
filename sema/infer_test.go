@@ -2,6 +2,7 @@ package sema
 
 import (
 	"github.com/rhysd/gocaml/syntax"
+	"github.com/rhysd/gocaml/types"
 	"github.com/rhysd/locerr"
 	"path/filepath"
 	"strings"
@@ -26,16 +27,12 @@ func TestEdgeCases(t *testing.T) {
 			if err != nil {
 				panic(err)
 			}
-			if err = AlphaTransform(ast); err != nil {
+			env := types.NewEnv()
+			if err = AlphaTransform(ast, env); err != nil {
 				panic(err)
 			}
-			i := NewInferer()
-			i.conv, err = newNodeTypeConv(ast.TypeDecls)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = i.infer(ast.Root)
-			if err != nil {
+			i := NewInferer(env)
+			if err := i.Infer(ast); err != nil {
 				t.Fatalf("Type check raised an error for code '%s': %s", tc.code, err.Error())
 			}
 		})
@@ -387,10 +384,11 @@ func TestUnificationFailure(t *testing.T) {
 			if err != nil {
 				panic(err)
 			}
-			if err = AlphaTransform(ast); err != nil {
+			env := types.NewEnv()
+			if err := AlphaTransform(ast, env); err != nil {
 				t.Fatal(err)
 			}
-			i := NewInferer()
+			i := NewInferer(env)
 			err = i.Infer(ast)
 			if err == nil {
 				t.Fatal("Error did not occur for code:", testcase.code)
@@ -417,16 +415,12 @@ func TestInferSuccess(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err = AlphaTransform(ast); err != nil {
+			env := types.NewEnv()
+			if err := AlphaTransform(ast, env); err != nil {
 				t.Fatal(err)
 			}
-			i := NewInferer()
-			i.conv, err = newNodeTypeConv(ast.TypeDecls)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = i.infer(ast.Root)
-			if err != nil {
+			i := NewInferer(env)
+			if err := i.Infer(ast); err != nil {
 				t.Fatal(err)
 			}
 		})

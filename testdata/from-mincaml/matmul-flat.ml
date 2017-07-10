@@ -1,3 +1,4 @@
+external truncate: float -> int = "truncate";
 let rec loop3 i k j a b c =
   if k < 0 then () else
   (c.(i).(j) <- c.(i).(j) +. a.(i).(k) *. b.(k).(j);
