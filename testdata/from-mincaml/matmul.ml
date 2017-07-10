@@ -1,3 +1,4 @@
+external truncate: float -> int = "truncate";
 let rec mul l m n a b c =
   let rec loop1 i =
     if i < 0 then () else

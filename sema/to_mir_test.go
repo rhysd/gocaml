@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/rhysd/gocaml/syntax"
+	"github.com/rhysd/gocaml/types"
 	"github.com/rhysd/locerr"
 	"strings"
 	"testing"
@@ -18,7 +19,7 @@ func TestEmitInsn(t *testing.T) {
 	}{
 		{
 			"int",
-			"42",
+			"(42 : int)",
 			[]string{"int 42 ; type=int"},
 		},
 		{
@@ -61,7 +62,7 @@ func TestEmitInsn(t *testing.T) {
 		},
 		{
 			"binary int op",
-			"1 + 2; 1 * 2; 1 / 2",
+			"1 + 2; 1 * 2; 1 / 2; 5 % 2",
 			[]string{
 				"int 1 ; type=int",
 				"int 2 ; type=int",
@@ -72,6 +73,9 @@ func TestEmitInsn(t *testing.T) {
 				"int 1 ; type=int",
 				"int 2 ; type=int",
 				"binary / $k7 $k8 ; type=int",
+				"int 5 ; type=int",
+				"int 2 ; type=int",
+				"binary % $k10 $k11 ; type=int",
 			},
 		},
 		{
@@ -238,14 +242,14 @@ func TestEmitInsn(t *testing.T) {
 		},
 		{
 			"external symbol references",
-			"x + 0",
+			`external x: int = "c_my_int"; x + 0`,
 			[]string{
 				"xref x ; type=int",
 			},
 		},
 		{
 			"external symbol references 2",
-			"x < 3",
+			`external x: int = "c_my_int"; x < 3`,
 			[]string{
 				"xref x ; type=int",
 			},
@@ -356,10 +360,11 @@ func TestEmitInsn(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err = AlphaTransform(ast); err != nil {
+			env := types.NewEnv()
+			if err := AlphaTransform(ast, env); err != nil {
 				t.Fatal(err)
 			}
-			inf := NewInferer()
+			inf := NewInferer(env)
 			if err := inf.Infer(ast); err != nil {
 				t.Fatal(err)
 			}

@@ -154,6 +154,8 @@ func Visit(vis Visitor, e Expr) {
 		Visit(v, n.Type)
 	case *TypeDecl:
 		Visit(v, n.Type)
+	case *External:
+		Visit(v, n.Type)
 	}
 
 	vis.VisitBottomup(e)

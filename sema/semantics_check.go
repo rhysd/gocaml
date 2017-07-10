@@ -12,18 +12,20 @@ import (
 )
 
 func Analyze(parsed *ast.AST) (*types.Env, InferredTypes, error) {
+	env := types.NewEnv()
+
 	// First, resolve all symbols by alpha transform
-	if err := AlphaTransform(parsed); err != nil {
+	if err := AlphaTransform(parsed, env); err != nil {
 		return nil, nil, locerr.NoteAt(parsed.Root.Pos(), err, "Alpha transform failed")
 	}
 
 	// Second, run unification on all nodes and dereference type variables
-	inferer := NewInferer()
+	inferer := NewInferer(env)
 	if err := inferer.Infer(parsed); err != nil {
 		return nil, nil, locerr.NoteAt(parsed.Root.Pos(), err, "Type inference failed")
 	}
 
-	return inferer.Env, inferer.inferred, nil
+	return env, inferer.inferred, nil
 }
 
 // SemanticsCheck applies type inference, checks semantics of types and finally converts AST into MIR

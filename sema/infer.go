@@ -19,8 +19,8 @@ type Inferer struct {
 }
 
 // NewInferer creates a new Inferer instance
-func NewInferer() *Inferer {
-	return &Inferer{NewEnv(), nil, map[ast.Expr]Type{}}
+func NewInferer(env *Env) *Inferer {
+	return &Inferer{env, nil, map[ast.Expr]Type{}}
 }
 
 func (inf *Inferer) checkNodeType(where string, node ast.Expr, expected Type) error {
@@ -185,14 +185,10 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 		if t, ok := inf.Env.Table[n.Symbol.Name]; ok {
 			return t, nil
 		}
-		if t, ok := inf.Env.Externals[n.Symbol.Name]; ok {
-			return t, nil
+		if e, ok := inf.Env.Externals[n.Symbol.Name]; ok {
+			return e.Type, nil
 		}
-		// Assume as free variable. If free variable's type is not identified,
-		// It falls into compilation error
-		t := &Var{}
-		inf.Env.Externals[n.Symbol.DisplayName] = t
-		return t, nil
+		panic("FATAL: Unknown symbol must be checked in alpha transform: " + n.Symbol.Name)
 	case *ast.LetRec:
 		f := &Var{}
 		// Need to register function here because of recursive functions
@@ -444,10 +440,26 @@ func (inf *Inferer) infer(e ast.Expr) (Type, error) {
 // Infer infers types in given AST and returns error when detecting type errors
 func (inf *Inferer) Infer(parsed *ast.AST) error {
 	var err error
+
+	// TODO:
+	// Move creating inf.conv to newInferer(). newInferer should receive *ast.AST and make
+	// Inferer instance to call Infer().
 	inf.conv, err = newNodeTypeConv(parsed.TypeDecls)
 	if err != nil {
 		return err
 	}
+
+	inf.conv.acceptsAnyType = false
+	for _, ext := range parsed.Externals {
+		t, err := inf.conv.nodeToType(ext.Type)
+		if err != nil {
+			err = locerr.NotefAt(ext.Pos(), err, "Invalid type annotation at 'external' declaration '%s'", ext.Ident.Name)
+			err = locerr.NoteAt(ext.Pos(), err, "'_' is not permitted in type of external symbol")
+			return err
+		}
+		inf.Env.Externals[ext.Ident.Name] = &External{t, ext.C}
+	}
+	inf.conv.acceptsAnyType = true
 
 	root, err := inf.infer(parsed.Root)
 	if err != nil {

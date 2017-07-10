@@ -69,7 +69,6 @@ func (e *emitter) emitFunInsn(node *ast.LetRec) *mir.Insn {
 	name := node.Func.Symbol.Name
 	ty, ok := e.env.Table[name]
 	if !ok {
-		// Note: Symbol in LetRec cannot be an external symbol.
 		panic("FATAL: Unknown function: " + name)
 	}
 

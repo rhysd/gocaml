@@ -103,6 +103,8 @@ func (l *Lexer) emitIdent(ident string) {
 		l.emit(token.FUN)
 	case "type":
 		l.emit(token.TYPE)
+	case "external":
+		l.emit(token.EXTERNAL)
 	default:
 		l.emit(token.IDENT)
 	}

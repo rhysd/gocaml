@@ -1,4 +1,5 @@
 (* thanks to autotaker: https://github.com/esumii/min-caml/pull/2 *)
+external print_newline: unit -> unit = "print_newline";
 let rec h p = 
   let (v1,v2,v3,v4,v5,v6,v7,v8,v9,v10) = p in
   let rec g z = 

@@ -1,3 +1,4 @@
+external truncate: float -> int = "truncate";
 let rec getx v = (let (x, y, z) = v in x) in
 let rec gety v = (let (x, y, z) = v in y) in
 let rec getz v = (let (x, y, z) = v in z) in
