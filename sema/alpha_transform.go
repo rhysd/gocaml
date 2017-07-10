@@ -205,11 +205,12 @@ func AlphaTransform(tree *ast.AST, env *types.Env) error {
 		v.typeScope.mapSymbol(i.DisplayName, i)
 	}
 
-	// TODO: Check C name duplicates
 	exts := make(map[string]struct{}, len(tree.Externals)+len(env.Externals))
+	cnames := make(map[string]struct{}, len(tree.Externals)+len(env.Externals))
 	// Register built-in external symbols
-	for n := range env.Externals {
+	for n, e := range env.Externals {
 		exts[n] = struct{}{}
+		cnames[e.C] = struct{}{}
 	}
 	// Register declared external symbols
 	for _, e := range tree.Externals {
@@ -217,6 +218,10 @@ func AlphaTransform(tree *ast.AST, env *types.Env) error {
 			return locerr.ErrorIn(e.Pos(), e.End(), "Cannot define external symbol as '_'")
 		}
 		exts[e.Ident.Name] = struct{}{}
+		if _, ok := cnames[e.C]; ok {
+			return locerr.ErrorfIn(e.Pos(), e.End(), "Cannot redeclare existing C symbol '%s'", e.C)
+		}
+		cnames[e.C] = struct{}{}
 	}
 	v.externals = exts
 

@@ -3,10 +3,13 @@ package sema
 import (
 	"github.com/rhysd/gocaml/ast"
 	"github.com/rhysd/gocaml/token"
+	"github.com/rhysd/gocaml/types"
 	"github.com/rhysd/locerr"
 	"strings"
 	"testing"
 )
+
+var env = types.NewEnv()
 
 func TestFlatScope(t *testing.T) {
 	tok := &token.Token{
@@ -24,7 +27,7 @@ func TestFlatScope(t *testing.T) {
 		ref,
 		nil,
 	}
-	if err := AlphaTransform(&ast.AST{Root: root}); err != nil {
+	if err := AlphaTransform(&ast.AST{Root: root}, env); err != nil {
 		t.Fatal(err)
 	}
 	if ref.Symbol.Name != "test$t1" {
@@ -59,7 +62,7 @@ func TestNested(t *testing.T) {
 		nil,
 	}
 
-	if err := AlphaTransform(&ast.AST{Root: root}); err != nil {
+	if err := AlphaTransform(&ast.AST{Root: root}, env); err != nil {
 		t.Fatal(err)
 	}
 
@@ -102,7 +105,7 @@ func TestMatch(t *testing.T) {
 		nil,
 	}
 
-	if err := AlphaTransform(&ast.AST{Root: root}); err != nil {
+	if err := AlphaTransform(&ast.AST{Root: root}, env); err != nil {
 		t.Fatal(err)
 	}
 
@@ -134,7 +137,7 @@ func TestLetTuple(t *testing.T) {
 		nil,
 	}
 
-	if err := AlphaTransform(&ast.AST{Root: root}); err != nil {
+	if err := AlphaTransform(&ast.AST{Root: root}, env); err != nil {
 		t.Fatal(err)
 	}
 
@@ -169,7 +172,7 @@ func TestLetTupleHasDuplicateName(t *testing.T) {
 		nil,
 	}
 
-	if err := AlphaTransform(&ast.AST{Root: root}); err == nil {
+	if err := AlphaTransform(&ast.AST{Root: root}, env); err == nil {
 		t.Fatalf("LetTuple contains duplicate symbols but error did not occur")
 	}
 }
@@ -202,7 +205,7 @@ func TestLetRec(t *testing.T) {
 		ref,
 	}
 
-	if err := AlphaTransform(&ast.AST{Root: root}); err != nil {
+	if err := AlphaTransform(&ast.AST{Root: root}, env); err != nil {
 		t.Fatal(err)
 	}
 
@@ -253,7 +256,7 @@ func TestRecursiveFunc(t *testing.T) {
 		&ast.Int{tok, 42},
 	}
 
-	if err := AlphaTransform(&ast.AST{Root: root}); err != nil {
+	if err := AlphaTransform(&ast.AST{Root: root}, env); err != nil {
 		t.Fatal(err)
 	}
 
@@ -291,7 +294,7 @@ func TestFuncAndParamHaveSameName(t *testing.T) {
 		ref2,
 	}
 
-	if err := AlphaTransform(&ast.AST{Root: root}); err != nil {
+	if err := AlphaTransform(&ast.AST{Root: root}, env); err != nil {
 		t.Fatal(err)
 	}
 
@@ -330,27 +333,8 @@ func TestParamDuplicate(t *testing.T) {
 		&ast.Int{tok, 42},
 	}
 
-	if err := AlphaTransform(&ast.AST{Root: root}); err == nil {
+	if err := AlphaTransform(&ast.AST{Root: root}, env); err == nil {
 		t.Fatal("Duplicate in parameters must raise an error")
-	}
-}
-
-func TestExternalSymbol(t *testing.T) {
-	tok := &token.Token{
-		Start: locerr.Pos{},
-		End:   locerr.Pos{},
-	}
-	ref := &ast.VarRef{
-		tok,
-		ast.NewSymbol("x"),
-	}
-
-	if err := AlphaTransform(&ast.AST{Root: ref}); err != nil {
-		t.Fatal(err)
-	}
-
-	if ref.Symbol.Name != ref.Symbol.DisplayName {
-		t.Fatalf("External symbol's name should not be changed but actually %s was changed to %s", ref.Symbol.DisplayName, ref.Symbol.Name)
 	}
 }
 
@@ -363,7 +347,7 @@ func TestUnderscoreName(t *testing.T) {
 		tok,
 		ast.NewSymbol("_"),
 	}
-	err := AlphaTransform(&ast.AST{Root: ref})
+	err := AlphaTransform(&ast.AST{Root: ref}, env)
 	if err == nil {
 		t.Fatal("Error was expected")
 	}
@@ -422,8 +406,8 @@ func TestInvalidTypeAlias(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.what, func(t *testing.T) {
-			tree := &ast.AST{tc.root, tc.types}
-			err := AlphaTransform(tree)
+			tree := &ast.AST{tc.root, tc.types, nil}
+			err := AlphaTransform(tree, env)
 			if err == nil {
 				t.Fatal("Error did not occur. Expected:", tc.err)
 			}
@@ -477,9 +461,9 @@ func TestTypeAlias(t *testing.T) {
 		{tok, bar, ty2},
 	}
 
-	tree := &ast.AST{root, decls}
+	tree := &ast.AST{root, decls, nil}
 
-	if err := AlphaTransform(tree); err != nil {
+	if err := AlphaTransform(tree, env); err != nil {
 		t.Fatal(err)
 	}
 
@@ -502,3 +486,62 @@ func TestTypeAlias(t *testing.T) {
 		t.Fatal("'_' should not be transformed:", anyTy.Ctor.Name)
 	}
 }
+
+func TestExternalSymbols(t *testing.T) {
+	pos := locerr.Pos{}
+	tok := &token.Token{
+		Start: pos,
+		End:   pos,
+		File:  locerr.NewDummySource(""),
+	}
+	prim := func(name string) *ast.CtorType {
+		return &ast.CtorType{
+			nil,
+			tok,
+			nil,
+			ast.NewSymbol(name),
+		}
+	}
+
+	ref1 := &ast.VarRef{tok, ast.NewSymbol("println_int")}
+	ref2 := &ast.VarRef{tok, ast.NewSymbol("blahblah")}
+
+	root := &ast.Let{
+		tok,
+		ast.NewSymbol("foo"),
+		ref1,
+		ref2,
+		nil,
+	}
+
+	exts := []*ast.External{
+		{
+			tok,
+			tok,
+			ast.NewSymbol("blahblah"),
+			prim("int"),
+			"c_level_hogehoge",
+		},
+		{
+			tok,
+			tok,
+			ast.NewSymbol("foobar"),
+			prim("unit"),
+			"c_level_foobar",
+		},
+	}
+	if err := AlphaTransform(&ast.AST{root, nil, exts}, env); err != nil {
+		t.Fatal(err)
+	}
+	if ref1.Symbol.Name != "println_int" {
+		t.Error("External symbol name should not be changed", ref1.Symbol.Name)
+	}
+	if ref2.Symbol.Name != "blahblah" {
+		t.Error("External symbol name should not be changed", ref2.Symbol.Name)
+	}
+}
+
+// TODO: Error cases for external symbol
+// func TestUnderscoreInExternal(t *testing.T) {
+// func TestDuplicateCName(t *testing.T) {
+// func TestUndefinedSymbol(t *testing.T) {
