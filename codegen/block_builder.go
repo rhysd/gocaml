@@ -375,7 +375,7 @@ func (b *blockBuilder) buildVal(ident string, val mir.Val) llvm.Value {
 		callee := val.Callee
 		if val.Kind == mir.EXTERNAL_CALL {
 			table = b.globalTable
-			callee = b.env.Externals[val.Callee].C
+			callee = b.env.Externals[val.Callee].CName
 		}
 
 		// Find function pointer for invoking a function directly
@@ -525,16 +525,16 @@ func (b *blockBuilder) buildVal(ident string, val mir.Val) llvm.Value {
 
 		funTy, ok := ext.Type.(*types.Fun)
 		if !ok {
-			x, ok := b.globalTable[ext.C]
+			x, ok := b.globalTable[ext.CName]
 			if !ok {
-				panic("Value for external value not found: " + ext.C)
+				panic("Value for external value not found: " + ext.CName)
 			}
 			return b.builder.CreateLoad(x, val.Ident)
 		}
 
 		// When external function is used as variable, it must be wrapped as closure
 		// instead of global value itself.
-		funVal := b.buildExternalClosureWrapper(val.Ident, funTy, ext.C)
+		funVal := b.buildExternalClosureWrapper(val.Ident, funTy, ext.CName)
 		clsTy := b.context.StructType([]llvm.Type{funVal.Type(), b.typeBuilder.voidPtrT}, false /*packed*/)
 		alloc := b.buildAlloca(clsTy, "")
 		funPtr := b.builder.CreateStructGEP(alloc, 0, "")

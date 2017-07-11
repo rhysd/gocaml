@@ -210,7 +210,7 @@ func AlphaTransform(tree *ast.AST, env *types.Env) error {
 	// Register built-in external symbols
 	for n, e := range env.Externals {
 		exts[n] = struct{}{}
-		cnames[e.C] = struct{}{}
+		cnames[e.CName] = struct{}{}
 	}
 	// Register declared external symbols
 	for _, e := range tree.Externals {
