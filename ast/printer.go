@@ -25,11 +25,13 @@ func (p Printer) VisitBottomup(Expr) {
 // Fprint outputs a structure of AST to given io.Writer object
 func Fprint(out io.Writer, a *AST) {
 	fmt.Fprintf(out, "AST for %s:", a.File().Path)
+	p := Printer{1, out}
 	for _, t := range a.TypeDecls {
-		p := Printer{1, out}
 		Visit(p, t)
 	}
-	p := Printer{1, out}
+	for _, e := range a.Externals {
+		Visit(p, e)
+	}
 	Visit(p, a.Root)
 }
 

@@ -123,71 +123,6 @@ func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
 	d.env.DeclTable[sym.Name] = t
 }
 
-// XXX: Different behavior from MinCaml.
-//
-// In MinCaml, unknown type value will be fallbacked into Int.
-// But GoCaml decided to fallback unit type.
-//
-//   1. When type variable is empty
-//   2. When the type variable appears in return type of external function symbol.
-//
-// For example, `print 42; ()` causes a type error such as 'type of $tmp1 is unknown'.
-// This is because it will be transformed to `let $tmp1 = print 42 in ()` and return
-// type of external function `print` is unknown.
-// To avoid kinds of this error, GoCaml decided to assign `()` to the return type.
-// Then $tmp can be inferred as `()`. $tmp1 is always unused variable. So it doesn't
-// cause any problem, I believe.
-//
-// (Test case: testdata/basic/external_func_unknown_ret_type.ml)
-func (d *typeVarDereferencer) fixExternalFuncRet(ret Type) Type {
-	for {
-		v, ok := ret.(*Var)
-		if !ok {
-			return ret
-		}
-		if v.Ref == nil {
-			if v.IsGeneric() {
-				return ret
-			}
-			return UnitType
-		}
-		ret = v.Ref
-	}
-}
-
-func (d *typeVarDereferencer) externalSymError(n string, t Type) {
-	d.errMsg(fmt.Sprintf("Cannot determine type of external symbol '%s'", n))
-	d.errMsg(fmt.Sprintf("Inferred as '%s'", t.String()))
-	d.errMsg("External symbol cannot be generic type")
-}
-
-func (d *typeVarDereferencer) derefExternalSym(name string, symType Type) Type {
-	switch ty := symType.(type) {
-	case *Var:
-		// Unwrap type variables: $($($(t))) -> t
-		if ty.Ref == nil {
-			d.externalSymError(name, symType)
-			return symType
-		}
-		return d.derefExternalSym(name, ty.Ref)
-	case *Fun:
-		ty.Ret = d.fixExternalFuncRet(ty.Ret)
-		t, ok := d.unwrapFun(ty)
-		if !ok {
-			d.externalSymError(name, symType)
-			return ty
-		}
-		return t
-	default:
-		t, ok := d.unwrap(symType)
-		if !ok {
-			d.externalSymError(name, symType)
-			return symType
-		}
-		return t
-	}
-}
-
 func (d *typeVarDereferencer) VisitTopdown(node ast.Expr) ast.Visitor {
 	switch n := node.(type) {
 	case *ast.Let:
@@ -323,9 +258,10 @@ RefLoop:
 
 func derefTypeVars(env *Env, root ast.Expr, inferred InferredTypes, ss schemes) *locerr.Error {
 	deref := &typeVarDereferencer{nil, env, inferred, ss}
-	for n, t := range env.Externals {
-		env.Externals[n] = deref.derefExternalSym(n, t)
-	}
+
+	// Note:
+	// Don't need to dereference types of external symbols because they must not contain any
+	// type variables.
 	ast.Visit(deref, root)
 
 	// Note:

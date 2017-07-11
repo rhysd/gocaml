@@ -24,8 +24,8 @@ type Inferer struct {
 }
 
 // NewInferer creates a new Inferer instance
-func NewInferer() *Inferer {
-	return &Inferer{NewEnv(), nil, map[ast.Expr]Type{}, map[Type]boundVarIDs{}}
+func NewInferer(env *Env) *Inferer {
+	return &Inferer{env, nil, map[ast.Expr]Type{}, map[Type]boundVarIDs{}}
 }
 
 func (inf *Inferer) generalize(t Type, level int) Type {
@@ -88,7 +88,7 @@ func (inf *Inferer) inferLogicalOp(op string, left, right ast.Expr, level int) (
 			return nil, err
 		}
 		if err := Unify(BoolType, t); err != nil {
-			return nil, err.In(e.Pos(), e.End()).NotefAt(e.Pos(), "Type mismatch at %dth operand of logical operator '%s'", i+1, op)
+			return nil, err.In(left.Pos(), right.End()).NotefAt(e.Pos(), "Type mismatch at %dth operand of logical operator '%s'", i+1, op)
 		}
 	}
 	return BoolType, nil
@@ -204,15 +204,10 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 			inf.Env.RefInsts[n] = inst
 			return inst.To, nil
 		}
-		if t, ok := inf.Env.Externals[n.Symbol.Name]; ok {
-			// External symbols are not permitted to be generic
-			return t, nil
+		if e, ok := inf.Env.Externals[n.Symbol.Name]; ok {
+			return e.Type, nil
 		}
-		// Assume as free variable. If free variable's type is not identified,
-		// It falls into compilation error
-		t := NewVar(nil, level)
-		inf.Env.Externals[n.Symbol.DisplayName] = t
-		return t, nil
+		panic("FATAL: Unknown symbol must be checked in alpha transform: " + n.Symbol.Name)
 	case *ast.LetRec:
 		// Note:
 		// LetRec is different from other Let or LetTuple because it may be recursive.
@@ -230,7 +225,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 			if p.Type != nil {
 				t, err = inf.conv.nodeToType(p.Type, level+1)
 				if err != nil {
-					return nil, locerr.NotefAt(p.Type.Pos(), err, "%s parameter of function", common.Ordinal(i+1))
+					return nil, locerr.NotefAt(p.Type.Pos(), err, "%s parameter of function '%s'", common.Ordinal(i+1), n.Func.Symbol.DisplayName)
 				}
 			} else {
 				t = NewVar(nil, level+1)
@@ -412,10 +407,10 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		for i, e := range n.Elems[1:] {
 			t, err := inf.infer(e, level)
 			if err != nil {
-				return nil, locerr.NotefAt(n.Pos(), err, "%s element type of array literal is incorrect", common.Ordinal(i+2))
+				return nil, locerr.NotefAt(e.Pos(), err, "%s element type of array literal is incorrect", common.Ordinal(i+2))
 			}
 			if err := Unify(elem, t); err != nil {
-				return nil, err.In(n.Pos(), n.End()).NotefAt(n.Pos(), "Mismatch between 1st element and %s element in array literal", common.Ordinal(i+2))
+				return nil, err.In(e.Pos(), e.End()).NotefAt(e.Pos(), "Mismatch between 1st element and %s element in array literal", common.Ordinal(i+2))
 			}
 		}
 		return &Array{elem}, nil
@@ -480,10 +475,26 @@ func (inf *Inferer) infer(e ast.Expr, level int) (Type, error) {
 // Infer infers types in given AST and returns error when detecting type errors
 func (inf *Inferer) Infer(parsed *ast.AST) error {
 	var err error
+
+	// TODO:
+	// Move creating inf.conv to newInferer(). newInferer should receive *ast.AST and make
+	// Inferer instance to call Infer().
 	inf.conv, err = newNodeTypeConv(parsed.TypeDecls)
 	if err != nil {
 		return err
 	}
+
+	inf.conv.acceptsAnyType = false
+	for _, ext := range parsed.Externals {
+		t, err := inf.conv.nodeToType(ext.Type, -1)
+		if err != nil {
+			err = locerr.NotefAt(ext.Pos(), err, "Invalid type annotation at 'external' declaration '%s'", ext.Ident.Name)
+			err = locerr.NoteAt(ext.Pos(), err, "'_' is not permitted in type of external symbol")
+			return err
+		}
+		inf.Env.Externals[ext.Ident.Name] = &External{t, ext.C}
+	}
+	inf.conv.acceptsAnyType = true
 
 	root, err := inf.infer(parsed.Root, 0)
 	if err != nil {

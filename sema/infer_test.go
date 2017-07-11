@@ -2,6 +2,7 @@ package sema
 
 import (
 	"github.com/rhysd/gocaml/syntax"
+	"github.com/rhysd/gocaml/types"
 	"github.com/rhysd/locerr"
 	"path/filepath"
 	"strings"
@@ -26,16 +27,12 @@ func TestEdgeCases(t *testing.T) {
 			if err != nil {
 				panic(err)
 			}
-			if err = AlphaTransform(ast); err != nil {
+			env := types.NewEnv()
+			if err = AlphaTransform(ast, env); err != nil {
 				panic(err)
 			}
-			i := NewInferer()
-			i.conv, err = newNodeTypeConv(ast.TypeDecls)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = i.infer(ast.Root, 0)
-			if err != nil {
+			i := NewInferer(env)
+			if err := i.Infer(ast); err != nil {
 				t.Fatalf("Type check raised an error for code '%s': %s", tc.code, err.Error())
 			}
 		})
@@ -319,6 +316,11 @@ func TestUnificationFailure(t *testing.T) {
 			expected: "Return type of function",
 		},
 		{
+			what:     "Type mismatch at return type (2)",
+			code:     "let rec f x = -x in (f : int -> float)",
+			expected: "On unifying functions' return types of 'int -> float' and 'int -> int'",
+		},
+		{
 			what:     "Invalid parameter type",
 			code:     "let rec f (x:(int, int) array) = x in f",
 			expected: "1st parameter of function",
@@ -373,6 +375,11 @@ func TestUnificationFailure(t *testing.T) {
 			code:     "42",
 			expected: "Type of root expression of program must be unit",
 		},
+		{
+			what:     "invalid ret type annotation",
+			code:     "let rec f x: (int, bool) array = x in f 10",
+			expected: "Return type of function 'f'",
+		},
 	}
 
 	for _, testcase := range testcases {
@@ -382,10 +389,11 @@ func TestUnificationFailure(t *testing.T) {
 			if err != nil {
 				panic(err)
 			}
-			if err = AlphaTransform(ast); err != nil {
+			env := types.NewEnv()
+			if err := AlphaTransform(ast, env); err != nil {
 				t.Fatal(err)
 			}
-			i := NewInferer()
+			i := NewInferer(env)
 			err = i.Infer(ast)
 			if err == nil {
 				t.Fatal("Error should occur:", testcase.code)
@@ -418,18 +426,56 @@ func TestInferSuccess(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err = AlphaTransform(ast); err != nil {
+			env := types.NewEnv()
+			if err := AlphaTransform(ast, env); err != nil {
 				t.Fatal(err)
 			}
-			i := NewInferer()
-			i.conv, err = newNodeTypeConv(ast.TypeDecls)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = i.infer(ast.Root, 0)
-			if err != nil {
+			i := NewInferer(env)
+			if err := i.Infer(ast); err != nil {
 				t.Fatal(err)
 			}
 		})
+	}
+}
+
+func TestTypeDeclError(t *testing.T) {
+	s := locerr.NewDummySource("type foo = (int, bool) array; ()")
+	tree, err := syntax.Parse(s)
+	if err != nil {
+		panic(err)
+	}
+	env := types.NewEnv()
+	if err := AlphaTransform(tree, env); err != nil {
+		t.Fatal(err)
+	}
+	i := NewInferer(env)
+	err = i.Infer(tree)
+	if err == nil {
+		t.Fatal("Error should have occurred")
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, "Invalid array type") {
+		t.Fatal("Unexpected error message:", msg)
+	}
+}
+
+func TestExternalDeclError(t *testing.T) {
+	s := locerr.NewDummySource(`external foo: _ = "c_foo"; ()`)
+	tree, err := syntax.Parse(s)
+	if err != nil {
+		panic(err)
+	}
+	env := types.NewEnv()
+	if err := AlphaTransform(tree, env); err != nil {
+		t.Fatal(err)
+	}
+	i := NewInferer(env)
+	err = i.Infer(tree)
+	if err == nil {
+		t.Fatal("Error should have occurred")
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, "'_' is not permitted for type annotation in this context") {
+		t.Fatal("Unexpected error message:", msg)
 	}
 }

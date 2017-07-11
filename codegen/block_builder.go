@@ -372,13 +372,16 @@ func (b *blockBuilder) buildVal(ident string, val mir.Val) llvm.Value {
 		argVals := make([]llvm.Value, 0, argsLen)
 
 		table := b.funcTable
+		callee := val.Callee
 		if val.Kind == mir.EXTERNAL_CALL {
 			table = b.globalTable
+			callee = b.env.Externals[val.Callee].C
 		}
+
 		// Find function pointer for invoking a function directly
-		funVal, funFound := table[val.Callee]
+		funVal, funFound := table[callee]
 		if !funFound && val.Kind != mir.CLOSURE_CALL {
-			panic("Value for function is not found in table: " + val.Callee)
+			panic("Value for function is not found in table: " + callee)
 		}
 
 		if val.Kind == mir.CLOSURE_CALL {
@@ -515,23 +518,23 @@ func (b *blockBuilder) buildVal(ident string, val mir.Val) llvm.Value {
 		fromVal := b.resolve(val.Array)
 		return b.builder.CreateExtractValue(fromVal, 1, "arrsize")
 	case *mir.XRef:
-		ty, ok := b.env.Externals[val.Ident]
+		ext, ok := b.env.Externals[val.Ident]
 		if !ok {
 			panic("Type for external value not found: " + val.Ident)
 		}
 
-		funTy, ok := ty.(*types.Fun)
+		funTy, ok := ext.Type.(*types.Fun)
 		if !ok {
-			x, ok := b.globalTable[val.Ident]
+			x, ok := b.globalTable[ext.C]
 			if !ok {
-				panic("Value for external value not found: " + val.Ident)
+				panic("Value for external value not found: " + ext.C)
 			}
 			return b.builder.CreateLoad(x, val.Ident)
 		}
 
 		// When external function is used as variable, it must be wrapped as closure
 		// instead of global value itself.
-		funVal := b.buildExternalClosureWrapper(val.Ident, funTy)
+		funVal := b.buildExternalClosureWrapper(val.Ident, funTy, ext.C)
 		clsTy := b.context.StructType([]llvm.Type{funVal.Type(), b.typeBuilder.voidPtrT}, false /*packed*/)
 		alloc := b.buildAlloca(clsTy, "")
 		funPtr := b.builder.CreateStructGEP(alloc, 0, "")

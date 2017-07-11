@@ -133,7 +133,7 @@ func (b *moduleBuilder) dispose() {
 // This is necessary when the external symbol function is used as a variable.
 // In GoCaml, all function variable falls back into closure value.
 // External symbol function should also be closure in the case.
-func (b *moduleBuilder) buildExternalClosureWrapper(funName string, ty *types.Fun) llvm.Value {
+func (b *moduleBuilder) buildExternalClosureWrapper(funName string, ty *types.Fun, cName string) llvm.Value {
 	name := funName + "$closure"
 	if f, ok := b.funcTable[name]; ok {
 		return f
@@ -154,9 +154,9 @@ func (b *moduleBuilder) buildExternalClosureWrapper(funName string, ty *types.Fu
 	val.AddFunctionAttr(b.attributes["disable-tail-calls"])
 	b.funcTable[name] = val
 
-	extFunVal, ok := b.globalTable[funName]
+	extFunVal, ok := b.globalTable[cName]
 	if !ok {
-		panic("No external symbol for closure wrapper not found: " + funName)
+		panic("No external symbol for closure wrapper not found: " + cName)
 	}
 
 	// Build definition of closure wrapper
@@ -179,22 +179,22 @@ func (b *moduleBuilder) buildExternalClosureWrapper(funName string, ty *types.Fu
 	return val
 }
 
-func (b *moduleBuilder) buildExternalDecl(name string, from types.Type) {
-	switch ty := from.(type) {
+func (b *moduleBuilder) buildExternalDecl(ext *types.External) {
+	switch ty := ext.Type.(type) {
 	case *types.Var:
-		panic("unreachable") // because type variables are dereferenced at type analysis
+		panic("unreachable")
 	case *types.Fun:
 		// Make a declaration for the external symbol function
 		tyVal := b.typeBuilder.buildExternalFun(ty)
-		val := llvm.AddFunction(b.module, name, tyVal)
+		val := llvm.AddFunction(b.module, ext.C, tyVal)
 		val.SetLinkage(llvm.ExternalLinkage)
 		val.AddFunctionAttr(b.attributes["disable-tail-calls"])
-		b.globalTable[name] = val
+		b.globalTable[ext.C] = val
 	default:
-		t := b.typeBuilder.fromMIR(from)
-		v := llvm.AddGlobal(b.module, t, name)
+		t := b.typeBuilder.fromMIR(ty)
+		v := llvm.AddGlobal(b.module, t, ext.C)
 		v.SetLinkage(llvm.ExternalLinkage)
-		b.globalTable[name] = v
+		b.globalTable[ext.C] = v
 	}
 }
 
@@ -371,8 +371,8 @@ func (b *moduleBuilder) build(prog *mir.Program) error {
 	b.funcTable = make(map[string]llvm.Value, len(prog.Toplevel)+len(b.env.Externals))
 
 	b.buildLibgcFuncDecls()
-	for name, ty := range b.env.Externals {
-		b.buildExternalDecl(name, ty)
+	for _, ext := range b.env.Externals {
+		b.buildExternalDecl(ext)
 	}
 
 	b.closures = prog.Closures

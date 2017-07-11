@@ -61,6 +61,7 @@ const (
 	BAR_RBRACKET
 	LBRACKET
 	RBRACKET
+	EXTERNAL
 	EOF
 )
 
@@ -118,6 +119,7 @@ var tokenTable = [...]string{
 	BAR_RBRACKET:   "|]",
 	LBRACKET:       "[",
 	RBRACKET:       "]",
+	EXTERNAL:       "external",
 }
 
 // Token instance for GoCaml.

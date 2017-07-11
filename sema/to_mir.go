@@ -45,7 +45,7 @@ func (e *emitter) emitLetInsn(node *ast.Let) *mir.Insn {
 	// TODO: Do not emit insn if it's unused generic decl
 
 	// Note:
-	// Instroduce shortcut about symbol to reduce number of instruction nodes.
+	// Introduce shortcut about symbol to reduce number of instruction nodes.
 	//
 	// Before:
 	//   $k1 = some_insn
@@ -53,14 +53,14 @@ func (e *emitter) emitLetInsn(node *ast.Let) *mir.Insn {
 	//
 	// After:
 	//   $sym$t1 = some_insn
+	//
+	// Here `$k1` is `bound.Ident`.
 	bound := e.emitInsn(node.Bound)
-	t, found := e.env.DeclTable[bound.Ident]
+	t, _ := e.env.DeclTable[bound.Ident]
 	delete(e.env.DeclTable, bound.Ident)
 
 	bound.Ident = node.Symbol.Name
-	if found {
-		e.env.DeclTable[bound.Ident] = t
-	}
+	e.env.DeclTable[bound.Ident] = t
 
 	body := e.emitInsn(node.Body)
 	body.Append(bound)
@@ -73,7 +73,6 @@ func (e *emitter) emitFunInsn(node *ast.LetRec) *mir.Insn {
 	name := node.Func.Symbol.Name
 	ty, ok := e.env.DeclTable[name]
 	if !ok {
-		// Note: Symbol in LetRec cannot be an external symbol.
 		panic("FATAL: Unknown function: " + name)
 	}
 

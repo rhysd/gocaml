@@ -21,6 +21,11 @@ type Instantiation struct {
 	Mapping []*VarMapping
 }
 
+type External struct {
+	Type Type
+	C    string
+}
+
 // Result of type analysis.
 type Env struct {
 	// Types for declarations. This is referred by type variables to resolve
@@ -38,7 +43,7 @@ type Env struct {
 	DeclTable map[string]Type
 	// External variable names which are referred but not defined.
 	// External variables are exposed as external symbols in other object files.
-	Externals map[string]Type
+	Externals map[string]*External
 	// GoCaml uses let-polymorphic type inference. It means that instantiation occurs when new
 	// symbol is introduced. So instantiation only occurs at variable reference.
 	RefInsts map[*ast.VarRef]*Instantiation
@@ -81,8 +86,8 @@ func (env *Env) DumpVariables() {
 
 func (env *Env) DumpExternals() {
 	fmt.Println("External Variables:")
-	for s, t := range env.Externals {
-		fmt.Printf("  %s: %s\n", s, t.String())
+	for s, e := range env.Externals {
+		fmt.Printf("  %s: %s (=> %s)\n", s, e.Type.String(), e.C)
 	}
 }
 

@@ -39,6 +39,7 @@ import (
 type AST struct {
 	Root      Expr
 	TypeDecls []*TypeDecl
+	Externals []*External
 }
 
 func (a *AST) File() *locerr.Source {
@@ -314,6 +315,14 @@ type (
 		Token *token.Token
 		Ident *Symbol
 		Type  Expr
+	}
+
+	External struct {
+		StartToken *token.Token
+		EndToken   *token.Token
+		Ident      *Symbol
+		Type       Expr
+		C          string
 	}
 )
 
@@ -645,6 +654,13 @@ func (e *TypeDecl) End() locerr.Pos {
 	return e.Type.End()
 }
 
+func (e *External) Pos() locerr.Pos {
+	return e.StartToken.Start
+}
+func (e *External) End() locerr.Pos {
+	return e.EndToken.End
+}
+
 func (e *Unit) Name() string      { return "Unit" }
 func (e *Bool) Name() string      { return "Bool" }
 func (e *Int) Name() string       { return "Int" }
@@ -708,3 +724,4 @@ func (e *CtorType) Name() string {
 }
 func (e *Typed) Name() string    { return "Typed" }
 func (e *TypeDecl) Name() string { return fmt.Sprintf("TypeDecl (%s)", e.Ident.Name) }
+func (e *External) Name() string { return fmt.Sprintf("External (%s => %s)", e.Ident.Name, e.C) }

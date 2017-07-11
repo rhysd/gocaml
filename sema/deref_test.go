@@ -69,117 +69,6 @@ func TestUnwrapEmptyTypeVar(t *testing.T) {
 	}
 }
 
-func TestUnwrapExternalSimpleTypes(t *testing.T) {
-	v := &typeVarDereferencer{
-		nil,
-		NewEnv(),
-		map[ast.Expr]Type{},
-		schemes{},
-	}
-	for _, ty := range []Type{
-		UnitType,
-		IntType,
-		FloatType,
-		BoolType,
-		&Tuple{
-			[]Type{
-				UnitType,
-				IntType,
-				&Tuple{
-					[]Type{FloatType, IntType},
-				},
-				&Array{IntType},
-				&Option{IntType},
-				&Option{&Option{&Array{IntType}}},
-			},
-		},
-		&Fun{IntType, []Type{FloatType, BoolType}},
-	} {
-		a := v.derefExternalSym("test", ty)
-		if a != ty {
-			t.Errorf("It must be %s but actually %s", ty.String(), a.String())
-		}
-		if v.err != nil {
-			t.Errorf("Unexpected error at %s: %s", ty.String(), v.err.Error())
-		}
-	}
-}
-
-func TestUnwrapTypeVarsInExternals(t *testing.T) {
-	v := &typeVarDereferencer{
-		nil,
-		NewEnv(),
-		map[ast.Expr]Type{},
-		schemes{},
-	}
-	for _, tc := range []struct {
-		input    Type
-		expected Type
-	}{
-		{varT(UnitType), UnitType},
-		{varT(varT(IntType)), IntType},
-		{&Tuple{[]Type{varT(FloatType), varT(IntType)}}, &Tuple{[]Type{FloatType, IntType}}},
-		{&Array{varT(&Tuple{[]Type{varT(IntType), UnitType}})}, &Array{&Tuple{[]Type{IntType, UnitType}}}},
-		{&Option{varT(&Option{varT(IntType)})}, &Option{&Option{IntType}}},
-	} {
-		actual := v.derefExternalSym("test", tc.input)
-		if !Equals(actual, tc.expected) {
-			t.Errorf("Expected dereferenced type to be '%s' but actually '%s'", tc.expected.String(), actual.String())
-		}
-		if v.err != nil {
-			t.Errorf("Unexpected error at type %s: %s", tc.input.String(), v.err.Error())
-		}
-	}
-}
-
-func TestRaiseErrorOnUnknownTypeInExternals(t *testing.T) {
-	v := &typeVarDereferencer{
-		nil,
-		NewEnv(),
-		map[ast.Expr]Type{},
-		schemes{},
-	}
-	for _, ty := range []Type{
-		varT(nil),
-		varT(varT(nil)),
-		&Tuple{[]Type{IntType, varT(nil)}},
-		&Array{varT(nil)},
-		&Fun{IntType, []Type{varT(varT(nil))}},
-		&Fun{&Array{varT(nil)}, []Type{}},
-		&Option{varT(nil)},
-		&Fun{&Option{varT(nil)}, []Type{}},
-	} {
-		v.derefExternalSym("test", ty)
-		if v.err == nil {
-			t.Errorf("Error should be raised for dereferencing external's type %s", ty.String())
-		}
-	}
-}
-
-func TestFixReturnTypeOfExternalFunction(t *testing.T) {
-	v := &typeVarDereferencer{
-		nil,
-		NewEnv(),
-		map[ast.Expr]Type{},
-		schemes{},
-	}
-	for _, ty := range []Type{
-		&Fun{varT(nil), []Type{}},
-		&Fun{varT(varT(nil)), []Type{IntType}},
-		varT(&Fun{varT(nil), []Type{FloatType}}),
-	} {
-		derefed := v.derefExternalSym("test", ty)
-		f, ok := derefed.(*Fun)
-		if !ok {
-			t.Errorf("It must be dereferenced as function but actually %s", derefed.String())
-			continue
-		}
-		if _, ok := f.Ret.(*Unit); !ok {
-			t.Errorf("Return type must be fixed to unit but actually %s", f.Ret.String())
-		}
-	}
-}
-
 func TestMiscCheckError(t *testing.T) {
 	cases := []struct {
 		what     string
@@ -215,11 +104,13 @@ func TestMiscCheckError(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err = AlphaTransform(parsed); err != nil {
+
+			env := NewEnv()
+			if err := AlphaTransform(parsed, env); err != nil {
 				t.Fatal(err)
 			}
 
-			inf := NewInferer()
+			inf := NewInferer(env)
 
 			// inf.Infer() invokes type dereferences
 			err = inf.Infer(parsed)

@@ -14,10 +14,11 @@ func testInferCodeWithoutConv(code string) (types.Type, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := AlphaTransform(ast); err != nil {
+	env := types.NewEnv()
+	if err := AlphaTransform(ast, env); err != nil {
 		return nil, err
 	}
-	i := NewInferer()
+	i := NewInferer(env)
 	// nodeTypeConv is unnecessary because no type annotation is contained in test cases
 	return i.infer(ast.Root, 0)
 }

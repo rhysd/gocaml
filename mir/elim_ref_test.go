@@ -282,7 +282,7 @@ func TestEliminatingRefNew(t *testing.T) {
 				env.DeclTable[i] = t
 			}
 			for i, t := range tc.ext {
-				env.Externals[i] = t
+				env.Externals[i] = &types.External{t, i}
 			}
 			block := NewBlockFromArray("PROGRAM", tc.block)
 

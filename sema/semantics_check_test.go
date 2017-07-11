@@ -10,7 +10,7 @@ import (
 )
 
 func TestResolvedSymbols(t *testing.T) {
-	s := locerr.NewDummySource("let x = 1 in x + y; ()")
+	s := locerr.NewDummySource(`external y: int = "c_y"; let x = 1 in x + y; ()`)
 	ast, err := syntax.Parse(s)
 	if err != nil {
 		panic(ast.Root)
@@ -49,7 +49,7 @@ func TestTypeCheckMinCamlTests(t *testing.T) {
 
 			ast, err := syntax.Parse(s)
 			if err != nil {
-				panic(ast.Root)
+				t.Fatal(err)
 			}
 
 			_, _, err = SemanticsCheck(ast)

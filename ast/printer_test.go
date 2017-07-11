@@ -247,6 +247,30 @@ func TestPrintAST(t *testing.T) {
 				},
 			},
 		},
+		Externals: []*External{
+			{
+				tok,
+				tok,
+				NewSymbol("cfun"),
+				&FuncType{
+					[]Expr{
+						&CtorType{
+							nil,
+							tok,
+							nil,
+							NewSymbol("int"),
+						},
+					},
+					&CtorType{
+						nil,
+						tok,
+						nil,
+						NewSymbol("bool"),
+					},
+				},
+				"c_level_fun",
+			},
+		},
 	}
 
 	old := os.Stdout
@@ -267,6 +291,10 @@ func TestPrintAST(t *testing.T) {
 	expected := `AST for <dummy>:
 -   TypeDecl (mytype) (0:0-0:0)
 -   -   CtorType (bool) (0:0-0:0)
+-   External (cfun => c_level_fun) (0:0-0:0)
+-   -   FuncType (0:0-0:0)
+-   -   -   CtorType (int) (0:0-0:0)
+-   -   -   CtorType (bool) (0:0-0:0)
 -   Let (foo) (0:0-0:0)
 -   -   FuncType (0:0-0:0)
 -   -   -   CtorType (int) (0:0-0:0)
