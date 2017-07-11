@@ -119,10 +119,10 @@ func Visit(vis Visitor, e Expr) {
 		Visit(v, n.Elem)
 	case *ArraySize:
 		Visit(v, n.Target)
-	case *Get:
+	case *ArrayGet:
 		Visit(v, n.Array)
 		Visit(v, n.Index)
-	case *Put:
+	case *ArrayPut:
 		Visit(v, n.Array)
 		Visit(v, n.Index)
 		Visit(v, n.Assignee)

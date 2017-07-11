@@ -243,7 +243,7 @@ exp:
 	| LET LPAREN pat RPAREN type_annotation EQUAL seq_exp IN seq_exp
 		{ $$ = &ast.LetTuple{$1, $3, $7, $9, $5} }
 	| simple_exp DOT LPAREN exp RPAREN LESS_MINUS exp
-		{ $$ = &ast.Put{$1, $4, $7} }
+		{ $$ = &ast.ArrayPut{$1, $4, $7} }
 	| ARRAY_MAKE simple_exp simple_exp
 		%prec prec_app
 		{ $$ = &ast.ArrayMake{$1, $2, $3} }
@@ -354,7 +354,7 @@ simple_exp:
 	| IDENT
 		{ $$ = &ast.VarRef{$1, ast.NewSymbol($1.Value())} }
 	| simple_exp DOT LPAREN exp RPAREN
-		{ $$ = &ast.Get{$1, $4} }
+		{ $$ = &ast.ArrayGet{$1, $4} }
 
 match_arm_start:
 	WITH BAR | WITH

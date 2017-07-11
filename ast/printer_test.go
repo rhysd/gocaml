@@ -81,7 +81,7 @@ func TestPrintAST(t *testing.T) {
 					},
 				},
 				&FMul{
-					&Get{
+					&ArrayGet{
 						&ArrayMake{
 							tok,
 							&Int{tok, 42},
@@ -89,7 +89,7 @@ func TestPrintAST(t *testing.T) {
 						},
 						&Int{tok, 1},
 					},
-					&Put{
+					&ArrayPut{
 						&ArrayLit{
 							tok,
 							tok,
@@ -332,12 +332,12 @@ func TestPrintAST(t *testing.T) {
 -   -   -   -   -   -   -   Bool (0:0-0:0)
 -   -   -   -   -   -   -   CtorType (bool) (0:0-0:0)
 -   -   -   -   FMul (0:0-0:0)
--   -   -   -   -   Get (0:0-0:0)
+-   -   -   -   -   ArrayGet (0:0-0:0)
 -   -   -   -   -   -   ArrayCreate (0:0-0:0)
 -   -   -   -   -   -   -   Int (0:0-0:0)
 -   -   -   -   -   -   -   Bool (0:0-0:0)
 -   -   -   -   -   -   Int (0:0-0:0)
--   -   -   -   -   Put (0:0-0:0)
+-   -   -   -   -   ArrayPut (0:0-0:0)
 -   -   -   -   -   -   ArrayLit (3) (0:0-0:0)
 -   -   -   -   -   -   -   Int (0:0-0:0)
 -   -   -   -   -   -   -   Int (0:0-0:0)

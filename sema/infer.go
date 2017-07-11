@@ -328,7 +328,7 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 			return nil, err
 		}
 		return IntType, nil
-	case *ast.Get:
+	case *ast.ArrayGet:
 		// Lhs of Get must be array but its element type is unknown.
 		// So introduce new type variable for it.
 		elem := &Var{}
@@ -343,7 +343,7 @@ func (inf *Inferer) unification(e ast.Expr) (Type, error) {
 		}
 
 		return elem, nil
-	case *ast.Put:
+	case *ast.ArrayPut:
 		if err := inf.checkNodeType("index at assignment to an element of array", n.Index, IntType); err != nil {
 			return nil, err
 		}
