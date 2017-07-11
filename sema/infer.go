@@ -363,7 +363,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 			return nil, err
 		}
 		return IntType, nil
-	case *ast.Get:
+	case *ast.ArrayGet:
 		// Lhs of Get must be array but its element type is unknown.
 		// So introduce new type variable for it.
 		elem := NewVar(nil, level)
@@ -378,7 +378,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		}
 
 		return elem, nil
-	case *ast.Put:
+	case *ast.ArrayPut:
 		if err := inf.checkNodeType("index at assignment to an element of array", n.Index, IntType, level); err != nil {
 			return nil, err
 		}

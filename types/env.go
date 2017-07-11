@@ -22,8 +22,8 @@ type Instantiation struct {
 }
 
 type External struct {
-	Type Type
-	C    string
+	Type  Type
+	CName string
 }
 
 // Result of type analysis.
@@ -87,7 +87,7 @@ func (env *Env) DumpVariables() {
 func (env *Env) DumpExternals() {
 	fmt.Println("External Variables:")
 	for s, e := range env.Externals {
-		fmt.Printf("  %s: %s (=> %s)\n", s, e.Type.String(), e.C)
+		fmt.Printf("  %s: %s (=> %s)\n", s, e.Type.String(), e.CName)
 	}
 }
 

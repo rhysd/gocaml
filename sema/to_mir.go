@@ -271,12 +271,12 @@ func (e *emitter) emitInsn(node ast.Expr) *mir.Insn {
 		elem := e.emitInsn(n.Elem)
 		elem.Append(size)
 		return e.insn(&mir.Array{size.Ident, elem.Ident}, elem, node)
-	case *ast.Get:
+	case *ast.ArrayGet:
 		array := e.emitInsn(n.Array)
 		index := e.emitInsn(n.Index)
 		index.Append(array)
 		return e.insn(&mir.ArrLoad{array.Ident, index.Ident}, index, node)
-	case *ast.Put:
+	case *ast.ArrayPut:
 		array := e.emitInsn(n.Array)
 		index := e.emitInsn(n.Index)
 		index.Append(array)

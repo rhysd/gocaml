@@ -186,15 +186,15 @@ func (b *moduleBuilder) buildExternalDecl(ext *types.External) {
 	case *types.Fun:
 		// Make a declaration for the external symbol function
 		tyVal := b.typeBuilder.buildExternalFun(ty)
-		val := llvm.AddFunction(b.module, ext.C, tyVal)
+		val := llvm.AddFunction(b.module, ext.CName, tyVal)
 		val.SetLinkage(llvm.ExternalLinkage)
 		val.AddFunctionAttr(b.attributes["disable-tail-calls"])
-		b.globalTable[ext.C] = val
+		b.globalTable[ext.CName] = val
 	default:
 		t := b.typeBuilder.fromMIR(ty)
-		v := llvm.AddGlobal(b.module, t, ext.C)
+		v := llvm.AddGlobal(b.module, t, ext.CName)
 		v.SetLinkage(llvm.ExternalLinkage)
-		b.globalTable[ext.C] = v
+		b.globalTable[ext.CName] = v
 	}
 }
 

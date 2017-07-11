@@ -258,11 +258,11 @@ type (
 		Target     Expr
 	}
 
-	Get struct {
+	ArrayGet struct {
 		Array, Index Expr
 	}
 
-	Put struct {
+	ArrayPut struct {
 		Array, Index, Assignee Expr
 	}
 
@@ -567,17 +567,17 @@ func (e *ArraySize) End() locerr.Pos {
 	return e.Target.End()
 }
 
-func (e *Get) Pos() locerr.Pos {
+func (e *ArrayGet) Pos() locerr.Pos {
 	return e.Array.Pos()
 }
-func (e *Get) End() locerr.Pos {
+func (e *ArrayGet) End() locerr.Pos {
 	return e.Index.End()
 }
 
-func (e *Put) Pos() locerr.Pos {
+func (e *ArrayPut) Pos() locerr.Pos {
 	return e.Array.Pos()
 }
-func (e *Put) End() locerr.Pos {
+func (e *ArrayPut) End() locerr.Pos {
 	return e.Assignee.End()
 }
 
@@ -707,8 +707,8 @@ func (e *LetTuple) Name() string {
 }
 func (e *ArrayMake) Name() string { return "ArrayCreate" }
 func (e *ArraySize) Name() string { return "ArraySize" }
-func (e *Get) Name() string       { return "Get" }
-func (e *Put) Name() string       { return "Put" }
+func (e *ArrayGet) Name() string  { return "ArrayGet" }
+func (e *ArrayPut) Name() string  { return "ArrayPut" }
 func (e *Match) Name() string     { return fmt.Sprintf("Match (%s)", e.SomeIdent.DisplayName) }
 func (e *Some) Name() string      { return "Some" }
 func (e *None) Name() string      { return "None" }
