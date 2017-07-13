@@ -22,8 +22,6 @@ SRCS := \
 	sema/to_mir.go \
 	sema/alpha_transform.go \
 	sema/scope.go \
-	sema/poly_env.go \
-	sema/tmp_poly_variant.go \
 	mir/val.go \
 	mir/block.go \
 	mir/printer.go \
