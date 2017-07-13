@@ -272,5 +272,7 @@ func derefTypeVars(env *Env, root ast.Expr, inferred InferredTypes, ss schemes) 
 
 	deref.normalizePolyTypes()
 
+	tmpPolyVisit(root, env, ss)
+
 	return nil
 }
