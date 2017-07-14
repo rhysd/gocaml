@@ -253,7 +253,7 @@ RefLoop:
 		}
 		polys[inst.From] = append(insts, inst)
 	}
-	d.env.PolyTypes = polys
+	d.env.PolyVariants = polys
 }
 
 func derefTypeVars(env *Env, root ast.Expr, inferred InferredTypes, ss schemes) *locerr.Error {

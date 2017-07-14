@@ -117,6 +117,19 @@ func NewGeneric() *Var {
 	return &Var{nil, GenericLevel, currentVarID}
 }
 
+// PolyTag is a special type to represent which variant polymorphic type has.
+type PolyTag struct {
+	Variants []*Instantiation
+}
+
+// PolyTag must be root of type tree. So toString doesn't need to support PolyTag.
+func (t *PolyTag) String() string {
+	if len(t.Variants) == 0 {
+		return "polytag(?)"
+	}
+	return fmt.Sprintf("polytag(%s)", t.Variants[0].From.String())
+}
+
 // Make singleton type values because it doesn't have any contextual information
 var (
 	UnitType   = &Unit{}
@@ -235,6 +248,9 @@ func (toStr *toString) ofVar(v *Var) string {
 
 // Debug represents the given type as string with detailed type variable information.
 func Debug(t Type) string {
+	if tag, ok := t.(*PolyTag); ok {
+		return tag.String()
+	}
 	tos := &toString{map[VarID]string{}, 0, 'a', true}
 	return tos.ofType(t)
 }

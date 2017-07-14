@@ -19,6 +19,7 @@ SRCS := \
 	sema/infer.go \
 	sema/node_to_type.go \
 	sema/semantics_check.go \
+	sema/poly_context.go \
 	sema/to_mir.go \
 	sema/alpha_transform.go \
 	sema/scope.go \
