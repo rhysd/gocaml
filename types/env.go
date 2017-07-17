@@ -52,7 +52,7 @@ type Env struct {
 	//   'a -> 'a => {int -> int, bool -> bool, float -> float}
 	//
 	// Note: This is set in sema/deref.go
-	PolyVariants map[Type][]*Instantiation
+	PolyTypes map[Type][]*Instantiation
 }
 
 // NewEnv creates empty Env instance.
@@ -102,7 +102,7 @@ func (env *Env) DumpInstantiations() {
 
 func (env *Env) DumpPolyTypes() {
 	fmt.Println("PolyTypes:")
-	for t, insts := range env.PolyVariants {
+	for t, insts := range env.PolyTypes {
 		fmt.Printf("  '%s' (%d instances) =>\n", t.String(), len(insts))
 		for i, inst := range insts {
 			fmt.Printf("    %d: %s\n", i, inst.To.String())
@@ -126,7 +126,7 @@ func (env *Env) DumpDebug() {
 	}
 	fmt.Println()
 	fmt.Println("PolyTypes:")
-	for t, insts := range env.PolyVariants {
+	for t, insts := range env.PolyTypes {
 		fmt.Printf("  '%s' (%d instance(s)) =>\n", Debug(t), len(insts))
 		for i, inst := range insts {
 			fmt.Printf("    %d: %s\n", i, Debug(inst.To))

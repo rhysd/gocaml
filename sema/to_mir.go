@@ -10,9 +10,9 @@ import (
 // Convert AST into MIR with K-Normalization
 
 type emitter struct {
-	count uint
-	env   *types.Env
-	poly  *polyContext
+	count    uint
+	env      *types.Env
+	inferred InferredTypes
 }
 
 func (e *emitter) genID() string {
@@ -20,9 +20,17 @@ func (e *emitter) genID() string {
 	return fmt.Sprintf("$k%d", e.count)
 }
 
+func (e *emitter) typeOf(node ast.Expr) types.Type {
+	t, ok := e.inferred[node]
+	if !ok {
+		panic("FATAL: Type was not inferred for node '" + node.Name() + "' at " + node.Pos().String())
+	}
+	return t
+}
+
 func (e *emitter) insn(val mir.Val, prev *mir.Insn, node ast.Expr) *mir.Insn {
 	id := e.genID()
-	e.env.DeclTable[id] = e.poly.typeOf(node)
+	e.env.DeclTable[id] = e.typeOf(node)
 	return mir.Concat(mir.NewInsn(id, val, node.Pos()), prev)
 }
 
@@ -119,7 +127,7 @@ func (e *emitter) emitLetTupleInsn(node *ast.LetTuple) *mir.Insn {
 	}
 
 	bound := e.emitInsn(node.Bound)
-	boundTy, ok := e.poly.typeOf(node.Bound).(*types.Tuple)
+	boundTy, ok := e.typeOf(node.Bound).(*types.Tuple)
 	if !ok {
 		panic("FATAL: LetTuple node did not bind symbols to tuple value")
 	}
@@ -303,6 +311,6 @@ func (e *emitter) emitBlock(name string, node ast.Expr) *mir.Block {
 
 // ToMIR converts given AST into MIR with type environment
 func ToMIR(root ast.Expr, env *types.Env, inferred InferredTypes) *mir.Block {
-	e := &emitter{0, env, newPolyContext(env, inferred)}
+	e := &emitter{0, env, inferred}
 	return e.emitBlock("program", root)
 }
