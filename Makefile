@@ -30,6 +30,7 @@ SRCS := \
 	closure/transform.go \
 	closure/freevars.go \
 	closure/post_process.go \
+	mono/monomorphize.go \
 	codegen/emitter.go \
 	codegen/module_builder.go \
 	codegen/type_builder.go \
@@ -94,7 +95,7 @@ test: $(TESTS)
 
 cover.out: $(TESTS)
 	go get github.com/haya14busa/goverage
-	goverage -coverprofile=cover.out -covermode=count ./ast ./mir ./closure ./syntax ./token ./sema ./codegen ./common
+	goverage -coverprofile=cover.out -covermode=count ./ast ./mir ./closure ./syntax ./token ./sema ./codegen ./common ./mono
 
 cov: cover.out
 	go get golang.org/x/tools/cmd/cover
