@@ -2,7 +2,6 @@ package mir
 
 import (
 	"fmt"
-	"github.com/rhysd/gocaml/types"
 	"io"
 	"strconv"
 	"strings"
@@ -116,20 +115,19 @@ type (
 		Callee string
 		Args   []string
 		Kind   AppKind
-		Inst   *types.Instantiation
 	}
 	Tuple struct {
 		Elems []string
+	}
+	TplLoad struct { // Used for each element of LetTuple
+		From  string
+		Index int
 	}
 	Array struct {
 		Size, Elem string
 	}
 	ArrLit struct {
 		Elems []string
-	}
-	TplLoad struct { // Used for each element of LetTuple
-		From  string
-		Index int
 	}
 	ArrLoad struct {
 		From, Index string

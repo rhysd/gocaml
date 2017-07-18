@@ -74,6 +74,14 @@ func NewBlock(name string, top, bottom *Insn) *Block {
 	return &Block{start, end, name}
 }
 
+func NewEmptyBlock(name string) *Block {
+	start := &Insn{"", NOPVal, nil, nil, locerr.Pos{}}
+	end := &Insn{"", NOPVal, nil, nil, locerr.Pos{}}
+	start.Next = end
+	end.Prev = start
+	return &Block{start, end, name}
+}
+
 func NewBlockFromArray(name string, insns []*Insn) *Block {
 	if len(insns) == 0 {
 		panic("Block must contain at least one instruction")

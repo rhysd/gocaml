@@ -13,6 +13,7 @@ type emitter struct {
 	count    uint
 	env      *types.Env
 	inferred InferredTypes
+	insts    refInsts
 }
 
 func (e *emitter) genID() string {
@@ -58,6 +59,10 @@ func (e *emitter) emitLetInsn(node *ast.Let) *mir.Insn {
 	bound := e.emitInsn(node.Bound)
 	t, _ := e.env.DeclTable[bound.Ident]
 	delete(e.env.DeclTable, bound.Ident)
+	if inst, ok := e.env.RefInsts[bound.Ident]; ok {
+		delete(e.env.RefInsts, bound.Ident)
+		e.env.RefInsts[node.Symbol.Name] = inst
+	}
 
 	bound.Ident = node.Symbol.Name
 	e.env.DeclTable[bound.Ident] = t
@@ -152,6 +157,46 @@ func (e *emitter) emitLetTupleInsn(node *ast.LetTuple) *mir.Insn {
 	return body
 }
 
+func (e *emitter) emitAppInsn(node *ast.Apply) *mir.Insn {
+	var prev *mir.Insn
+	var inst *types.Instantiation
+	var ident string
+	if ref, ok := node.Callee.(*ast.VarRef); ok {
+		// Note:
+		// When calling a variable directly, it may be direct call of a known function.
+		// Known function is optimized in closure transform. So we set name of variable
+		// reference directly to the callee of 'app' instruction. When callee is a polymorphic
+		// function and needs to be instantiated, what type the callee is instantiated should
+		// be maintained for monomorphization. Here we set the identifier of 'app' instruction
+		// as the key of the instantiation. It is used to know how the callee was instantiated
+		// while monomorphization.
+		if _, ok := e.env.DeclTable[ref.Symbol.Name]; ok {
+			ident = ref.Symbol.Name
+			inst, _ = e.insts[ref]
+		} else if _, ok := e.env.Externals[ref.Symbol.Name]; ok {
+			prev = e.insn(&mir.XRef{ref.Symbol.Name}, nil, ref)
+			ident = prev.Ident
+		} else {
+			panic("FATAL: Unknown identifier: " + ref.Symbol.Name)
+		}
+	} else {
+		prev = e.emitInsn(node.Callee)
+		ident = prev.Ident
+	}
+	args := make([]string, 0, len(node.Args))
+	for _, a := range node.Args {
+		arg := e.emitInsn(a)
+		arg.Append(prev)
+		args = append(args, arg.Ident)
+		prev = arg
+	}
+	insn := e.insn(&mir.App{ident, args, mir.DIRECT_CALL}, prev, node)
+	if inst != nil {
+		e.env.RefInsts[insn.Ident] = inst
+	}
+	return insn
+}
+
 func (e *emitter) emitInsn(node ast.Expr) *mir.Insn {
 	switch n := node.(type) {
 	case *ast.Unit:
@@ -221,7 +266,11 @@ func (e *emitter) emitInsn(node ast.Expr) *mir.Insn {
 		return e.emitLetInsn(n)
 	case *ast.VarRef:
 		if _, ok := e.env.DeclTable[n.Symbol.Name]; ok {
-			return e.insn(&mir.Ref{n.Symbol.Name}, nil, node)
+			insn := e.insn(&mir.Ref{n.Symbol.Name}, nil, node)
+			if inst, ok := e.insts[n]; ok {
+				e.env.RefInsts[insn.Ident] = inst
+			}
+			return insn
 		} else if _, ok := e.env.Externals[n.Symbol.Name]; ok {
 			return e.insn(&mir.XRef{n.Symbol.Name}, nil, node)
 		} else {
@@ -230,23 +279,7 @@ func (e *emitter) emitInsn(node ast.Expr) *mir.Insn {
 	case *ast.LetRec:
 		return e.emitFunInsn(n)
 	case *ast.Apply:
-		callee := e.emitInsn(n.Callee)
-		ident := callee.Ident
-		prev := callee
-		var inst *types.Instantiation
-		if ref, ok := callee.Val.(*mir.Ref); ok {
-			ident = ref.Ident
-			prev = nil
-			inst, _ = e.env.RefInsts[n.Callee.(*ast.VarRef)]
-		}
-		args := make([]string, 0, len(n.Args))
-		for _, a := range n.Args {
-			arg := e.emitInsn(a)
-			arg.Append(prev)
-			args = append(args, arg.Ident)
-			prev = arg
-		}
-		return e.insn(&mir.App{ident, args, mir.DIRECT_CALL, inst}, prev, node)
+		return e.emitAppInsn(n)
 	case *ast.Tuple:
 		var prev *mir.Insn
 		len := len(n.Elems)
@@ -317,7 +350,7 @@ func (e *emitter) emitBlock(name string, node ast.Expr) *mir.Block {
 }
 
 // ToMIR converts given AST into MIR with type environment
-func ToMIR(root ast.Expr, env *types.Env, inferred InferredTypes) *mir.Block {
-	e := &emitter{0, env, inferred}
+func ToMIR(root ast.Expr, env *types.Env, inferred InferredTypes, insts refInsts) *mir.Block {
+	e := &emitter{0, env, inferred, insts}
 	return e.emitBlock("program", root)
 }

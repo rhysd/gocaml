@@ -178,8 +178,6 @@ func Transform(ir *mir.Block) *mir.Program {
 		}
 	}
 
-	fmt.Println(t.closures)
-
 	prog := &mir.Program{toplevel, t.closures, ir}
 	doPostProcess(prog)
 	return prog

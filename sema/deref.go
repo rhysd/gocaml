@@ -12,6 +12,7 @@ type typeVarDereferencer struct {
 	env      *Env
 	inferred InferredTypes
 	schemes  schemes
+	insts    refInsts
 }
 
 func (d *typeVarDereferencer) unwrapVar(v *Var) (Type, bool) {
@@ -143,7 +144,7 @@ func (d *typeVarDereferencer) VisitTopdown(node ast.Expr) ast.Visitor {
 	case *ast.Match:
 		d.derefSym(n, n.SomeIdent)
 	case *ast.VarRef:
-		if inst, ok := d.env.RefInsts[n]; ok {
+		if inst, ok := d.insts[n]; ok {
 			unwrapped, ok := d.unwrap(inst.To)
 			if !ok {
 				msg := fmt.Sprintf("Cannot instantiate declaration '%s' typed as type '%s'", n.Symbol.DisplayName, inst.From.String())
@@ -242,7 +243,7 @@ func (d *typeVarDereferencer) normalizePolyTypes() {
 		polys[t] = make([]*Instantiation, 0, 3)
 	}
 RefLoop:
-	for _, inst := range d.env.RefInsts {
+	for _, inst := range d.insts {
 		insts := polys[inst.From]
 		for _, i := range insts {
 			if Equals(i.To, inst.To) {
@@ -256,8 +257,8 @@ RefLoop:
 	d.env.PolyTypes = polys
 }
 
-func derefTypeVars(env *Env, root ast.Expr, inferred InferredTypes, ss schemes) *locerr.Error {
-	deref := &typeVarDereferencer{nil, env, inferred, ss}
+func derefTypeVars(env *Env, root ast.Expr, inferred InferredTypes, ss schemes, insts map[*ast.VarRef]*Instantiation) *locerr.Error {
+	deref := &typeVarDereferencer{nil, env, inferred, ss, insts}
 
 	// Note:
 	// Don't need to dereference types of external symbols because they must not contain any

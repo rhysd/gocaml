@@ -14,6 +14,8 @@ type InferredTypes map[ast.Expr]Type
 // Type schemes for generic types
 type schemes map[Type]boundVarIDs
 
+type refInsts map[*ast.VarRef]*Instantiation
+
 // Inferer is a visitor to infer types in the AST
 type Inferer struct {
 	Env      *Env
@@ -21,11 +23,18 @@ type Inferer struct {
 	inferred InferredTypes
 	// Map from generic type to bound type variables in the generic type
 	schemes schemes
+	insts   refInsts
 }
 
 // NewInferer creates a new Inferer instance
 func NewInferer(env *Env) *Inferer {
-	return &Inferer{env, nil, map[ast.Expr]Type{}, map[Type]boundVarIDs{}}
+	return &Inferer{
+		env,
+		nil,
+		map[ast.Expr]Type{},
+		map[Type]boundVarIDs{},
+		refInsts{},
+	}
 }
 
 func (inf *Inferer) generalize(t Type, level int) Type {
@@ -201,7 +210,7 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 			if inst == nil {
 				return t, nil
 			}
-			inf.Env.RefInsts[n] = inst
+			inf.insts[n] = inst
 			return inst.To, nil
 		}
 		if e, ok := inf.Env.Externals[n.Symbol.Name]; ok {
@@ -505,7 +514,7 @@ func (inf *Inferer) Infer(parsed *ast.AST) error {
 		return err.At(parsed.Root.Pos()).Note("Type of root expression of program must be unit")
 	}
 
-	if err := derefTypeVars(inf.Env, parsed.Root, inf.inferred, inf.schemes); err != nil {
+	if err := derefTypeVars(inf.Env, parsed.Root, inf.inferred, inf.schemes, inf.insts); err != nil {
 		return err
 	}
 
