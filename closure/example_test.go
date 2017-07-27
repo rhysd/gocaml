@@ -1,12 +1,12 @@
 package closure
 
 import (
-	"github.com/rhysd/gocaml/mir"
+	"os"
+	"path/filepath"
+
 	"github.com/rhysd/gocaml/sema"
 	"github.com/rhysd/gocaml/syntax"
 	"github.com/rhysd/locerr"
-	"os"
-	"path/filepath"
 )
 
 func Example() {
@@ -29,9 +29,6 @@ func Example() {
 		// Type error detected
 		panic(err)
 	}
-
-	// Eliminate redundant refs
-	mir.ElimRefs(block, env)
 
 	// Closure transform.
 	// Move all nested function to toplevel with resolving closures and known

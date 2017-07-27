@@ -231,7 +231,14 @@ func (e *emitter) emitInsn(node ast.Expr) *mir.Insn {
 		return e.emitFunInsn(n)
 	case *ast.Apply:
 		callee := e.emitInsn(n.Callee)
+		ident := callee.Ident
 		prev := callee
+		var inst *types.Instantiation
+		if ref, ok := callee.Val.(*mir.Ref); ok {
+			ident = ref.Ident
+			prev = nil
+			inst, _ = e.env.RefInsts[n.Callee.(*ast.VarRef)]
+		}
 		args := make([]string, 0, len(n.Args))
 		for _, a := range n.Args {
 			arg := e.emitInsn(a)
@@ -239,7 +246,7 @@ func (e *emitter) emitInsn(node ast.Expr) *mir.Insn {
 			args = append(args, arg.Ident)
 			prev = arg
 		}
-		return e.insn(&mir.App{callee.Ident, args, mir.DIRECT_CALL}, prev, node)
+		return e.insn(&mir.App{ident, args, mir.DIRECT_CALL, inst}, prev, node)
 	case *ast.Tuple:
 		var prev *mir.Insn
 		len := len(n.Elems)

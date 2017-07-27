@@ -3,7 +3,6 @@ package closure
 import (
 	"bytes"
 	"fmt"
-	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/sema"
 	"github.com/rhysd/gocaml/syntax"
 	"github.com/rhysd/locerr"
@@ -358,7 +357,6 @@ func TestClosureTransform(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			mir.ElimRefs(ir, env)
 			prog := Transform(ir)
 
 			if len(tc.closures) != len(prog.Closures) {
@@ -490,11 +488,10 @@ func TestClosureCaptureInInsn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	env, ir, err := sema.SemanticsCheck(ast)
+	_, ir, err := sema.SemanticsCheck(ast)
 	if err != nil {
 		t.Fatal(err)
 	}
-	mir.ElimRefs(ir, env)
 	prog := Transform(ir)
 
 	c, ok := prog.Closures["func$t19"]

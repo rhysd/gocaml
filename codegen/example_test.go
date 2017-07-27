@@ -3,7 +3,6 @@ package codegen
 import (
 	"fmt"
 	"github.com/rhysd/gocaml/closure"
-	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/sema"
 	"github.com/rhysd/gocaml/syntax"
 	"github.com/rhysd/locerr"
@@ -30,9 +29,6 @@ func Example() {
 		// Type error detected
 		panic(err)
 	}
-
-	// Eliminate redundant refs
-	mir.ElimRefs(block, env)
 
 	// Create MIR compilation unit
 	program := closure.Transform(block)

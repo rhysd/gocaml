@@ -111,7 +111,6 @@ func (d *Driver) EmitMIR(src *locerr.Source) (*mir.Program, *types.Env, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	mir.ElimRefs(ir, env)
 	prog := closure.Transform(ir)
 	return prog, env, nil
 }

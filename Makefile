@@ -25,7 +25,6 @@ SRCS := \
 	mir/val.go \
 	mir/block.go \
 	mir/printer.go \
-	mir/elim_ref.go \
 	mir/program.go \
 	closure/transform.go \
 	closure/freevars.go \
@@ -64,7 +63,6 @@ TESTS := \
 	sema/alpha_transform_test.go \
 	sema/algorithm_w_test.go \
 	mir/block_test.go \
-	mir/elim_ref_test.go \
 	mir/program_test.go \
 	codegen/example_test.go \
 	codegen/executable_test.go \

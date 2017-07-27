@@ -2,6 +2,7 @@ package mir
 
 import (
 	"fmt"
+	"github.com/rhysd/gocaml/types"
 	"io"
 	"strconv"
 	"strings"
@@ -115,6 +116,7 @@ type (
 		Callee string
 		Args   []string
 		Kind   AppKind
+		Inst   *types.Instantiation
 	}
 	Tuple struct {
 		Elems []string
