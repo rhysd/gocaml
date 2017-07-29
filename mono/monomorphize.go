@@ -183,6 +183,13 @@ func (assign typeVarAssignment) applyTo(t types.Type) (copied types.Type) {
 	return
 }
 
+func (assign typeVarAssignment) dump() {
+	fmt.Println("Type assignments")
+	for id, t := range assign {
+		fmt.Printf("  '%d => %s\n", id, types.Debug(t))
+	}
+}
+
 func mangleType(t types.Type) string {
 	// TODO: More efficient type mangling
 	return t.String()
@@ -353,6 +360,9 @@ func (dup *codeDup) dupFun(fun mir.FunInsn, inst *types.Instantiation) mir.FunIn
 	}
 
 	funName := dup.mangleFun(fun.Name, inst)
+	for _, m := range inst.Mapping {
+		dup.typeVarAssign[m.ID] = dup.typeVarAssign.applyTo(m.Type)
+	}
 
 	val := &mir.Fun{
 		Params:      make([]string, 0, len(fun.Val.Params)),
@@ -365,9 +375,10 @@ func (dup *codeDup) dupFun(fun mir.FunInsn, inst *types.Instantiation) mir.FunIn
 		val.Params = append(val.Params, p)
 	}
 
-	dup.env.DeclTable[funName] = dup.typeVarAssign.applyTo(dup.env.DeclTable[fun.Name])
+	t := dup.typeVarAssign.applyTo(dup.env.DeclTable[fun.Name])
+	dup.env.DeclTable[funName] = t
 
-	val.Body = dup.dupBlock(val.Body)
+	val.Body = dup.dupBlock(fun.Val.Body)
 
 	insn := mir.FunInsn{
 		Name: funName,
@@ -451,6 +462,7 @@ func (dup *codeDup) dupClosure(name string, captures []string) mir.FunInsn {
 		mapping := make([]*types.VarMapping, 0, len(inst.Mapping))
 		for _, m := range inst.Mapping {
 			t := dup.typeVarAssign.applyTo(m.Type)
+			dup.typeVarAssign[m.ID] = t
 			mapping = append(mapping, &types.VarMapping{m.ID, t})
 		}
 		monoFun := dup.dupFun(insn, &types.Instantiation{inst.From, inst.To, mapping})
@@ -503,6 +515,8 @@ func (mono *monomorphizer) visitInsn(from *mir.Insn) {
 	switch val := from.Val.(type) {
 	case *mir.MakeCls:
 		mono.newCodeDup().dupClosure(val.Fun, val.Vars)
+	case *mir.App:
+		panic("TODO:: Consider callee is generic and monomorphized")
 	case *mir.If:
 		mono.visitBlock(val.Then)
 		mono.visitBlock(val.Else)
