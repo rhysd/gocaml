@@ -2,9 +2,10 @@
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <math.h>
 #include <gc.h>
 #include "gocaml.h"
-#include <time.h>
 
 #define SNPRINTF_MAX 128
 #define LINE_MAX 1024
@@ -26,6 +27,10 @@
     }
 
 extern int __gocaml_main();
+
+// Constants
+double gocaml_infinity = INFINITY;
+double gocaml_nan = NAN;
 
 // string array for argv
 typedef struct {

@@ -824,6 +824,14 @@ It returns wether it could write the content to the file.
 
 Basic math functions. This is the same functions as defined in [OCaml's `Pervasives` module][OCaml Pervasives module].
 
+## Built-in Constants
+
+- `infinity : float`
+- `nan : float`
+
+Floating point values represent initinity and NaN. It's the same values as defined in
+[OCaml's `Pervasives` module][OCaml Pervasives module].
+
 ## How to Work with C
 
 All symbols not defined in source are treated as external symbols. So you can define it in C source

@@ -8,6 +8,8 @@ package types
 func builtinPopulatedTable() map[string]*External {
 	return map[string]*External{
 		"argv":                       &External{&Array{StringType}, "argv"},
+		"infinity":                   &External{FloatType, "gocaml_infinity"},
+		"nan":                        &External{FloatType, "gocaml_nan"},
 		"print_int":                  &External{&Fun{UnitType, []Type{IntType}}, "print_int"},
 		"print_bool":                 &External{&Fun{UnitType, []Type{BoolType}}, "print_bool"},
 		"print_float":                &External{&Fun{UnitType, []Type{FloatType}}, "print_float"},

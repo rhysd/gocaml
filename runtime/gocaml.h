@@ -2,7 +2,6 @@
 #define      GOCAML_H_INCLUDED
 
 #include <stdint.h>
-#include <stdlib.h>
 
 typedef int64_t gocaml_int;
 typedef int gocaml_bool;
