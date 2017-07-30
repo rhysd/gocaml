@@ -801,6 +801,29 @@ First argument is a file name. It returns the content of the file. If failed, it
 It takes file name as first argument and its content as second argument.
 It returns wether it could write the content to the file.
 
+
+- `exp : float -> float`
+- `log : float -> float`
+- `log10 : float -> float`
+- `log1p : float -> float`
+- `sqrt : float -> float`
+- `sin : float -> float`
+- `cos : float -> float`
+- `tan : float -> float`
+- `asin : float -> float`
+- `acos : float -> float`
+- `atan : float -> float`
+- `atan2 : float -> float`
+- `sinh : float -> float`
+- `cosh : float -> float`
+- `tanh : float -> float`
+- `asinh : float -> float`
+- `acosh : float -> float`
+- `atanh : float -> float`
+- `hypot : float -> float -> float`
+
+Basic math functions. This is the same functions as defined in [OCaml's `Pervasives` module][OCaml Pervasives module].
+
 ## How to Work with C
 
 All symbols not defined in source are treated as external symbols. So you can define it in C source
@@ -905,3 +928,4 @@ $ gcc -m32 -lgc source.o ./runtime/gocamlrt.a
 [goyacc]: https://godoc.org/golang.org/x/tools/cmd/goyacc
 [Option type]: https://en.wikipedia.org/wiki/Option_type
 [option type test cases]: ./codegen/testdata/option_values.ml
+[OCaml Pervasives module]: https://caml.inria.fr/pub/docs/manual-ocaml/libref/Pervasives.html
