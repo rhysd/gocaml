@@ -39,6 +39,11 @@ typedef struct {
 } argv_t;
 argv_t argv;
 
+typedef struct {
+    gocaml_float fst;
+    gocaml_float snd;
+} ff_pair_t;
+
 int main(int const argc, char const* const argv_[]) {
     GC_init();
     gocaml_string *ptr = (gocaml_string *) GC_malloc(argc * sizeof(gocaml_string *));
@@ -299,6 +304,18 @@ gocaml_int bit_lsft(gocaml_int const l, gocaml_int const r)
 gocaml_int bit_inv(gocaml_int const i)
 {
     return ~i;
+}
+
+ff_pair_t *gocaml_modf(gocaml_float const f)
+{
+    double fractional, integral;
+    ff_pair_t *ret;
+
+    fractional = modf(f, &integral);
+    ret = (ff_pair_t *) GC_malloc(sizeof(ff_pair_t));
+    ret->fst = fractional;
+    ret->snd = integral;
+    return ret;
 }
 
 gocaml_int time_now(gocaml_unit _)

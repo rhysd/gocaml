@@ -821,6 +821,8 @@ It returns wether it could write the content to the file.
 - `acosh : float -> float`
 - `atanh : float -> float`
 - `hypot : float -> float -> float`
+- `mod_float : float -> float -> float`
+- `modf : float -> float * float`
 
 Basic math functions. This is the same functions as defined in [OCaml's `Pervasives` module][OCaml Pervasives module].
 
