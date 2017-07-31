@@ -38,6 +38,8 @@ func builtinPopulatedTable() map[string]*External {
 		"bit_rsft":                   &External{&Fun{IntType, []Type{IntType, IntType}}, "bit_rsft"},
 		"bit_lsft":                   &External{&Fun{IntType, []Type{IntType, IntType}}, "bit_lsft"},
 		"bit_inv":                    &External{&Fun{IntType, []Type{IntType}}, "bit_inv"},
+		"ceil":                       &External{&Fun{FloatType, []Type{FloatType}}, "ceil"},
+		"floor":                      &External{&Fun{FloatType, []Type{FloatType}}, "floor"},
 		"exp":                        &External{&Fun{FloatType, []Type{FloatType}}, "exp"},
 		"log":                        &External{&Fun{FloatType, []Type{FloatType}}, "log"},
 		"log10":                      &External{&Fun{FloatType, []Type{FloatType}}, "log10"},

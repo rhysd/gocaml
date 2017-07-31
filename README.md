@@ -802,6 +802,8 @@ It takes file name as first argument and its content as second argument.
 It returns wether it could write the content to the file.
 
 
+- `ceil : float -> float`
+- `floor : float -> float`
 - `exp : float -> float`
 - `log : float -> float`
 - `log10 : float -> float`
