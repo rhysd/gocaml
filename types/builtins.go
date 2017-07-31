@@ -59,6 +59,8 @@ func builtinPopulatedTable() map[string]*External {
 		"hypot":                      &External{&Fun{FloatType, []Type{FloatType, FloatType}}, "hypot"},
 		"mod_float":                  &External{&Fun{FloatType, []Type{FloatType, FloatType}}, "fmod"},
 		"modf":                       &External{&Fun{&Tuple{[]Type{FloatType, FloatType}}, []Type{FloatType}}, "gocaml_modf"},
+		"frexp":                      &External{&Fun{&Tuple{[]Type{FloatType, IntType}}, []Type{FloatType}}, "gocaml_frexp"},
+		"ldexp":                      &External{&Fun{FloatType, []Type{FloatType, IntType}}, "gocaml_ldexp"},
 		"time_now":                   &External{&Fun{IntType, []Type{UnitType}}, "time_now"},
 		"read_file":                  &External{&Fun{&Option{StringType}, []Type{StringType}}, "read_file"},
 		"write_file":                 &External{&Fun{BoolType, []Type{StringType, StringType}}, "write_file"},
