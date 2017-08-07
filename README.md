@@ -10,7 +10,8 @@ MinCaml is a minimal subset of OCaml for educational purpose. It is statically-t
 This project aims incremental compiler development for my own programming language.
 Type inference, closure transform, mid-level IR are implemented.
 
-[Japanese presentation](https://speakerdeck.com/rhysd/go-detukurufan-yong-yan-yu-chu-li-xi-shi-zhuang-zhan-lue)
+- [Japanese presentation (Go Conference Tokyo 2017 Spring)](https://speakerdeck.com/rhysd/go-detukurufan-yong-yan-yu-chu-li-xi-shi-zhuang-zhan-lue)
+- [Japanese presentation (builderscon 2017)](https://speakerdeck.com/rhysd/xiao-sakushi-meteyu-terukonpaira)
 
 Example:
 
