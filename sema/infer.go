@@ -318,31 +318,27 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		}
 		return &Tuple{Elems: elems}, nil
 	case *ast.LetTuple:
-		var t Type
+		var t *Tuple
 
 		if n.Type != nil {
-			var err error
-			t, err = inf.conv.nodeToType(n.Type, level)
+			ty, err := inf.conv.nodeToType(n.Type, level)
 			if err != nil {
 				return nil, err
 			}
-			tpl, ok := t.(*Tuple)
+
+			var ok bool
+			t, ok = ty.(*Tuple)
 			if !ok {
 				return nil, locerr.ErrorfIn(n.Type.Pos(), n.Type.End(), "Type error: Bound value of 'let (...) =' must be tuple, but found '%s'", t.String())
 			}
-			if len(tpl.Elems) != len(n.Symbols) {
-				return nil, locerr.ErrorfIn(n.Type.Pos(), n.Type.End(), "Type error: Mismatch numbers of elements of specified tuple type and symbols in 'let (...)' expression: %d vs %d", len(tpl.Elems), len(n.Symbols))
-			}
-			for i, sym := range n.Symbols {
-				inf.Env.DeclTable[sym.Name] = inf.generalize(tpl.Elems[i], level)
+			if len(t.Elems) != len(n.Symbols) {
+				return nil, locerr.ErrorfIn(n.Type.Pos(), n.Type.End(), "Type error: Mismatch numbers of elements of specified tuple type and symbols in 'let (...)' expression: %d vs %d", len(t.Elems), len(n.Symbols))
 			}
 		} else {
 			elems := make([]Type, len(n.Symbols))
-			for i, sym := range n.Symbols {
+			for i := range n.Symbols {
 				// Bound elements' types are unknown in this point
-				v := NewVar(nil, level)
-				inf.Env.DeclTable[sym.Name] = inf.generalize(v, level)
-				elems[i] = v
+				elems[i] = NewVar(nil, level+1)
 			}
 			t = &Tuple{Elems: elems}
 		}
@@ -350,6 +346,10 @@ func (inf *Inferer) inferNode(e ast.Expr, level int) (Type, error) {
 		bound, err := inf.infer(n.Bound, level+1)
 		if err != nil {
 			return nil, err
+		}
+
+		for i, sym := range n.Symbols {
+			inf.Env.DeclTable[sym.Name] = inf.generalize(t.Elems[i], level)
 		}
 
 		// Bound value must be tuple

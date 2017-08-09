@@ -465,7 +465,12 @@ func (dup *codeDup) dupClosure(name string, captures []string) mir.FunInsn {
 			dup.typeVarAssign[m.ID] = t
 			mapping = append(mapping, &types.VarMapping{m.ID, t})
 		}
-		monoFun := dup.dupFun(insn, &types.Instantiation{inst.From, inst.To, mapping})
+		monoInst := &types.Instantiation{
+			inst.From,
+			dup.typeVarAssign.applyTo(inst.To),
+			mapping,
+		}
+		monoFun := dup.dupFun(insn, monoInst)
 		dup.toProg.Closures[monoFun.Name] = monoCaps
 		mappings[monoFun.Name] = mapping
 	}
