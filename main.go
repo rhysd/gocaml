@@ -7,6 +7,7 @@ import (
 	"github.com/rhysd/gocaml/driver"
 	"github.com/rhysd/locerr"
 	"os"
+	"strings"
 )
 
 var (
@@ -68,7 +69,12 @@ func main() {
 
 	if *showTargets {
 		for _, t := range codegen.AllTargets() {
-			fmt.Printf("%s:\t%s\n", t.Name, t.Description)
+			tabs := (23 - (len(t.Name) + 1)) / 8
+			if tabs <= 0 {
+				tabs = 1
+			}
+			pad := strings.Repeat("\t", tabs)
+			fmt.Printf("%s:%s%s\n", t.Name, pad, t.Description)
 		}
 		os.Exit(0)
 	}

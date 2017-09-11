@@ -9,15 +9,14 @@ script:
 addons:
   apt:
     sources:
-      - llvm-toolchain-trusty-4.0
+      - llvm-toolchain-trusty-5.0
     packages:
-      - libllvm4.0
-      - llvm-4.0-dev
-      - clang-4.0
+      - libllvm5.0
+      - llvm-5.0-dev
+      - clang-5.0
       - libgc-dev
       - cmake
       - time
-      - realpath
 cache:
   apt: true
   directories:

@@ -10,7 +10,8 @@ MinCaml is a minimal subset of OCaml for educational purpose. It is statically-t
 This project aims incremental compiler development for my own programming language.
 Type inference, closure transform, mid-level IR are implemented.
 
-[Japanese presentation](https://speakerdeck.com/rhysd/go-detukurufan-yong-yan-yu-chu-li-xi-shi-zhuang-zhan-lue)
+- [Japanese presentation (Go Conference Tokyo 2017 Spring)](https://speakerdeck.com/rhysd/go-detukurufan-yong-yan-yu-chu-li-xi-shi-zhuang-zhan-lue)
+- [Japanese presentation (builderscon 2017)](https://speakerdeck.com/rhysd/xiao-sakushi-meteyu-terukonpaira)
 
 Example:
 
@@ -586,7 +587,7 @@ Like `type` syntax, all `external` declarations should be written before any exp
 
 - Go 1.7+
 - GNU make
-- Clang
+- Clang or GCC (for building small runtime)
 - cmake (for building LLVM)
 - Git
 
@@ -624,7 +625,8 @@ building `$GOPATH/src/llvm.org/llvm`, please follow build instruction.
 Note that it still clones LLVM repository because `$GOPATH/src/llvm.org/llvm/bindings/go/*` is
 necessary for building gocaml.
 
-To use `USE_SYSTEM_LLVM`, you need to install LLVM 4.0.0 with system's package manager in advance.
+To use `USE_SYSTEM_LLVM`, you need to install LLVM 4.0.0 or later (5.0.0 is recommended) with system's
+package manager in advance.
 
 If you use Debian-family Linux, use [LLVM apt repository][] or download [LLVM official binary][].
 
@@ -801,6 +803,43 @@ First argument is a file name. It returns the content of the file. If failed, it
 It takes file name as first argument and its content as second argument.
 It returns wether it could write the content to the file.
 
+
+- `ceil : float -> float`
+- `floor : float -> float`
+- `exp : float -> float`
+- `log : float -> float`
+- `log10 : float -> float`
+- `log1p : float -> float`
+- `sqrt : float -> float`
+- `sin : float -> float`
+- `cos : float -> float`
+- `tan : float -> float`
+- `asin : float -> float`
+- `acos : float -> float`
+- `atan : float -> float`
+- `atan2 : float -> float`
+- `sinh : float -> float`
+- `cosh : float -> float`
+- `tanh : float -> float`
+- `asinh : float -> float`
+- `acosh : float -> float`
+- `atanh : float -> float`
+- `hypot : float -> float -> float`
+- `mod_float : float -> float -> float`
+- `modf : float -> float * float`
+- `frexp : float -> float * int`
+- `ldexp : float -> int -> float`
+
+Basic math functions. This is the same functions as defined in [OCaml's `Pervasives` module][OCaml Pervasives module].
+
+## Built-in Constants
+
+- `infinity : float`
+- `nan : float`
+
+Floating point values represent initinity and NaN. It's the same values as defined in
+[OCaml's `Pervasives` module][OCaml Pervasives module].
+
 ## How to Work with C
 
 All symbols not defined in source are treated as external symbols. So you can define it in C source
@@ -905,3 +944,4 @@ $ gcc -m32 -lgc source.o ./runtime/gocamlrt.a
 [goyacc]: https://godoc.org/golang.org/x/tools/cmd/goyacc
 [Option type]: https://en.wikipedia.org/wiki/Option_type
 [option type test cases]: ./codegen/testdata/option_values.ml
+[OCaml Pervasives module]: https://caml.inria.fr/pub/docs/manual-ocaml/libref/Pervasives.html

@@ -2,9 +2,10 @@
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <math.h>
 #include <gc.h>
 #include "gocaml.h"
-#include <time.h>
 
 #define SNPRINTF_MAX 128
 #define LINE_MAX 1024
@@ -27,12 +28,31 @@
 
 extern int __gocaml_main();
 
+// Constants
+double gocaml_infinity = INFINITY;
+double gocaml_nan = NAN;
+
 // string array for argv
 typedef struct {
     gocaml_string *buf;
     gocaml_int size;
 } argv_t;
 argv_t argv;
+
+typedef struct {
+    gocaml_float fst;
+    gocaml_float snd;
+} ff_pair_t;
+
+typedef struct {
+    gocaml_float fst;
+    gocaml_int snd;
+} fi_pair_t;
+
+typedef struct {
+    gocaml_int fst;
+    gocaml_float snd;
+} if_pair_t;
 
 int main(int const argc, char const* const argv_[]) {
     GC_init();
@@ -294,6 +314,36 @@ gocaml_int bit_lsft(gocaml_int const l, gocaml_int const r)
 gocaml_int bit_inv(gocaml_int const i)
 {
     return ~i;
+}
+
+ff_pair_t *gocaml_modf(gocaml_float const f)
+{
+    double fractional, integral;
+    ff_pair_t *ret;
+
+    fractional = modf(f, &integral);
+    ret = (ff_pair_t *) GC_malloc(sizeof(ff_pair_t));
+    ret->fst = fractional;
+    ret->snd = integral;
+    return ret;
+}
+
+fi_pair_t *gocaml_frexp(gocaml_float const f)
+{
+    double frac;
+    int exp;
+    fi_pair_t *ret;
+
+    frac = frexp(f, &exp);
+    ret = (fi_pair_t *) GC_malloc(sizeof(fi_pair_t));
+    ret->fst = frac;
+    ret->snd = exp;
+    return ret;
+}
+
+gocaml_float gocaml_ldexp(gocaml_float const f, gocaml_int const i)
+{
+    return ldexp(f, (int) i);
 }
 
 gocaml_int time_now(gocaml_unit _)
