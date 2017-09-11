@@ -587,7 +587,7 @@ Like `type` syntax, all `external` declarations should be written before any exp
 
 - Go 1.7+
 - GNU make
-- Clang
+- Clang or GCC (for building small runtime)
 - cmake (for building LLVM)
 - Git
 
@@ -625,7 +625,8 @@ building `$GOPATH/src/llvm.org/llvm`, please follow build instruction.
 Note that it still clones LLVM repository because `$GOPATH/src/llvm.org/llvm/bindings/go/*` is
 necessary for building gocaml.
 
-To use `USE_SYSTEM_LLVM`, you need to install LLVM 4.0.0 with system's package manager in advance.
+To use `USE_SYSTEM_LLVM`, you need to install LLVM 4.0.0 or later (5.0.0 is recommended) with system's
+package manager in advance.
 
 If you use Debian-family Linux, use [LLVM apt repository][] or download [LLVM official binary][].
 
