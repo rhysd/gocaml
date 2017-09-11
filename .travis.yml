@@ -17,7 +17,6 @@ addons:
       - libgc-dev
       - cmake
       - time
-      - realpath
 cache:
   apt: true
   directories:
