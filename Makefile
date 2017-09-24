@@ -26,7 +26,7 @@ SRCS := \
 	mir/program.go \
 	closure/transform.go \
 	closure/freevars.go \
-	closure/post_process.go \
+	closure/fix_apps.go \
 	codegen/emitter.go \
 	codegen/module_builder.go \
 	codegen/type_builder.go \
