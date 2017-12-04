@@ -603,7 +603,7 @@ For Linux or macOS, below commands build `gocaml` binary at root of the reposito
 $ sudo apt-get install libgc-dev
 
 # On macOS
-$ brew install bdw-gc coreutils
+$ brew install go cmake bdw-gc coreutils
 
 $ mkdir -p $GOPATH/src/github.com/rhysd && cd $GOPATH/src/github.com/rhysd
 $ git clone https://github.com/rhysd/gocaml.git
