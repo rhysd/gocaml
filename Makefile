@@ -73,7 +73,11 @@ build: gocaml runtime/gocamlrt.a
 gocaml: $(SRCS)
 	./scripts/install_llvmgo.sh
 	go get -t -d ./...
-	if which time > /dev/null; then time go build; else go build; fi
+	if which time > /dev/null; then\
+		CGO_LDFLAGS_ALLOW='-Wl,(-search_paths_first|-headerpad_max_install_names)' time go build;\
+	else\
+		CGO_LDFLAGS_ALLOW='-Wl,(-search_paths_first|-headerpad_max_install_names)' go build;\
+	fi
 
 syntax/grammar.go: syntax/grammar.go.y
 	go get golang.org/x/tools/cmd/goyacc
