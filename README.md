@@ -145,13 +145,13 @@ As mentioned above, GoCaml distinguishes int and float in operators. Operators f
 suffixed by `.` (dot).
 
 ```ml
-(* integer calcuration *)
+(* integer calculation *)
 1 + 2;
 1 - 2;
 1 * 2;
 1 / 2;
 
-(* float calcuration *)
+(* float calculation *)
 1.0 +. 2.0;
 1.0 -. 2.0;
 1.0 *. 2.0;
