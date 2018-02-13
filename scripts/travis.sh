@@ -15,9 +15,8 @@ else
     export LLVM_CONFIG="llvm-config-5.0"
 fi
 
-# Build binary
 make build
-go test -v ./...
+make test VERBOSE=true
 
 # Take coverage
 make cover.out
