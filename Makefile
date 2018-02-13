@@ -89,18 +89,22 @@ runtime/gocamlrt.a: runtime/gocamlrt.o
 	ar -r runtime/gocamlrt.a runtime/gocamlrt.o
 
 test: $(TESTS)
-	go test ./...
+ifdef VERBOSE
+	CGO_LDFLAGS_ALLOW='-Wl,(-search_paths_first|-headerpad_max_install_names)' go test -v ./...
+else
+	CGO_LDFLAGS_ALLOW='-Wl,(-search_paths_first|-headerpad_max_install_names)' go test ./...
+endif
 
 cover.out: $(TESTS)
 	go get github.com/haya14busa/goverage
-	goverage -coverprofile=cover.out -covermode=count ./ast ./mir ./closure ./syntax ./token ./sema ./codegen ./common
+	CGO_LDFLAGS_ALLOW='-Wl,(-search_paths_first|-headerpad_max_install_names)' goverage -coverprofile=cover.out -covermode=count ./ast ./mir ./closure ./syntax ./token ./sema ./codegen ./common
 
 cov: cover.out
 	go get golang.org/x/tools/cmd/cover
 	go tool cover -html=cover.out
 
 cpu.prof codegen.test: $(SRCS) codegen/executable_test.go
-	go test -cpuprofile cpu.prof -bench . -run '^$$' ./codegen
+	CGO_LDFLAGS_ALLOW='-Wl,(-search_paths_first|-headerpad_max_install_names)' go test -cpuprofile cpu.prof -bench . -run '^$$' ./codegen
 
 prof: cpu.prof codegen.test
 	go tool pprof codegen.test cpu.prof
