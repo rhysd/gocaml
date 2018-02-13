@@ -29,7 +29,7 @@ mkdir -p "$LLVM_ORG_DIR"
 cd "$LLVM_ORG_DIR"
 
 echo "Cloning LLVM branch: ${LLVM_BRANCH}..."
-git clone --depth 1 -b $LLVM_BRANCH --single-branch http://llvm.org/git/llvm.git
+git clone --depth 1 -b $LLVM_BRANCH --single-branch https://llvm.org/git/llvm.git
 cd "$LLVM_GO_DIR"
 
 if [[ "$USE_SYSTEM_LLVM" == "" ]]; then
