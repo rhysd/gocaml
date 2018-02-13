@@ -16,10 +16,3 @@ else
 fi
 
 make build
-make test VERBOSE=true
-
-# Take coverage
-make cover.out
-go tool cover -func cover.out
-mv cover.out coverage.txt
-bash <(curl -s https://codecov.io/bash)
