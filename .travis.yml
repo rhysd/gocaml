@@ -5,7 +5,7 @@ os:
   - linux
   - osx
 install:
-  - bash ./scripts/travis_install.sh
+  - CC=gcc-7 CXX=g++-7 bash ./scripts/travis_install.sh
 script:
   - make test VERBOSE=true
 after_success:
@@ -19,7 +19,7 @@ addons:
       - llvm-toolchain-trusty-6.0
       - ubuntu-toolchain-r-test
     packages:
-      - g++-4.9
+      - g++-7
       - libllvm6.0
       - llvm-6.0-dev
       - clang-6.0
