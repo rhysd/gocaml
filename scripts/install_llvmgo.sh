@@ -58,7 +58,7 @@ if [[ "$LLVM_CONFIG" == "" ]]; then
     esac
 fi
 
-if which "$LLVM_CONFIG" 2>&1 > /dev/null; then
+if which "$LLVM_CONFIG" > /dev/null 2>&1; then
     echo "llvm-config version: $($LLVM_CONFIG --version)"
 else
     echo "llvm-config command not found: $LLVM_CONFIG" >&2
@@ -75,9 +75,9 @@ echo "CGO_CPPFLAGS='$CGO_CPPFLAGS'"
 echo "CGO_CXXFLAGS='$CGO_CXXFLAGS'"
 echo "CGO_LDFLAGS='$CGO_LDFLAGS'"
 
-cat ${LLVM_GO_LLVM_DIR}/llvm_config.go.in | \
+cat "${LLVM_GO_LLVM_DIR}/llvm_config.go.in" | \
     sed "s#@LLVM_CFLAGS@#${CGO_CPPFLAGS}#" | \
     sed "s#@LLVM_LDFLAGS@#${CGO_LDFLAGS}#" > \
-    ${LLVM_GO_LLVM_DIR}/llvm_config.go
+    "${LLVM_GO_LLVM_DIR}/llvm_config.go"
 
 go install -v -tags byollvm
