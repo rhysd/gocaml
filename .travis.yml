@@ -5,7 +5,7 @@ os:
   - linux
   - osx
 install:
-  - CC=gcc-7 CXX=g++-7 bash ./scripts/travis_install.sh
+  - bash ./scripts/travis_install.sh
 script:
   - make test VERBOSE=true
 after_success:
