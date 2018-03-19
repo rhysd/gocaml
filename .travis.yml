@@ -16,11 +16,13 @@ after_success:
 addons:
   apt:
     sources:
-      - llvm-toolchain-trusty-5.0
+      - llvm-toolchain-trusty-6.0
+      - ubuntu-toolchain-r-test
     packages:
-      - libllvm5.0
-      - llvm-5.0-dev
-      - clang-5.0
+      - g++-4.9
+      - libllvm6.0
+      - llvm-6.0-dev
+      - clang-6.0
       - libgc-dev
       - cmake
       - time

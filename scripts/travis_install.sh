@@ -12,7 +12,7 @@ else
     go get golang.org/x/tools/cmd/cover
     go get github.com/haya14busa/goverage
     go get github.com/mattn/goveralls
-    export LLVM_CONFIG="llvm-config-5.0"
+    export LLVM_CONFIG="llvm-config-6.0"
 fi
 
 make build

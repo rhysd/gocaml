@@ -21,7 +21,7 @@ if [[ -f "$LLVM_ARCHIVE" ]]; then
 fi
 
 if [[ "$LLVM_BRANCH" == "" ]]; then
-    LLVM_BRANCH="release_50"
+    LLVM_BRANCH="release_60"
 fi
 
 rm -rf "$LLVM_DIR"
