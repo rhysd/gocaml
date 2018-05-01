@@ -631,8 +631,8 @@ package manager in advance.
 If you use Debian-family Linux, use [LLVM apt repository][] or download [LLVM official binary][].
 
 ```console
-$ sudo apt-get install libllvm4.0 llvm-4.0-dev
-$ export LLVM_CONFIG=llvm-config-4.0
+$ sudo apt-get install libllvm5.0 llvm-5.0-dev
+$ export LLVM_CONFIG=llvm-config-5.0
 ```
 
 If you use macOS, use [Homebrew][]. GoCaml's installation script will automatically detect LLVM
@@ -939,7 +939,7 @@ $ gcc -m32 -lgc source.o ./runtime/gocamlrt.a
 [examples]: ./examples
 [Brainfxxk interpreter example]: ./examples/brainfxxk.ml
 [N-Queens puzzle example]: ./examples/n-queens.ml
-[LLVM official binary]: http://releases.llvm.org/download.html#4.0.0
+[LLVM official binary]: http://releases.llvm.org/download.html#5.0.0
 [Go binding building instruction]: https://github.com/llvm-mirror/llvm/blob/master/bindings/go/README.txt
 [goyacc]: https://godoc.org/golang.org/x/tools/cmd/goyacc
 [Option type]: https://en.wikipedia.org/wiki/Option_type
