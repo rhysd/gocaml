@@ -13,6 +13,18 @@ type appFixer struct {
 }
 
 // TODO:
+// Reveal how each adhoc polymorphic types should be instantiated.
+// e.g.
+//   let o = None in o = (o = Some 10) || (o = Some true) in ...
+// In expression `None`, it's type is 'a option and 'a should be instantiated as int and bool.
+// In this process, collect the actual instantiated types for adhoc polymorphic type variables
+// (in above example, they're int and bool).
+// It also corrects captured values. In above case, when capturing `o`, the type of capture
+// value is 'a option. However, it actually needs to capture two values typed as int option and
+// bool option because we introduce code duplication to generate code for polymorphic type
+// expressions.
+
+// TODO:
 // Rearrange basic blocks to represents actual DAG.
 // All blocks should be flattened in a function.
 //

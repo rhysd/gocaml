@@ -8,7 +8,9 @@ import (
 	"strings"
 )
 
+// Closures is a map from closure name to its captures
 type Closures map[string][]string
+
 type FunInsn struct {
 	Name string
 	Val  *Fun

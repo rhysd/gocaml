@@ -157,8 +157,8 @@ func TestUnificationFailure(t *testing.T) {
 		},
 		{
 			what:     "mismatch parameter type",
-			code:     "let rec f a b = a < b in (f 1 1) = (f 1.0 1.0)",
-			expected: "On unifying 1st parameter of function 'int -> int -> bool' and 'float -> float -> bool'",
+			code:     "let rec f a b = a < b in f 1.0 1",
+			expected: "On unifying 2nd parameter of function 'float -> float -> bool' and 'float -> int -> bool'",
 		},
 		{
 			what:     "does not meet parameter type requirements",
@@ -236,9 +236,9 @@ func TestUnificationFailure(t *testing.T) {
 			expected: "'int' and 'float'",
 		},
 		{
-			what:     "occur check",
+			what:     "cyclic dependency",
 			code:     "let rec f x = f in f 4",
-			expected: "Cyclic dependency found while unification with",
+			expected: "Cyclic dependency found for free type variable",
 		},
 		{
 			what:     "pre-registered external functions (param type)",
@@ -396,10 +396,11 @@ func TestUnificationFailure(t *testing.T) {
 			i := NewInferer(env)
 			err = i.Infer(ast)
 			if err == nil {
-				t.Fatal("Error did not occur for code:", testcase.code)
+				t.Fatal("Error should occur:", testcase.code)
 			}
-			if !strings.Contains(err.Error(), testcase.expected) {
-				t.Fatalf("Expected error message '%s' to contain '%s'", err.Error(), testcase.expected)
+			msg := err.Error()
+			if !strings.Contains(msg, testcase.expected) {
+				t.Fatalf("Expected error message '%s' to contain '%s'", msg, testcase.expected)
 			}
 		})
 	}
@@ -412,6 +413,11 @@ func TestInferSuccess(t *testing.T) {
 	}
 	for _, file := range files {
 		t.Run(file, func(t *testing.T) {
+			defer func() {
+				if err := recover(); err != nil {
+					t.Fatal(err)
+				}
+			}()
 			s, err := locerr.NewSourceFromFile(file)
 			if err != nil {
 				panic(err)

@@ -7,25 +7,40 @@ import (
 	"github.com/rhysd/locerr"
 )
 
-func unwrapVar(variable *Var) (Type, bool) {
-	if variable.Ref != nil {
-		r, ok := unwrap(variable.Ref)
-		if ok {
-			return r, true
-		}
+type typeVarDereferencer struct {
+	err      *locerr.Error
+	env      *Env
+	inferred InferredTypes
+	schemes  schemes
+	insts    refInsts
+}
+
+func (d *typeVarDereferencer) unwrapVar(v *Var) (Type, bool) {
+	if v.Ref != nil {
+		return d.unwrap(v.Ref)
+	}
+
+	if v.IsGeneric() {
+		// Note:
+		// If `d.isGeneralized(v.ID)` is true here, it meands that this type variable will be instantiated later.
+		// e.g.
+		//   let o = None in o = Some 42; o = Some true
+		// In this example, type of `o` and `None` is 'a and will be instantiated `int option` and
+		// `bool option` later.
+		return v, true
 	}
 
 	return nil, false
 }
 
-func unwrapFun(fun *Fun) (Type, bool) {
-	r, ok := unwrap(fun.Ret)
+func (d *typeVarDereferencer) unwrapFun(fun *Fun) (Type, bool) {
+	r, ok := d.unwrap(fun.Ret)
 	if !ok {
 		return nil, false
 	}
 	fun.Ret = r
 	for i, param := range fun.Params {
-		p, ok := unwrap(param)
+		p, ok := d.unwrap(param)
 		if !ok {
 			return nil, false
 		}
@@ -34,40 +49,34 @@ func unwrapFun(fun *Fun) (Type, bool) {
 	return fun, true
 }
 
-func unwrap(target Type) (Type, bool) {
+func (d *typeVarDereferencer) unwrap(target Type) (Type, bool) {
 	switch t := target.(type) {
 	case *Fun:
-		return unwrapFun(t)
+		return d.unwrapFun(t)
 	case *Tuple:
 		for i, elem := range t.Elems {
-			e, ok := unwrap(elem)
+			e, ok := d.unwrap(elem)
 			if !ok {
 				return nil, false
 			}
 			t.Elems[i] = e
 		}
 	case *Array:
-		e, ok := unwrap(t.Elem)
+		e, ok := d.unwrap(t.Elem)
 		if !ok {
 			return nil, false
 		}
 		t.Elem = e
 	case *Option:
-		e, ok := unwrap(t.Elem)
+		e, ok := d.unwrap(t.Elem)
 		if !ok {
 			return nil, false
 		}
 		t.Elem = e
 	case *Var:
-		return unwrapVar(t)
+		return d.unwrapVar(t)
 	}
 	return target, true
-}
-
-type typeVarDereferencer struct {
-	err      *locerr.Error
-	env      *Env
-	inferred InferredTypes
 }
 
 func (d *typeVarDereferencer) errIn(node ast.Expr, msg string) {
@@ -78,14 +87,25 @@ func (d *typeVarDereferencer) errIn(node ast.Expr, msg string) {
 	}
 }
 
+func (d *typeVarDereferencer) errMsg(msg string) {
+	if d.err == nil {
+		d.err = locerr.NewError(msg)
+	} else {
+		d.err = d.err.Note(msg)
+	}
+}
+
 func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
-	symType, ok := d.env.Table[sym.Name]
+	symType, ok := d.env.DeclTable[sym.Name]
+	if !ok {
+		panic("FATAL: Cannot dereference unknown symbol: " + sym.Name)
+	}
 
 	if sym.IsIgnored() {
 		// Parser expands `foo; bar` to `let $unused = foo in bar`. In this situation, type of the
 		// variable will never be determined because it's unused.
 		// So skipping it in order to avoid unknown type error for the unused variable.
-		if v, ok := symType.(*Var); ok && v.Ref == nil {
+		if v, ok := symType.(*Var); ok && v.Ref == nil && !v.IsGeneric() {
 			// $unused variables are never be used. So its type may not be determined. In the case,
 			// it's type should be fixed to unit type.
 			v.Ref = UnitType
@@ -93,18 +113,15 @@ func (d *typeVarDereferencer) derefSym(node ast.Expr, sym *ast.Symbol) {
 		return
 	}
 
+	t, ok := d.unwrap(symType)
 	if !ok {
-		panic("FATAL: Cannot dereference unknown symbol: " + sym.Name)
-	}
-
-	t, ok := unwrap(symType)
-	if !ok {
-		d.errIn(node, fmt.Sprintf("Cannot infer type of variable '%s'. Inferred type was '%s'", sym.DisplayName, symType.String()))
+		msg := fmt.Sprintf("Cannot infer type of variable '%s'. Inferred type was '%s'", sym.DisplayName, symType.String())
+		d.errIn(node, msg)
 		return
 	}
 
 	// Also dereference type variable in symbol
-	d.env.Table[sym.Name] = t
+	d.env.DeclTable[sym.Name] = t
 }
 
 func (d *typeVarDereferencer) VisitTopdown(node ast.Expr) ast.Visitor {
@@ -114,8 +131,8 @@ func (d *typeVarDereferencer) VisitTopdown(node ast.Expr) ast.Visitor {
 	case *ast.LetRec:
 		// Note:
 		// Need to dereference parameters at first because type of the function depends on type
-		// of its parameters and parameters may be specified as '_'.
-		// '_' is unused. So its type may not be determined and need to be fixed as unit type.
+		// of its parameters and parameters may be specified as '_'. '_' is unused. So its type
+		// may not be determined and need to be fixed as unit type.
 		for _, p := range n.Func.Params {
 			d.derefSym(n, p.Ident)
 		}
@@ -126,6 +143,26 @@ func (d *typeVarDereferencer) VisitTopdown(node ast.Expr) ast.Visitor {
 		}
 	case *ast.Match:
 		d.derefSym(n, n.SomeIdent)
+	case *ast.VarRef:
+		if inst, ok := d.insts[n]; ok {
+			unwrapped, ok := d.unwrap(inst.To)
+			if !ok {
+				msg := fmt.Sprintf("Cannot instantiate declaration '%s' typed as type '%s'", n.Symbol.DisplayName, inst.From.String())
+				d.errIn(n, msg)
+				d.err = d.err.NotefAt(n.Pos(), "Tried to instantiate the generic type as '%s'", inst.To.String())
+				return nil
+			}
+			inst.To = unwrapped
+			for _, m := range inst.Mapping {
+				t, ok := d.unwrap(m.Type)
+				if !ok {
+					msg := fmt.Sprintf("Cannot instantiate type variable in generic type '%s' at declaration '%s'", inst.From.String(), n.Symbol.DisplayName)
+					d.errIn(n, msg)
+					return nil
+				}
+				m.Type = t
+			}
+		}
 	}
 	return d
 }
@@ -190,27 +227,51 @@ func (d *typeVarDereferencer) VisitBottomup(node ast.Expr) {
 		return
 	}
 
-	unwrapped, ok := unwrap(t)
+	unwrapped, ok := d.unwrap(t)
 	if !ok {
-		d.errIn(node, fmt.Sprintf("Cannot infer type of expression. Type annotation is needed. Inferred type was '%s'", t.String()))
+		msg := fmt.Sprintf("Cannot infer type of expression. Type annotation is needed. Inferred type was '%s'", t.String())
+		d.errIn(node, msg)
 		return
 	}
 
 	d.inferred[node] = unwrapped
 }
 
-func derefTypeVars(env *Env, root ast.Expr, inferred InferredTypes) error {
-	v := &typeVarDereferencer{nil, env, inferred}
+func (d *typeVarDereferencer) normalizePolyTypes() {
+	polys := make(map[Type][]*Instantiation, len(d.schemes))
+	for t := range d.schemes {
+		polys[t] = make([]*Instantiation, 0, 3)
+	}
+RefLoop:
+	for _, inst := range d.insts {
+		insts := polys[inst.From]
+		for _, i := range insts {
+			if Equals(i.To, inst.To) {
+				inst.To = i.To
+				inst.Mapping = i.Mapping
+				continue RefLoop
+			}
+		}
+		polys[inst.From] = append(insts, inst)
+	}
+	d.env.PolyTypes = polys
+}
+
+func derefTypeVars(env *Env, root ast.Expr, inferred InferredTypes, ss schemes, insts map[*ast.VarRef]*Instantiation) *locerr.Error {
+	deref := &typeVarDereferencer{nil, env, inferred, ss, insts}
 
 	// Note:
 	// Don't need to dereference types of external symbols because they must not contain any
 	// type variables.
-	ast.Visit(v, root)
+	ast.Visit(deref, root)
 
 	// Note:
 	// Cannot return v.err directly because `return v.err` returns typed nil (typed as *locerr.Error).
-	if v.err != nil {
-		return v.err
+	if deref.err != nil {
+		return deref.err
 	}
+
+	deref.normalizePolyTypes()
+
 	return nil
 }

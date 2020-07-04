@@ -31,11 +31,18 @@ func occur(v *Var, rhs Type) bool {
 			}
 		}
 	case *Var:
+		if t.Ref != nil {
+			return occur(v, t.Ref)
+		}
+		if t.IsGeneric() {
+			panic("FATAL: Generic type variable must not appear in occur check")
+		}
 		if v == t {
 			return true
 		}
-		if t.Ref != nil {
-			return occur(v, t.Ref)
+		if t.Level > v.Level {
+			// Adjust levels
+			t.Level = v.Level
 		}
 	}
 	return false
@@ -80,8 +87,17 @@ func unifyFun(left, right *Fun) *locerr.Error {
 func assignVar(v *Var, t Type) *locerr.Error {
 	// When rv.Ref == nil
 	if occur(v, t) {
-		return locerr.Errorf("Cannot resolve uninstantiated type variable. Cyclic dependency found while unification with '%s'", t.String())
+		return locerr.Errorf("Cannot resolve free type variable. Cyclic dependency found for free type variable '%s' while unification with '%s'", v.String(), t.String())
 	}
+
+	// Note:
+	// 'v' may be generic type variable because of external symbols.
+	// e.g.
+	//   let _ = x in x + x
+	// The `x` is an external symbol and typed as ?. And it is bound to `_` in `let` expression.
+	// The `_` is typed as 'a so the type of `x` will be 'a.
+	// In `x + x`, type of `x` is unified although its type is generic.
+
 	v.Ref = t
 	return nil
 }

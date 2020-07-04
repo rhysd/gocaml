@@ -3,7 +3,6 @@ package codegen
 import (
 	"fmt"
 	"github.com/rhysd/gocaml/closure"
-	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/sema"
 	"github.com/rhysd/gocaml/syntax"
 	"github.com/rhysd/locerr"
@@ -62,7 +61,6 @@ func TestExecutable(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			mir.ElimRefs(ir, env)
 			prog := closure.Transform(ir)
 
 			opts := EmitOptions{OptimizeDefault, "", "", true}
@@ -130,7 +128,6 @@ func BenchmarkExecutableCreation(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		mir.ElimRefs(ir, env)
 		prog := closure.Transform(ir)
 
 		opts := EmitOptions{OptimizeDefault, "", "", true}
@@ -189,7 +186,6 @@ func TestExamples(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			mir.ElimRefs(ir, env)
 			prog := closure.Transform(ir)
 
 			opts := EmitOptions{OptimizeDefault, "", "", true}

@@ -11,56 +11,8 @@ import (
 	"testing"
 )
 
-func testTypeEquals(l, r Type) bool {
-	switch l := l.(type) {
-	case *Unit, *Int, *Float, *Bool, *String:
-		return l == r
-	case *Tuple:
-		r, ok := r.(*Tuple)
-		if !ok || len(l.Elems) != len(r.Elems) {
-			return false
-		}
-		for i, e := range l.Elems {
-			if !testTypeEquals(e, r.Elems[i]) {
-				return false
-			}
-		}
-		return true
-	case *Array:
-		r, ok := r.(*Array)
-		if !ok {
-			return false
-		}
-		return testTypeEquals(l.Elem, r.Elem)
-	case *Fun:
-		r, ok := r.(*Fun)
-		if !ok || !testTypeEquals(l.Ret, r.Ret) || len(l.Params) != len(r.Params) {
-			return false
-		}
-		for i, p := range l.Params {
-			if !testTypeEquals(p, r.Params[i]) {
-				return false
-			}
-		}
-		return true
-	case *Var:
-		r, ok := r.(*Var)
-		if !ok {
-			return false
-		}
-		if l.Ref == nil || r.Ref == nil {
-			return l.Ref == nil && r.Ref == nil
-		}
-		return testTypeEquals(l.Ref, r.Ref)
-	case *Option:
-		r, ok := r.(*Option)
-		if !ok {
-			return false
-		}
-		return testTypeEquals(l.Elem, r.Elem)
-	default:
-		panic("Unreachable")
-	}
+func varT(t Type) *Var {
+	return NewVar(t, 0)
 }
 
 func TestDerefFailure(t *testing.T) {
@@ -68,8 +20,13 @@ func TestDerefFailure(t *testing.T) {
 	pos := locerr.Pos{0, 0, 0, s}
 	tok := &token.Token{token.ILLEGAL, pos, pos, s}
 	env := NewEnv()
-	env.Table["hello"] = &Var{}
-	v := &typeVarDereferencer{nil, env, map[ast.Expr]Type{}}
+	env.DeclTable["hello"] = varT(nil)
+	v := &typeVarDereferencer{
+		nil,
+		env,
+		map[ast.Expr]Type{},
+		schemes{},
+	}
 	root := &ast.Let{
 		tok,
 		ast.NewSymbol("hello"),
@@ -88,18 +45,24 @@ func TestDerefFailure(t *testing.T) {
 }
 
 func TestUnwrapEmptyTypeVar(t *testing.T) {
-	e := &Var{}
+	e := varT(nil)
 	for _, ty := range []Type{
 		e,
-		&Var{e},
-		&Var{&Var{e}},
+		varT(e),
+		varT(varT(e)),
 		&Tuple{[]Type{e}},
 		&Fun{e, []Type{}},
 		&Fun{IntType, []Type{e}},
 		&Option{e},
 		&Array{e},
 	} {
-		_, ok := unwrap(ty)
+		v := &typeVarDereferencer{
+			nil,
+			NewEnv(),
+			map[ast.Expr]Type{},
+			schemes{},
+		}
+		_, ok := v.unwrap(ty)
 		if ok {
 			t.Error("Unwrapping type variable must cause an error:", ty.String())
 		}

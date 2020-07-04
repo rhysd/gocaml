@@ -11,7 +11,10 @@ SRCS := \
 	types/builtins.go \
 	types/env.go \
 	types/type.go \
+	types/visitor.go \
+	types/equals.go \
 	sema/unify.go \
+	sema/generic.go \
 	sema/deref.go \
 	sema/infer.go \
 	sema/node_to_type.go \
@@ -22,11 +25,11 @@ SRCS := \
 	mir/val.go \
 	mir/block.go \
 	mir/printer.go \
-	mir/elim_ref.go \
 	mir/program.go \
 	closure/transform.go \
 	closure/freevars.go \
 	closure/fix_apps.go \
+	mono/monomorphize.go \
 	codegen/emitter.go \
 	codegen/module_builder.go \
 	codegen/type_builder.go \
@@ -49,6 +52,7 @@ TESTS := \
 	token/token_test.go \
 	types/env_test.go \
 	types/type_test.go \
+	types/visitor_test.go \
 	sema/example_test.go \
 	sema/infer_test.go \
 	sema/deref_test.go \
@@ -57,8 +61,8 @@ TESTS := \
 	sema/semantics_check_test.go \
 	sema/scope_test.go \
 	sema/alpha_transform_test.go \
+	sema/algorithm_w_test.go \
 	mir/block_test.go \
-	mir/elim_ref_test.go \
 	mir/program_test.go \
 	codegen/example_test.go \
 	codegen/executable_test.go \
@@ -97,7 +101,7 @@ endif
 
 cover.out: $(TESTS)
 	go get github.com/haya14busa/goverage
-	CGO_LDFLAGS_ALLOW='-Wl,(-search_paths_first|-headerpad_max_install_names)' goverage -coverprofile=cover.out -covermode=count ./ast ./mir ./closure ./syntax ./token ./sema ./codegen ./common
+	CGO_LDFLAGS_ALLOW='-Wl,(-search_paths_first|-headerpad_max_install_names)' goverage -coverprofile=cover.out -covermode=count ./ast ./mir ./closure ./syntax ./token ./sema ./codegen ./common ./mono
 
 cov: cover.out
 	go get golang.org/x/tools/cmd/cover

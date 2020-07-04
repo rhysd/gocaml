@@ -20,8 +20,8 @@ func TestResolvedSymbols(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := env.Table["x"]; ok {
-		t.Error("'x' was resolved as internal symbol:", env.Table)
+	if _, ok := env.DeclTable["x"]; ok {
+		t.Error("'x' was resolved as internal symbol:", env.DeclTable)
 	}
 	if _, ok := env.Externals["y"]; !ok {
 		t.Error("'y' was not resolved as external symbol:", env.Externals)

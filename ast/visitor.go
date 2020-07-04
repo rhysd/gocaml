@@ -2,14 +2,14 @@ package ast
 
 // Visitor is an interface for the structs which is used for traversing AST.
 type Visitor interface {
-	// VisitTopdown defines the process when a node is visit. This method is called before
+	// VisitTopdown defines the process when a node is visited. This method is called before
 	// children are visited.
 	// Returned value is a next visitor to use for succeeding visit. When wanting to stop
 	// visiting, please return nil.
 	// A visitor visits in depth-first order.
 	VisitTopdown(e Expr) Visitor
-	// VisitBottomup defines the process when a node is visit. This method is called after
-	// children were visited.
+	// VisitBottomup defines the process when a node is visited. This method is called after
+	// children were visited. When VisitTopdown returned nil, this method won't be caled for the node.
 	VisitBottomup(e Expr)
 }
 

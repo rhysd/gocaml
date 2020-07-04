@@ -2,7 +2,6 @@ package codegen
 
 import (
 	"github.com/rhysd/gocaml/closure"
-	"github.com/rhysd/gocaml/mir"
 	"github.com/rhysd/gocaml/sema"
 	"github.com/rhysd/gocaml/syntax"
 	"github.com/rhysd/locerr"
@@ -22,7 +21,6 @@ func testCreateEmitter(code string, optimize OptLevel, debug bool) (e *Emitter, 
 	if err != nil {
 		return
 	}
-	mir.ElimRefs(ir, env)
 	prog := closure.Transform(ir)
 	opts := EmitOptions{optimize, "", "", debug}
 	e, err = NewEmitter(prog, env, s, opts)

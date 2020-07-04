@@ -8,6 +8,7 @@ import (
 	"github.com/rhysd/gocaml/closure"
 	"github.com/rhysd/gocaml/codegen"
 	"github.com/rhysd/gocaml/mir"
+	"github.com/rhysd/gocaml/mono"
 	"github.com/rhysd/gocaml/sema"
 	"github.com/rhysd/gocaml/syntax"
 	"github.com/rhysd/gocaml/token"
@@ -88,6 +89,19 @@ func (d *Driver) SemanticAnalysis(src *locerr.Source) (*types.Env, sema.Inferred
 	return sema.Analyze(a)
 }
 
+func (d *Driver) DumpEnvToStdout(src *locerr.Source) error {
+	env, inferred, err := d.SemanticAnalysis(src)
+	if err != nil {
+		return err
+	}
+	env.Dump()
+	fmt.Println("\nType Information:\n")
+	for expr, ty := range inferred {
+		fmt.Printf("  %s: %s (%s-%s)\n", expr.Name(), ty.String(), expr.Pos().String(), expr.End().String())
+	}
+	return nil
+}
+
 // EmitMIR emits MIR tree representation.
 func (d *Driver) EmitMIR(src *locerr.Source) (*mir.Program, *types.Env, error) {
 	parsed, err := d.Parse(src)
@@ -98,8 +112,8 @@ func (d *Driver) EmitMIR(src *locerr.Source) (*mir.Program, *types.Env, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	mir.ElimRefs(ir, env)
 	prog := closure.Transform(ir)
+	prog = mono.Monomorphize(prog, env)
 	return prog, env, nil
 }
 

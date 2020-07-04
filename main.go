@@ -14,9 +14,9 @@ var (
 	help        = flag.Bool("help", false, "Show this help")
 	showTokens  = flag.Bool("tokens", false, "Show tokens for input")
 	showAST     = flag.Bool("ast", false, "Show AST for input")
-	analyze     = flag.Bool("analyze", false, "Analyze code and report errors if exist")
+	analyze     = flag.Bool("analyze", false, "Dump analyzed symbols and types information to stdout")
 	showMIR     = flag.Bool("mir", false, "Emit GoCaml Intermediate Language representation to stdout")
-	externals   = flag.Bool("externals", false, "Display external symbols")
+	check       = flag.Bool("check", false, "Check code (syntax, types, ...) and report errors if exist")
 	llvm        = flag.Bool("llvm", false, "Emit LLVM IR to stdout")
 	asm         = flag.Bool("asm", false, "Emit assembler code to stdout")
 	opt         = flag.Int("opt", -1, "Optimization level (0~3). 0: none, 1: less, 2: default, 3: aggressive")
@@ -104,9 +104,14 @@ func main() {
 	case *showTokens:
 		d.PrintTokens(src)
 	case *showAST:
+	case *check:
 		d.PrintAST(src)
-	case *analyze:
 		if _, _, err := d.SemanticAnalysis(src); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(4)
+		}
+	case *analyze:
+		if err := d.DumpEnvToStdout(src); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(4)
 		}

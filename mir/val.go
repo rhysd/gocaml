@@ -119,15 +119,15 @@ type (
 	Tuple struct {
 		Elems []string
 	}
+	TplLoad struct { // Used for each element of LetTuple
+		From  string
+		Index int
+	}
 	Array struct {
 		Size, Elem string
 	}
 	ArrLit struct {
 		Elems []string
-	}
-	TplLoad struct { // Used for each element of LetTuple
-		From  string
-		Index int
 	}
 	ArrLoad struct {
 		From, Index string

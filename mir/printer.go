@@ -13,7 +13,7 @@ type printer struct {
 }
 
 func (p *printer) getTypeNameOf(insn *Insn) string {
-	t, ok := p.types.Table[insn.Ident]
+	t, ok := p.types.DeclTable[insn.Ident]
 	if !ok {
 		panic("FATAL: Type of identifier not found: " + insn.Ident)
 	}

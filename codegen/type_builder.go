@@ -58,7 +58,7 @@ func (b *typeBuilder) buildClosureCaptures(name string, closure []string) llvm.T
 
 	fields := make([]llvm.Type, 0, len(closure))
 	for _, capture := range closure {
-		t, ok := b.env.Table[capture]
+		t, ok := b.env.DeclTable[capture]
 		if !ok {
 			panic(fmt.Sprintf("Type of capture '%s' not found!", capture))
 		}

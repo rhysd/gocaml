@@ -10,10 +10,12 @@ import (
 
 func TestDumpResult(t *testing.T) {
 	env := NewEnv()
-	env.Table["test_ident"] = IntType
-	env.Table["test_ident2"] = BoolType
-	env.Table["external_ident"] = UnitType
-	env.Table["external_ident2"] = FloatType
+	env.DeclTable["test_ident"] = IntType
+	env.DeclTable["test_ident2"] = BoolType
+	env.DeclTable["external_ident"] = UnitType
+	env.DeclTable["external_ident2"] = FloatType
+
+	// TODO: Add dummy instantiations
 
 	old := os.Stdout
 	r, w, _ := os.Pipe()
@@ -44,6 +46,8 @@ func TestDumpResult(t *testing.T) {
 		}
 	}
 }
+
+// TODO: TestDumpDebug
 
 func TestEnvHasBuiltins(t *testing.T) {
 	env := NewEnv()

@@ -201,7 +201,7 @@ func (b *moduleBuilder) buildExternalDecl(ext *types.External) {
 func (b *moduleBuilder) buildFuncDecl(insn mir.FunInsn) {
 	name := insn.Name
 	_, isClosure := b.closures[name]
-	found, ok := b.env.Table[name]
+	found, ok := b.env.DeclTable[name]
 	if !ok {
 		panic(fmt.Sprintf("Type not found for function '%s'", name))
 	}
@@ -262,7 +262,7 @@ func (b *moduleBuilder) buildFunBody(insn mir.FunInsn) {
 	}
 
 	if b.debug != nil {
-		ty, ok := b.env.Table[name].(*types.Fun)
+		ty, ok := b.env.DeclTable[name].(*types.Fun)
 		if !ok {
 			panic("Type for function definition not found: " + name)
 		}

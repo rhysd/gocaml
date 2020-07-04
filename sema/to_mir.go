@@ -13,6 +13,7 @@ type emitter struct {
 	count    uint
 	env      *types.Env
 	inferred InferredTypes
+	insts    refInsts
 }
 
 func (e *emitter) genID() string {
@@ -30,7 +31,7 @@ func (e *emitter) typeOf(node ast.Expr) types.Type {
 
 func (e *emitter) insn(val mir.Val, prev *mir.Insn, node ast.Expr) *mir.Insn {
 	id := e.genID()
-	e.env.Table[id] = e.typeOf(node)
+	e.env.DeclTable[id] = e.typeOf(node)
 	return mir.Concat(mir.NewInsn(id, val, node.Pos()), prev)
 }
 
@@ -42,8 +43,10 @@ func (e *emitter) emitBinaryInsn(op mir.OperatorKind, lhs, rhs, node ast.Expr) *
 }
 
 func (e *emitter) emitLetInsn(node *ast.Let) *mir.Insn {
+	// TODO: Do not emit insn if it's unused generic decl
+
 	// Note:
-	// Instroduce shortcut about symbol to reduce number of instruction nodes.
+	// Introduce shortcut about symbol to reduce number of instruction nodes.
 	//
 	// Before:
 	//   $k1 = some_insn
@@ -54,11 +57,15 @@ func (e *emitter) emitLetInsn(node *ast.Let) *mir.Insn {
 	//
 	// Here `$k1` is `bound.Ident`.
 	bound := e.emitInsn(node.Bound)
-	t, _ := e.env.Table[bound.Ident]
-	delete(e.env.Table, bound.Ident)
+	t, _ := e.env.DeclTable[bound.Ident]
+	delete(e.env.DeclTable, bound.Ident)
+	if inst, ok := e.env.RefInsts[bound.Ident]; ok {
+		delete(e.env.RefInsts, bound.Ident)
+		e.env.RefInsts[node.Symbol.Name] = inst
+	}
 
 	bound.Ident = node.Symbol.Name
-	e.env.Table[bound.Ident] = t
+	e.env.DeclTable[bound.Ident] = t
 
 	body := e.emitInsn(node.Body)
 	body.Append(bound)
@@ -66,8 +73,10 @@ func (e *emitter) emitLetInsn(node *ast.Let) *mir.Insn {
 }
 
 func (e *emitter) emitFunInsn(node *ast.LetRec) *mir.Insn {
+	// TODO: Do not emit insn if it's unused generic function
+
 	name := node.Func.Symbol.Name
-	ty, ok := e.env.Table[name]
+	ty, ok := e.env.DeclTable[name]
 	if !ok {
 		panic("FATAL: Unknown function: " + name)
 	}
@@ -85,7 +94,7 @@ func (e *emitter) emitFunInsn(node *ast.LetRec) *mir.Insn {
 		false,
 	}
 
-	e.env.Table[name] = ty
+	e.env.DeclTable[name] = ty
 	insn := mir.NewInsn(name, val, node.Pos())
 
 	body := e.emitInsn(node.Body)
@@ -97,15 +106,16 @@ func (e *emitter) emitMatchInsn(node *ast.Match) *mir.Insn {
 	pos := node.Pos()
 	matched := e.emitInsn(node.Target)
 	id := e.genID()
-	e.env.Table[id] = types.BoolType
+	e.env.DeclTable[id] = types.BoolType
 	cond := mir.Concat(mir.NewInsn(id, &mir.IsSome{matched.Ident}, pos), matched)
 
-	matchedTy, ok := e.env.Table[matched.Ident].(*types.Option)
+	// TODO: Do not emit insn if it's unused generic decl
+	matchedTy, ok := e.env.DeclTable[matched.Ident].(*types.Option)
 	if !ok {
 		panic("Type of 'match' expression target not found")
 	}
 	name := node.SomeIdent.Name
-	e.env.Table[name] = matchedTy.Elem
+	e.env.DeclTable[name] = matchedTy.Elem
 
 	derefInsn := mir.NewInsn(name, &mir.DerefSome{matched.Ident}, pos)
 	someBlk := e.emitBlock("then", node.IfSome)
@@ -129,8 +139,9 @@ func (e *emitter) emitLetTupleInsn(node *ast.LetTuple) *mir.Insn {
 
 	insn := bound
 	for i, sym := range node.Symbols {
+		// TODO: Do not emit insn if it's unused generic decl
 		name := sym.Name
-		e.env.Table[name] = boundTy.Elems[i]
+		e.env.DeclTable[name] = boundTy.Elems[i]
 		insn = mir.Concat(mir.NewInsn(
 			name,
 			&mir.TplLoad{
@@ -144,6 +155,46 @@ func (e *emitter) emitLetTupleInsn(node *ast.LetTuple) *mir.Insn {
 	body := e.emitInsn(node.Body)
 	body.Append(insn)
 	return body
+}
+
+func (e *emitter) emitAppInsn(node *ast.Apply) *mir.Insn {
+	var prev *mir.Insn
+	var inst *types.Instantiation
+	var ident string
+	if ref, ok := node.Callee.(*ast.VarRef); ok {
+		// Note:
+		// When calling a variable directly, it may be direct call of a known function.
+		// Known function is optimized in closure transform. So we set name of variable
+		// reference directly to the callee of 'app' instruction. When callee is a polymorphic
+		// function and needs to be instantiated, what type the callee is instantiated should
+		// be maintained for monomorphization. Here we set the identifier of 'app' instruction
+		// as the key of the instantiation. It is used to know how the callee was instantiated
+		// while monomorphization.
+		if _, ok := e.env.DeclTable[ref.Symbol.Name]; ok {
+			ident = ref.Symbol.Name
+			inst, _ = e.insts[ref]
+		} else if _, ok := e.env.Externals[ref.Symbol.Name]; ok {
+			prev = e.insn(&mir.XRef{ref.Symbol.Name}, nil, ref)
+			ident = prev.Ident
+		} else {
+			panic("FATAL: Unknown identifier: " + ref.Symbol.Name)
+		}
+	} else {
+		prev = e.emitInsn(node.Callee)
+		ident = prev.Ident
+	}
+	args := make([]string, 0, len(node.Args))
+	for _, a := range node.Args {
+		arg := e.emitInsn(a)
+		arg.Append(prev)
+		args = append(args, arg.Ident)
+		prev = arg
+	}
+	insn := e.insn(&mir.App{ident, args, mir.DIRECT_CALL}, prev, node)
+	if inst != nil {
+		e.env.RefInsts[insn.Ident] = inst
+	}
+	return insn
 }
 
 func (e *emitter) emitInsn(node ast.Expr) *mir.Insn {
@@ -214,8 +265,12 @@ func (e *emitter) emitInsn(node ast.Expr) *mir.Insn {
 	case *ast.Let:
 		return e.emitLetInsn(n)
 	case *ast.VarRef:
-		if _, ok := e.env.Table[n.Symbol.Name]; ok {
-			return e.insn(&mir.Ref{n.Symbol.Name}, nil, node)
+		if _, ok := e.env.DeclTable[n.Symbol.Name]; ok {
+			insn := e.insn(&mir.Ref{n.Symbol.Name}, nil, node)
+			if inst, ok := e.insts[n]; ok {
+				e.env.RefInsts[insn.Ident] = inst
+			}
+			return insn
 		} else if _, ok := e.env.Externals[n.Symbol.Name]; ok {
 			return e.insn(&mir.XRef{n.Symbol.Name}, nil, node)
 		} else {
@@ -224,16 +279,7 @@ func (e *emitter) emitInsn(node ast.Expr) *mir.Insn {
 	case *ast.LetRec:
 		return e.emitFunInsn(n)
 	case *ast.Apply:
-		callee := e.emitInsn(n.Callee)
-		prev := callee
-		args := make([]string, 0, len(n.Args))
-		for _, a := range n.Args {
-			arg := e.emitInsn(a)
-			arg.Append(prev)
-			args = append(args, arg.Ident)
-			prev = arg
-		}
-		return e.insn(&mir.App{callee.Ident, args, mir.DIRECT_CALL}, prev, node)
+		return e.emitAppInsn(n)
 	case *ast.Tuple:
 		var prev *mir.Insn
 		len := len(n.Elems)
@@ -304,7 +350,7 @@ func (e *emitter) emitBlock(name string, node ast.Expr) *mir.Block {
 }
 
 // ToMIR converts given AST into MIR with type environment
-func ToMIR(root ast.Expr, env *types.Env, inferred InferredTypes) *mir.Block {
-	e := &emitter{0, env, inferred}
+func ToMIR(root ast.Expr, env *types.Env, inferred InferredTypes, insts refInsts) *mir.Block {
+	e := &emitter{0, env, inferred, insts}
 	return e.emitBlock("program", root)
 }
