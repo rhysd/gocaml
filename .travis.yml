@@ -4,8 +4,15 @@ dist: trusty
 os:
   - linux
   - osx
+install:
+  - bash ./scripts/travis_install.sh
 script:
-  - bash ./scripts/travis.sh
+  - make test VERBOSE=true
+after_success:
+  - make cover.out
+  - go tool cover -func cover.out
+  - mv cover.out coverage.txt
+  - bash <(curl -s https://codecov.io/bash)
 addons:
   apt:
     sources:

@@ -145,13 +145,13 @@ As mentioned above, GoCaml distinguishes int and float in operators. Operators f
 suffixed by `.` (dot).
 
 ```ml
-(* integer calcuration *)
+(* integer calculation *)
 1 + 2;
 1 - 2;
 1 * 2;
 1 / 2;
 
-(* float calcuration *)
+(* float calculation *)
 1.0 +. 2.0;
 1.0 -. 2.0;
 1.0 *. 2.0;
@@ -603,7 +603,7 @@ For Linux or macOS, below commands build `gocaml` binary at root of the reposito
 $ sudo apt-get install libgc-dev
 
 # On macOS
-$ brew install bdw-gc coreutils
+$ brew install go cmake bdw-gc coreutils
 
 $ mkdir -p $GOPATH/src/github.com/rhysd && cd $GOPATH/src/github.com/rhysd
 $ git clone https://github.com/rhysd/gocaml.git
@@ -631,8 +631,8 @@ package manager in advance.
 If you use Debian-family Linux, use [LLVM apt repository][] or download [LLVM official binary][].
 
 ```console
-$ sudo apt-get install libllvm4.0 llvm-4.0-dev
-$ export LLVM_CONFIG=llvm-config-4.0
+$ sudo apt-get install libllvm5.0 llvm-5.0-dev
+$ export LLVM_CONFIG=llvm-config-5.0
 ```
 
 If you use macOS, use [Homebrew][]. GoCaml's installation script will automatically detect LLVM
@@ -939,7 +939,7 @@ $ gcc -m32 -lgc source.o ./runtime/gocamlrt.a
 [examples]: ./examples
 [Brainfxxk interpreter example]: ./examples/brainfxxk.ml
 [N-Queens puzzle example]: ./examples/n-queens.ml
-[LLVM official binary]: http://releases.llvm.org/download.html#4.0.0
+[LLVM official binary]: http://releases.llvm.org/download.html#5.0.0
 [Go binding building instruction]: https://github.com/llvm-mirror/llvm/blob/master/bindings/go/README.txt
 [goyacc]: https://godoc.org/golang.org/x/tools/cmd/goyacc
 [Option type]: https://en.wikipedia.org/wiki/Option_type

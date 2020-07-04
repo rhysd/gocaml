@@ -5,7 +5,7 @@ def run_test(file)
     # XXX
     sources += " ./sema/deref_test.go"
   end
-  result = `go test -v ./#{file} #{sources}`
+  result = run_tests "./#{file} #{sources}"
   puts_out result
 end
 
@@ -15,6 +15,10 @@ end
 
 def sep(f)
   puts "\033[93m#{Time.now}: #{File.basename f}\033[0m"
+end
+
+def run_tests(args)
+ `CGO_LDFLAGS_ALLOW='-Wl,(-search_paths_first|-headerpad_max_install_names)' go test -v #{args}`
 end
 
 guard :shell do
@@ -29,7 +33,7 @@ guard :shell do
   end
   watch /(.*)\/testdata\/.+\.(:?ml|out)$/ do |m|
     sep m[0]
-    puts_out `go test -v ./#{m[1]}`
+    puts_out run_tests("./#{m[1]}")
   end
   watch /\.c$/ do |m|
     sep m[0]

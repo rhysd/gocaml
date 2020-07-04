@@ -179,6 +179,6 @@ func Transform(ir *mir.Block) *mir.Program {
 	}
 
 	prog := &mir.Program{toplevel, t.closures, ir}
-	doPostProcess(prog)
+	fixAppsInProg(prog)
 	return prog
 }
